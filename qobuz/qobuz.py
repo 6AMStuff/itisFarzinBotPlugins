@@ -282,7 +282,7 @@ async def download_from_qobuz(_: Client, message: Message):
     try:
         album = qobuz.get_album(album_id)
     except Exception as e:
-        await message.reply("**ERROR**: " + e)
+        await message.reply("**ERROR**: " + str(e))
         return
 
     keyboard = [
