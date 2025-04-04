@@ -339,6 +339,14 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
         album_path = download_path + parse_data(ALBUM_PATH, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
         os.makedirs(album_path, exist_ok=True)
+        if not os.path.exists(album_path + "cover.jpg"):
+            cover_msg = await query.message.reply("Downloading **cover.jpg**.")
+            await download_file(
+                album["image"]["large"],
+                album_path + "cover.jpg",
+                progress=download_progress,
+                progress_args=("cover.jpg", time.time(), cover_msg)
+            )
 
         for track in tracks:
             stream_data = qobuz.get_file_url(str(track["id"]))
