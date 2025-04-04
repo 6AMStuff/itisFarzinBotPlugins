@@ -4,7 +4,9 @@ import httpx
 import hashlib
 import requests
 from typing import Callable
+from mutagen.id3 import PictureType
 from pyrogram import Client, filters
+from mutagen.flac import FLAC, Picture
 from pyrogram.types import (Message, CallbackQuery, InlineKeyboardMarkup,
                             InlineKeyboardButton)
 
@@ -239,6 +241,23 @@ def parse_data(text: str, data: dict):
     return text.format_map(DefaultDictMissing(data))
 
 
+def tag_file(file_path: str, image_path: str):
+    track_type = file_path.split(".")[-1].lower()
+
+    if track_type == "flac":
+        tagger = FLAC(file_path)
+
+        picture = Picture()
+
+        with open(image_path, "rb") as f:
+            picture.data = f.read()
+
+        picture.type = PictureType.COVER_FRONT
+        picture.mime = u"image/jpeg"
+
+        tagger.add_picture(picture)
+
+
 def set_up_qobuz():
     app_id = Config.getdata("qobuz_app_id", "579939560")
     app_secret = Config.getdata(
@@ -339,11 +358,13 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
         album_path = download_path + parse_data(ALBUM_PATH, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
         os.makedirs(album_path, exist_ok=True)
-        if not os.path.exists(album_path + "cover.jpg"):
+
+        cover_path = album_path + "cover.jpg"
+        if not os.path.exists(cover_path):
             cover_msg = await query.message.reply("Downloading **cover.jpg**.")
             await download_file(
                 album["image"]["large"],
-                album_path + "cover.jpg",
+                cover_path,
                 progress=download_progress,
                 progress_args=("cover.jpg", time.time(), cover_msg)
             )
@@ -371,4 +392,5 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
                 progress=download_progress,
                 progress_args=(track_name, time.time(), track_msg)
             )
+            tag_file(full_path, cover_path)
         await query.message.reply("Download is done.")
