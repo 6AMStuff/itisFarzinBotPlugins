@@ -287,6 +287,7 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
         tagger["date"] = parse_data("{date}", track_info, "")
         tagger["genre"] = parse_data("{genre}", track_info, "")
         tagger["composer"] = parse_data("{composer}", track_info)
+        tagger["copyright"] = parse_data("{copyright}", track_info)
         tagger["comment"] = "Download by itisFarzin's tool"
 
         tagger.save(file_path)
