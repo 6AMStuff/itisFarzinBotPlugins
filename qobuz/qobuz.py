@@ -336,9 +336,9 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
             _track = qobuz.get_track(info["id"])
             album = qobuz.get_album(_track["album"]["id"])
             tracks = [_track]
-        album_path = parse_data(ALBUM_PATH, album)
+        album_path = download_path + parse_data(ALBUM_PATH, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
-        os.makedirs(download_path + album_path, exist_ok=True)
+        os.makedirs(album_path, exist_ok=True)
 
         for track in tracks:
             stream_data = qobuz.get_file_url(str(track["id"]))
@@ -351,7 +351,7 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
                 TRACK_NAME + ".{format}",
                 track
             )
-            full_path = download_path + album_path + "/" + track_name
+            full_path = album_path + track_name
             if os.path.exists(full_path):
                 await track_msg.edit(
                     parse_data("Track **{name}** already exists.", track)
