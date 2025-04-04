@@ -256,6 +256,7 @@ def tag_file(file_path: str, image_path: str):
         picture.mime = u"image/jpeg"
 
         tagger.add_picture(picture)
+        tagger.save(file_path)
 
 
 def set_up_qobuz():
