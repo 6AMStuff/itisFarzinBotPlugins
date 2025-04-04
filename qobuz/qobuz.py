@@ -274,7 +274,8 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
             picture.data = f.read()
         picture.type = PictureType.COVER_FRONT
         picture.mime = u"image/jpeg"
-        tagger.add_picture(picture)
+        if len(picture.data) > 4 * 1024:
+            tagger.add_picture(picture)
 
         tagger["title"] = parse_data("{name}", track_info)
         tagger["artist"] = parse_data("{artist}", track_info)
