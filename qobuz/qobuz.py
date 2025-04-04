@@ -1,4 +1,5 @@
 import os
+import copy
 import time
 import httpx
 import hashlib
@@ -224,38 +225,66 @@ async def download_progress(
 
 
 class DefaultDictMissing(dict):
+    def __init__(self, *args, missing_text: str = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.missing_text = missing_text or "{{{key}}}"
+
     def __missing__(self, key):
-        return f"{{{key}}}"
+        return self.missing_text.format(key=key)
 
 
-def parse_data(text: str, data: dict):
+def parse_data(text: str, data: dict, missing_text: str = None):
+    _data = copy.deepcopy(data)
     if "performer" in data:
-        data["artist"] = data["performer"]["name"]
+        _data["artist"] = data["performer"]["name"]
     elif "artist" in data:
-        data["artist"] = data["artist"]["name"]
+        _data["artist"] = data["artist"]["name"]
     if "title" in data:
-        data["name"] = data["title"]
+        _data["name"] = data["title"]
     if "format_id" in data:
-        data["format"] = "flac" if data["format_id"] in {6, 7, 27} else "mp3"
+        _data["format"] = "flac" if _data["format_id"] in {6, 7, 27} else "mp3"
+    if "album" in data:
+        _data["album_title"] = data["album"]["title"]
+        _data["album_name"] = data["album"]["title"]
+        _data["album_artist"] = data["album"]["artist"]["name"]
+    if "release_date_original" in data:
+        _data["date"] = data["release_date_original"]
+    if "genre" in data.get("album", {}):
+        _data["genre"] = data["album"]["genre"]["name"]
+    if "composer" in data:
+        _data["composer"] = data["composer"]["name"]
+    if "media_number" in data:
+        _data["disc_number"] = data["media_number"]
 
-    return text.format_map(DefaultDictMissing(data))
+    return text.format_map(
+        DefaultDictMissing(_data, missing_text=missing_text)
+    )
 
 
-def tag_file(file_path: str, image_path: str):
+def tag_file(file_path: str, image_path: str, track_info: dict):
     track_type = file_path.split(".")[-1].lower()
 
     if track_type == "flac":
         tagger = FLAC(file_path)
 
         picture = Picture()
-
         with open(image_path, "rb") as f:
             picture.data = f.read()
-
         picture.type = PictureType.COVER_FRONT
         picture.mime = u"image/jpeg"
-
         tagger.add_picture(picture)
+
+        tagger["title"] = parse_data("{name}", track_info)
+        tagger["artist"] = parse_data("{artist}", track_info)
+        tagger["album"] = parse_data("{album_name}", track_info)
+        tagger["albumartist"] = parse_data("{album_artist}", track_info)
+        tagger["tracknumber"] = parse_data("{track_number}", track_info)
+        tagger["date"] = parse_data("{date}", track_info, "")
+        tagger["genre"] = parse_data("{genre}", track_info, "")
+        tagger["composer"] = parse_data("{composer}", track_info)
+        tagger["discnumber"] = parse_data("{media_number}", track_info)
+        tagger["comment"] = "Download by itisFarzin's tool"
+
         tagger.save(file_path)
 
 
@@ -393,5 +422,5 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
                 progress=download_progress,
                 progress_args=(track_name, time.time(), track_msg)
             )
-            tag_file(full_path, cover_path)
+            tag_file(full_path, cover_path, track)
         await query.message.reply("Download is done.")
