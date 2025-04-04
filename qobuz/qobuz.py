@@ -247,6 +247,8 @@ def parse_data(text: str, data: dict, missing_text: str = None):
         _data["album_title"] = data["album"]["title"]
         _data["album_name"] = data["album"]["title"]
         _data["album_artist"] = data["album"]["artist"]["name"]
+        _data["total_tracks"] = data["album"]["tracks_count"]
+        _data["total_discs"] = data["album"]["media_count"]
     if "release_date_original" in data:
         _data["date"] = data["release_date_original"]
     if "genre" in data.get("album", {}):
@@ -279,10 +281,12 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
         tagger["album"] = parse_data("{album_name}", track_info)
         tagger["albumartist"] = parse_data("{album_artist}", track_info)
         tagger["tracknumber"] = parse_data("{track_number}", track_info)
+        tagger["totaltracks"] = parse_data("{total_tracks}", track_info)
+        tagger["discnumber"] = parse_data("{disc_number}", track_info)
+        tagger["totaldiscs"] = parse_data("{total_discs}", track_info)
         tagger["date"] = parse_data("{date}", track_info, "")
         tagger["genre"] = parse_data("{genre}", track_info, "")
         tagger["composer"] = parse_data("{composer}", track_info)
-        tagger["discnumber"] = parse_data("{media_number}", track_info)
         tagger["comment"] = "Download by itisFarzin's tool"
 
         tagger.save(file_path)
