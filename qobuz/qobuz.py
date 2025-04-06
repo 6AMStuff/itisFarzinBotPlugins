@@ -17,7 +17,7 @@ from config import Config
 # with some modifications
 class Qobuz:
     def __init__(self, app_id: str | int, app_secret: str, auth_token: str):
-        self.api_base = 'https://www.qobuz.com/api.json/0.2/'
+        self.api_base = "https://www.qobuz.com/api.json/0.2/"
         self._app_id = str(app_id)
         self._app_secret = app_secret
         self._auth_token = auth_token
@@ -39,30 +39,30 @@ class Qobuz:
         if not params:
             params = {}
 
-        r = self.session.get(
+        response = self.session.get(
             self.api_base + url,
             params=params,
             headers=self.headers()
         )
 
-        if r.status_code not in [200, 201, 202]:
-            raise Exception(r.json()["message"])
+        if response.status_code not in [200, 201, 202]:
+            raise Exception(response.json()["message"])
 
-        return r.json()
+        return response.json()
 
     def check_token(self):
         params = {
             "app_id": self._app_id,
         }
-        signature = self.create_signature("user/get", params)
-        params["request_ts"] = signature[0]
-        params["request_sig"] = signature[1]
+        params["request_ts"], params["request_sig"] = self.create_signature(
+            "user/get", params
+        )
 
-        r = self._get("user/get", params)
+        response = self._get("user/get", params)
 
-        if r["credential"]["parameters"]:
+        if response["credential"]["parameters"]:
             pass
-        elif not r["credential"]["parameters"]:
+        elif not response["credential"]["parameters"]:
             raise Exception("Free accounts are not eligible for downloading")
         else:
             raise Exception("Invalid UserID/Token")
