@@ -370,7 +370,6 @@ async def download_from_qobuz(_: Client, message: Message):
 )
 async def qobuz_callback(_: Client, query: CallbackQuery):
     if isinstance(qobuz, str):
-        _.stop_transmission()
         await query.answer(qobuz)
         return
 
