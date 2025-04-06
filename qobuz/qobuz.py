@@ -302,10 +302,10 @@ def set_up_qobuz():
     auth_token = Config.getdata("qobuz_auth_token")
     if not auth_token or len(auth_token) == 0:
         return (
-            "**ERROR**: No qobuz token were provided."
-            f"Set your qobuz token via: `/setdata {__name__.split('.')[-1]}"
-            " qobuz_auth_token [your auth token]`"
-        )
+            "**ERROR**: No qobuz token were provided.\n"
+            "Set your qobuz token via: `{}setdata {} qobuz_auth_token"
+            " [your auth token]`"
+        ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
     return Qobuz(app_id, app_secret, auth_token)
 
 
