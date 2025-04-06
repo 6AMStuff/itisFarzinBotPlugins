@@ -3,7 +3,6 @@ import copy
 import time
 import httpx
 import hashlib
-import requests
 from typing import Callable
 from mutagen.id3 import PictureType
 from pyrogram import Client, filters
@@ -22,7 +21,7 @@ class Qobuz:
         self._app_id = str(app_id)
         self._app_secret = app_secret
         self._auth_token = auth_token
-        self.session = requests.Session()
+        self.session = httpx.Client()
 
     def headers(self):
         return {
