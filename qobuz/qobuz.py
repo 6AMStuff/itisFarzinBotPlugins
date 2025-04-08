@@ -428,3 +428,6 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
             )
             tag_file(full_path, cover_path, track)
         await query.message.reply("Download is done.")
+
+
+__all__ = ["download_from_qobuz", "qobuz_callback"]
