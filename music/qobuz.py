@@ -343,7 +343,11 @@ async def download_from_qobuz(_: Client, message: Message):
         [InlineKeyboardButton(
             "Download the album", f"qobuz dlalbum {album_id}"
         )],
-        [InlineKeyboardButton("Tracks", "none")]
+        [
+            InlineKeyboardButton("—", "none"),
+            InlineKeyboardButton("Tracks", "none"),
+            InlineKeyboardButton("—", "none")
+        ]
     ]
     tracks = [
         [InlineKeyboardButton(
