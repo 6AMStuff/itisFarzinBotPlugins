@@ -19,7 +19,7 @@ class APIError(Exception):
 
 
 class DeezerAPI:
-    def __init__(self, client_id, client_secret, bf_secret):
+    def __init__(self, client_id, client_secret, bf_secret, proxy):
         self.gw_light_url = "https://www.deezer.com/ajax/gw-light.php"
         self.api_token = ""
         self.client_id = client_id
@@ -27,7 +27,7 @@ class DeezerAPI:
 
         self.bf_secret = bf_secret.encode("ascii")
 
-        self.session = httpx.Client()
+        self.session = httpx.Client(proxy=proxy)
         self.session.headers.update({
             'accept': '*/*',
             'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
