@@ -3,6 +3,7 @@ import hashlib
 from time import time
 from math import ceil
 from random import randint
+from typing import Optional
 # from Crypto.Cipher import Blowfish
 
 
@@ -19,7 +20,13 @@ class APIError(Exception):
 
 
 class DeezerAPI:
-    def __init__(self, client_id, client_secret, bf_secret, proxy):
+    def __init__(
+        self,
+        client_id: str,
+        client_secret: str,
+        bf_secret: str,
+        proxy: Optional[str] = None
+    ):
         self.gw_light_url = "https://www.deezer.com/ajax/gw-light.php"
         self.api_token = ""
         self.client_id = client_id
@@ -41,7 +48,7 @@ class DeezerAPI:
             'accept-language': 'en-US,en;q=0.9',
         })
 
-    def _api_call(self, method, payload={}):
+    def _api_call(self, method: str, payload: Optional[dict] = None):
         api_token = (
             self.api_token
             if method not in ("deezer.getUserData", "user.getArl")
@@ -58,7 +65,7 @@ class DeezerAPI:
         resp = self.session.post(
             self.gw_light_url,
             params=params,
-            json=payload
+            json=payload or {}
         ).json()
 
         if resp["error"]:
@@ -85,7 +92,7 @@ class DeezerAPI:
 
         return resp["results"]
 
-    def login_via_email(self, email, password):
+    def login_via_email(self, email: str, password: str):
         # server sends set-cookie header with anonymous sid
         self.session.get("https://www.deezer.com")
 
@@ -115,7 +122,7 @@ class DeezerAPI:
 
         return arl, self.login_via_arl(arl)
 
-    def login_via_arl(self, arl):
+    def login_via_arl(self, arl: str):
         self.session.cookies.set("arl", arl, domain=".deezer.com")
         user_data = self._api_call("deezer.getUserData")
 
@@ -125,28 +132,28 @@ class DeezerAPI:
 
         return user_data
 
-    def get_track(self, id):
+    def get_track(self, id: str):
         return self._api_call("deezer.pageTrack", {"sng_id": id})
 
-    def get_track_data(self, id):
+    def get_track_data(self, id: str):
         return self._api_call("song.getData", {"sng_id": id})
 
-    def get_track_lyrics(self, id):
+    def get_track_lyrics(self, id: str):
         return self._api_call("song.getLyrics", {"sng_id": id})
 
-    def get_track_contributors(self, id):
+    def get_track_contributors(self, id: str):
         return self._api_call(
             "song.getData",
             {"sng_id": id, "array_default": ["SNG_CONTRIBUTORS"]}
         )["SNG_CONTRIBUTORS"]
 
-    def get_track_cover(self, id):
+    def get_track_cover(self, id: str):
         return self._api_call(
             "song.getData",
             {"sng_id": id, "array_default": ["ALB_PICTURE"]}
         )["ALB_PICTURE"]
 
-    def get_track_data_by_isrc(self, isrc):
+    def get_track_data_by_isrc(self, isrc: str):
         resp = self.session.get(
             f"https://api.deezer.com/track/isrc:{isrc}"
         ).json()
@@ -162,7 +169,7 @@ class DeezerAPI:
             "ALB_TITLE": resp["album"]["title"]
         }
 
-    def get_album(self, id):
+    def get_album(self, id: str):
         try:
             return self._api_call(
                 "deezer.pageAlbum",
@@ -180,7 +187,7 @@ class DeezerAPI:
             else:
                 raise e
 
-    def get_playlist(self, id, nb, start):
+    def get_playlist(self, id: str, nb: str, start: str):
         return self._api_call(
             "deezer.pagePlaylist",
             {
@@ -194,13 +201,13 @@ class DeezerAPI:
             }
         )
 
-    def get_artist_name(self, id):
+    def get_artist_name(self, id: str):
         return self._api_call(
             "artist.getData",
             {"art_id": id, "array_default": ["ART_NAME"]}
         )["ART_NAME"]
 
-    def search(self, query, type, start, nb):
+    def search(self, query: str, type: str, start: str, nb: str):
         return self._api_call(
             "search.music",
             {
@@ -212,7 +219,13 @@ class DeezerAPI:
             }
         )
 
-    def get_artist_album_ids(self, id, start, nb, credited_albums):
+    def get_artist_album_ids(
+        self,
+        id: str,
+        start: str,
+        nb: str,
+        credited_albums: bool
+    ):
         payload = {
             "art_id": id,
             "start": start,
@@ -225,7 +238,13 @@ class DeezerAPI:
         resp = self._api_call("album.getDiscography", payload)
         return [a["ALB_ID"] for a in resp["data"]]
 
-    def get_track_url(self, id, track_token, track_token_expiry, format):
+    def get_track_url(
+        self,
+        id: str,
+        track_token: str,
+        track_token_expiry: str,
+        format: str
+    ):
         # renews license token
         if time() - self.renew_timestamp >= 3600:
             self._api_call("deezer.getUserData")
@@ -253,7 +272,7 @@ class DeezerAPI:
         ).json()
         return resp["data"][0]["media"][0]["sources"][0]["url"]
 
-    def _get_blowfish_key(self, track_id):
+    def _get_blowfish_key(self, track_id: str):
         # yeah, you use the bytes of the hex digest of the hash. bruh moment
         md5_id = hashlib.md5(
             str(track_id).encode()
