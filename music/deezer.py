@@ -6,6 +6,8 @@ from random import randint
 from typing import Optional
 # from Crypto.Cipher import Blowfish
 
+from config import Config
+
 
 # Deezer classes from https://github.com/uhwot/orpheusdl-deezer
 # with some modifications
@@ -302,3 +304,27 @@ class DeezerAPI:
     #                 )
     #                 chunk = cipher.decrypt(chunk)
     #             file.write(chunk)
+
+
+def set_up_deezer():
+    client_id = Config.getdata("deezer_client_id", "579939560")
+    client_secret = Config.getdata(
+        "deezer_client_secret",
+        "fa31fc13e7a28e7d70bb61e91aa9e178"
+    )
+    bf_secret = Config.getdata("deezer_bf_secret", "g4el58wc0zvf9na1")
+    arl = Config.getdata("deezer_arl")
+    if not arl or len(arl) == 0:
+        return (
+            "**ERROR**: No deezer arl were provided.\n"
+            "Set your arl via: `{}setdata {} deezer_arl"
+            " [your arl]`"
+        ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
+    deezer = DeezerAPI(client_id, client_secret, bf_secret)
+    deezer.login_via_arl(arl)
+    return deezer
+
+
+deezer = set_up_deezer()
+
+__plugin__ = True
