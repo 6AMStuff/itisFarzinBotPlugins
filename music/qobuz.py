@@ -164,6 +164,11 @@ def set_up_qobuz():
     return Qobuz(app_id, app_secret, auth_token)
 
 
+def on_data_change():
+    global qobuz
+    qobuz = set_up_qobuz()
+
+
 qobuz = set_up_qobuz()
 
 ALBUM_PATH = "{artist}/{name}"
