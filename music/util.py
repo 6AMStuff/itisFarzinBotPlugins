@@ -130,7 +130,7 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
             picture.data = f.read()
         picture.type = PictureType.COVER_FRONT
         picture.mime = u"image/jpeg"
-        if len(picture.data) > 4 * 1024:
+        if len(picture.data) < 4 * 1024 * 1024:
             tagger.add_picture(picture)
 
         tagger["title"] = parse_data("{name}", track_info)
