@@ -241,6 +241,12 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
         await query.answer(qobuz)
         return
 
+    try:
+        qobuz.check_token()
+    except Exception as e:
+        await query.answer("ERROR: " + str(e))
+        return
+
     info = query.matches[0].groupdict()
 
     if info["type"] in ["dlalbum", "dltrack"]:
@@ -253,7 +259,7 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
         if info["type"] == "dlalbum":
             album = qobuz.get_album(info["id"])
             tracks = album["tracks"]["items"]
-        elif info["type"] == "dltrack":
+        else:
             _track = qobuz.get_track(info["id"])
             album = qobuz.get_album(_track["album"]["id"])
             tracks = [_track]
