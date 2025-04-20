@@ -21,7 +21,7 @@ class Qobuz:
         self._auth_token = auth_token
         self.session = httpx.Client()
 
-    def headers(self):
+    def headers(self) -> dict[str, str]:
         return {
             'X-Device-Platform': 'android',
             'X-Device-Model': 'Pixel 3',
@@ -33,7 +33,7 @@ class Qobuz:
             "/QP1A.190711.020) QobuzMobileAndroid/5.16.1.5-b21041415"
         }
 
-    def _get(self, url: str, params=None):
+    def _get(self, url: str, params=None) -> dict:
         if not params:
             params = {}
 
@@ -65,7 +65,11 @@ class Qobuz:
         else:
             raise Exception("Invalid UserID/Token")
 
-    def create_signature(self, method: str, parameters: dict):
+    def create_signature(
+        self,
+        method: str,
+        parameters: dict
+    ) -> tuple[str, str]:
         timestamp = str(int(time.time()))
         to_hash = method.replace("/", "")
 
@@ -77,7 +81,7 @@ class Qobuz:
         signature = hashlib.md5(to_hash.encode()).hexdigest()
         return timestamp, signature
 
-    def search(self, query_type: str, query: str, limit: int = 10):
+    def search(self, query_type: str, query: str, limit: int = 10) -> dict:
         return self._get(
             "catalog/search",
             params={
@@ -88,7 +92,7 @@ class Qobuz:
             }
         )
 
-    def get_file_url(self, track_id: str, quality_id=27):
+    def get_file_url(self, track_id: str, quality_id=27) -> dict:
         params = {
             "track_id": track_id,
             "format_id": str(quality_id),
@@ -103,7 +107,7 @@ class Qobuz:
 
         return self._get("track/getFileUrl", params=params)
 
-    def get_track(self, track_id: str):
+    def get_track(self, track_id: str) -> dict:
         return self._get(
             "track/get",
             params={
@@ -112,7 +116,7 @@ class Qobuz:
             }
         )
 
-    def get_playlist(self, playlist_id: str):
+    def get_playlist(self, playlist_id: str) -> dict:
         return self._get(
             "playlist/get",
             params={
@@ -124,7 +128,7 @@ class Qobuz:
             }
         )
 
-    def get_album(self, album_id: str):
+    def get_album(self, album_id: str) -> dict:
         return self._get(
             "album/get",
             params={
@@ -134,7 +138,7 @@ class Qobuz:
             }
         )
 
-    def get_artist(self, artist_id: str):
+    def get_artist(self, artist_id: str) -> dict:
         return self._get(
             "artist/get",
             params={
