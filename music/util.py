@@ -1,6 +1,7 @@
 import copy
 import time
 import httpx
+import datetime
 from typing import Callable
 from pyrogram.types import Message
 from mutagen.id3 import PictureType
@@ -113,6 +114,7 @@ def parse_data(text: str, data: dict, missing_text: str = None):
         _data["composer"] = data["composer"]["name"]
     if "media_number" in data:
         _data["disc_number"] = data["media_number"]
+    _data["time"] = datetime.timedelta(seconds=int(data["duration"]))
 
     return text.format_map(
         DefaultDictMissing(_data, missing_text=missing_text)

@@ -2,7 +2,6 @@ import os
 import time
 import httpx
 import hashlib
-import datetime
 from pyrogram import Client, filters
 from pyrogram.types import (
     Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
@@ -174,10 +173,8 @@ def qobuz_search_keyboard(query: str):
     result = qobuz.search("track", query)
 
     for track in result["tracks"]["items"]:
-        time = datetime.timedelta(seconds=int(track["duration"]))
-        info = parse_data("{name} - {artist}", track)
         keyboard.append([InlineKeyboardButton(
-            f"{time} | {info}",
+            parse_data("{time} | {name} - {artist}", track),
             parse_data("qobuz trackinfo {id}", track)
         )])
     return InlineKeyboardMarkup(keyboard)
@@ -240,7 +237,7 @@ async def qobuz_message(_: Client, message: Message):
     ]
     tracks = [
         [InlineKeyboardButton(
-            parse_data("{name}", track),
+            parse_data("{time} | {name} - {artist}", track),
             parse_data("qobuz dltrack {id}", track)
         )] for track in album["tracks"]["items"]
     ]
