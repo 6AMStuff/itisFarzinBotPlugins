@@ -67,9 +67,13 @@ async def youtube_callback(_: Client, query: CallbackQuery):
         "downloads",
         use_env=True
     ) + "/"
+    youtube_file_name = Config.getdata(
+        "youtube_file_name",
+        "%(title)s.%(ext)s"
+    )
     ydl_opts = {
         "format": quality,
-        "outtmpl": f"{download_path}%(title)s.%(ext)s",
+        "outtmpl": download_path + youtube_file_name,
         "quiet": True,
         "proxy": Config.PROXY,
     }
