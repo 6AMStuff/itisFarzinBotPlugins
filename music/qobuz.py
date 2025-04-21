@@ -187,9 +187,6 @@ def on_data_change():
 
 qobuz = set_up_qobuz()
 
-ALBUM_PATH = "{artist}/{name}"
-TRACK_NAME = "{track_number} {name}"
-
 
 @Client.on_message(
     Config.IS_ADMIN
@@ -282,7 +279,8 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
             _track = qobuz.get_track(info["id"])
             album = qobuz.get_album(_track["album"]["id"])
             tracks = [_track]
-        album_path = download_path + parse_data(ALBUM_PATH, album) + "/"
+        _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
+        album_path = download_path + parse_data(_album_path, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
         os.makedirs(album_path, exist_ok=True)
 
@@ -303,8 +301,12 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
             track_msg = await query.message.reply(
                 parse_data("Downloading **{name}**.", track)
             )
+            _track_name = Config.getdata(
+                "qobuz_track_name",
+                "{track_number} {name}"
+            )
             track_name = parse_data(
-                TRACK_NAME + ".{format}",
+                _track_name + ".{format}",
                 track
             )
             full_path = album_path + track_name
