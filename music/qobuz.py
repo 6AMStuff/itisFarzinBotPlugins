@@ -2,6 +2,7 @@ import os
 import time
 import httpx
 import hashlib
+import datetime
 from pyrogram import Client, filters
 from pyrogram.types import (
     Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
@@ -168,6 +169,20 @@ def set_up_qobuz():
     return Qobuz(app_id, app_secret, auth_token)
 
 
+def qobuz_search_keyboard(query: str):
+    keyboard = []
+    result = qobuz.search("track", query)
+
+    for track in result["tracks"]["items"]:
+        time = datetime.timedelta(seconds=int(track["duration"]))
+        info = parse_data("{name} - {artist}", track)
+        keyboard.append([InlineKeyboardButton(
+            f"{time} | {info}",
+            parse_data("qobuz trackinfo {id}", track)
+        )])
+    return InlineKeyboardMarkup(keyboard)
+
+
 def on_data_change():
     global qobuz
     qobuz = set_up_qobuz()
@@ -182,19 +197,29 @@ TRACK_NAME = "{track_number} {name}"
 @Client.on_message(
     Config.IS_ADMIN
     & filters.regex(
-        f"{Config.REGEX_CMD_PREFIXES}qobuz"
-        r"(?: https://www\.qobuz\.com/.*/album/.*/(?P<id>\w+))?"
+        fr"^{Config.REGEX_CMD_PREFIXES}qobuz"
+        r"(?: https://www\.qobuz\.com/.*/album/.*/(?P<id>\w+)"
+        r"| (?P<query>.+))$"
     )
 )
-async def download_from_qobuz(_: Client, message: Message):
+async def qobuz_message(_: Client, message: Message):
     if isinstance(qobuz, str):
         await message.reply(qobuz)
         return
 
     album_id = message.matches[0].group("id")
+    query = message.matches[0].group("query")
 
-    if not album_id:
-        await message.reply(f"{Config.CMD_PREFIXES[0]}qobuz [album url]")
+    if query:
+        await message.reply(
+            f"Results for **{query}**:",
+            reply_markup=qobuz_search_keyboard(query)
+        )
+        return
+    elif not album_id:
+        await message.reply(
+            f"{Config.CMD_PREFIXES[0]}qobuz [album url] | [query to search]"
+        )
         return
 
     try:
@@ -221,10 +246,7 @@ async def download_from_qobuz(_: Client, message: Message):
     ]
     await message.reply_photo(
         album["image"]["large"],
-        caption="Album **{}** by **{}**".format(
-            album["title"],
-            ", ".join(artist["name"] for artist in album["artists"])
-        ),
+        caption=parse_data("{name} - {artist}", album),
         reply_markup=InlineKeyboardMarkup(
             keyboard
             + tracks
@@ -241,15 +263,15 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
         await query.answer(qobuz)
         return
 
-    try:
-        qobuz.check_token()
-    except Exception as e:
-        await query.answer("ERROR: " + str(e))
-        return
-
     info = query.matches[0].groupdict()
 
     if info["type"] in ["dlalbum", "dltrack"]:
+        try:
+            qobuz.check_token()
+        except Exception as e:
+            await query.answer("ERROR: " + str(e))
+            return
+
         await query.answer("Download is in process")
         download_path = Config.getdata(
             "download_path",
@@ -302,7 +324,20 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
             )
             tag_file(full_path, cover_path, track)
         await query.message.reply("Download is done.")
+    elif info["type"] == "trackinfo":
+        track = qobuz.get_track(info["id"])
+        album = qobuz.get_album(track["album"]["id"])
+        await query.message.reply_photo(
+            album["image"]["large"],
+            caption=parse_data("{name} - {artist}", track),
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(
+                    "Download",
+                    parse_data("qobuz dltrack {id}", track)
+                )]
+            ])
+        )
 
 
-__all__ = ["download_from_qobuz", "qobuz_callback"]
+__all__ = ["qobuz_message", "qobuz_callback"]
 __plugin__ = True
