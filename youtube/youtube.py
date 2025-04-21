@@ -57,11 +57,27 @@ async def youtube_message(_: Client, message: Message):
 @Client.on_callback_query(
     Config.IS_ADMIN
     & filters.regex(
-        r"^youtube (?P<id>[a-zA-Z0-9_-]{11})(?: (?P<quality>\w+))$"
+        r"^youtube (?P<id>[a-zA-Z0-9_-]{11}) (?P<quality>\w+)$"
     )
 )
 async def youtube_callback(_: Client, query: CallbackQuery):
-    pass
+    vid_id, quality = query.matches[0].groups()
+    download_path = Config.getdata(
+        "download_path",
+        "downloads",
+        use_env=True
+    ) + "/"
+    ydl_opts = {
+        "format": quality,
+        "outtmpl": f"{download_path}%(title)s.%(ext)s",
+        "quiet": True,
+        "proxy": Config.PROXY,
+    }
+    await query.answer("Download is in process")
+    msg = await query.message.reply("Downloading the video.")
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([yt_url.format(vid_id)])
+    await msg.edit("Download is done.")
 
 
 __all__ = ["youtube_message", "youtube_callback"]
