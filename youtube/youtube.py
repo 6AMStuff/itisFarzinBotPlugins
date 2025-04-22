@@ -13,7 +13,6 @@ yt_regex = (
     r"(watch\?v=|embed/|v/|shorts/|)(?P<id>[a-zA-Z0-9_-]{11})"
 )
 yt_url = "https://www.youtube.com/watch?v={}"
-resolutions = ["1080p", "720p", "480p", "360p", "144p"]
 
 
 @Client.on_message(
@@ -41,8 +40,17 @@ async def youtube_message(_: Client, message: Message):
 
             if not format["format_note"] in formats:
                 formats.append(format["format_note"])
+                size_bytes = format.get(
+                    "filesize",
+                    format.get("filesize_approx", 0)
+                )
+                size_mb = (
+                    size_bytes / (1024 * 1024)
+                    if size_bytes
+                    else "Unknown"
+                )
                 keyboard.append([InlineKeyboardButton(
-                    format["format_note"],
+                    f"{format['format_note']} ({size_mb:.2f} MB)",
                     f"youtube {vid_id} {format['format_id']}"
                 )])
 
