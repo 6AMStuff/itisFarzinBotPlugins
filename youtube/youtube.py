@@ -1,3 +1,4 @@
+import copy
 import yt_dlp
 import datetime
 from pyrogram import Client, filters
@@ -13,6 +14,11 @@ yt_regex = (
     r"(watch\?v=|embed/|v/|shorts/|)(?P<id>[a-zA-Z0-9_-]{11})"
 )
 yt_url = "https://www.youtube.com/watch?v={}"
+ydl_opts = {
+    "quiet": True,
+    "proxy": Config.PROXY,
+    "cookies": Config.getdata("youtube_cookies_file")
+}
 
 
 @Client.on_message(
@@ -21,14 +27,23 @@ yt_url = "https://www.youtube.com/watch?v={}"
 )
 async def youtube_message(_: Client, message: Message):
     vid_id = message.matches[0].group("id")
-    ydl_opts = {
-        "quiet": True,
-        "proxy": Config.PROXY,
-    }
     keyboard = []
     formats = []
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(yt_url.format(vid_id), download=False)
+        try:
+            info = ydl.extract_info(yt_url.format(vid_id), download=False)
+        except (yt_dlp.utils.DownloadError, yt_dlp.utils.ExtractorError) as e:
+            text = "**ERROR**: " + str(e)
+            if "Sign in" in text:
+                text += (
+                    "\nSet your cookie file via: "
+                    "`{}setdata {} youtube_cookies_file"
+                    " [path to the cookies file]`"
+                    "\n(Preferably put the cookies file in the data folder)"
+                ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
+
+            await message.reply(text)
+            return
         time = datetime.timedelta(seconds=int(info["duration"]))
 
         for format in info.get("formats", []):
@@ -79,16 +94,28 @@ async def youtube_callback(_: Client, query: CallbackQuery):
         "youtube_file_name",
         "%(title)s.%(ext)s"
     )
-    ydl_opts = {
+    parameters = copy.deepcopy(ydl_opts)
+    parameters.update({
         "format": quality,
         "outtmpl": download_path + youtube_file_name,
-        "quiet": True,
-        "proxy": Config.PROXY,
-    }
+    })
     await query.answer("Download is in process")
     msg = await query.message.reply("Downloading the video.")
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([yt_url.format(vid_id)])
+        try:
+            ydl.download([yt_url.format(vid_id)])
+        except (yt_dlp.utils.DownloadError, yt_dlp.utils.ExtractorError) as e:
+            text = "**ERROR**: " + str(e)
+            if "Sign in" in text:
+                text += (
+                    "\nSet your cookie file via: "
+                    "`{}setdata {} youtube_cookies_file"
+                    " [path to the cookies file]`"
+                    "\n(Preferably put the cookies file in the data folder)"
+                ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
+
+            await msg.edit(text)
+            return
     await msg.edit("Download is done.")
 
 
