@@ -8,8 +8,7 @@ notes: dict = Config.getdata("notes") or {}
 
 
 @Client.on_message(
-    Config.IS_ADMIN
-    & filters.command(
+    filters.command(
         ["savenote", "getnote", "delnote", "notes"],
         Config.CMD_PREFIXES
     )
@@ -17,7 +16,7 @@ notes: dict = Config.getdata("notes") or {}
 async def note_message(_: Client, message: Message):
     action = message.command[0]
     match action:
-        case "savenote":
+        case "savenote" if await Config.IS_ADMIN(_, message):
             if len(message.command) >= 2:
                 note_name = message.command[1]
                 if len(message.command) > 2:
@@ -57,7 +56,7 @@ async def note_message(_: Client, message: Message):
                 if note["type"] == "text":
                     note = note["content"]
             await message.reply(note)
-        case "delnote":
+        case "delnote" if await Config.IS_ADMIN(_, message):
             if len(message.command) != 2:
                 await message.reply(
                     f"{Config.CMD_PREFIXES[0]}delnote [note name]"
