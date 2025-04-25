@@ -22,7 +22,7 @@ async def note_message(_: Client, message: Message):
                 note_name = message.command[1]
                 if len(message.command) > 2:
                     note = message.text[len(action) + len(note_name) + 3:]
-                    notes[note_name] = note
+                    notes[note_name] = {"type": "text", "content": note}
                     Config.setdata("notes", notes)
                     await message.reply(f"Saved note `{note_name}`.")
                     return
@@ -43,6 +43,9 @@ async def note_message(_: Client, message: Message):
                 await message.reply(f"Note **{note_name}** doesn't exist.")
                 return
             note = notes[note_name]
+            if isinstance(note, dict):
+                if note["type"] == "text":
+                    note = note["content"]
             await message.reply(note)
         case "delnote":
             if len(message.command) != 2:
