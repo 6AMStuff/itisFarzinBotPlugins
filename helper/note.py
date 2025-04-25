@@ -44,6 +44,18 @@ async def note_message(_: Client, message: Message):
                 return
             note = notes[note_name]
             await message.reply(note)
+        case "delnote":
+            if len(message.command) != 2:
+                await message.reply(
+                    f"{Config.CMD_PREFIXES[0]}delnote [note name]"
+                )
+            note_name = message.command[1]
+            if note_name not in notes:
+                await message.reply(f"Note **{note_name}** doesn't exist.")
+                return
+            del notes[note_name]
+            Config.setdata("notes", notes)
+            await message.reply(f"Note {note_name} has been deleted.")
 
 
 __all__ = ["note_message"]
