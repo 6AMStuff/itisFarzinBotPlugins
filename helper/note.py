@@ -56,6 +56,19 @@ async def note_message(_: Client, message: Message):
             del notes[note_name]
             Config.setdata("notes", notes)
             await message.reply(f"Note {note_name} has been deleted.")
+        case "notes":
+            note_names = notes.keys()
+            if len(note_names) == 0:
+                msg = "There are no notes saved."
+            else:
+                msg = "List of notes:\n"
+                for note in note_names:
+                    msg += f" - `{note}`\n"
+                msg += (
+                    "You can retrieve these notes by using `/getnote"
+                    + " [notename]`"
+                )
+            await message.reply(msg)
 
 
 __all__ = ["note_message"]
