@@ -68,7 +68,7 @@ async def note_message(_: Client, message: Message):
                 return
             del notes[note_name]
             Config.setdata("notes", notes)
-            await message.reply(f"Note {note_name} has been deleted.")
+            await message.reply(f"Note **{note_name}** has been deleted.")
         case "notes":
             note_names = notes.keys()
             if len(note_names) == 0:
