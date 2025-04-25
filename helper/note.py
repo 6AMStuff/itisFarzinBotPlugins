@@ -13,15 +13,19 @@ def serialize_entities(entities: list[dict]):
         {
             key: value.name.lower()
             if isinstance(value, enums.MessageEntityType)
+            else value.id if key == "user"
             else value
             for key, value in entity.__dict__.items()
-            if key not in ["_client", "user"]
+            if key not in ["_client"]
         }
         for entity in entities
     ]
 
 
-def deserialize_entities(entities: Union[list[dict]] = None):
+async def deserialize_entities(
+    client: Client,
+    entities: Union[list[dict]] = None
+):
     if not entities:
         return None
 
@@ -31,15 +35,14 @@ def deserialize_entities(entities: Union[list[dict]] = None):
             offset=entity["offset"],
             length=entity["length"],
             url=entity.get("url"),
-            user=None,
+            user=await client.get_users(entity.get("user")),
             language=entity.get("language"),
             custom_emoji_id=entity.get("document_id"),
             expandable=entity.get("collapsed"),
-            client=None
+            client=client
         )
         for entity in entities
         if hasattr(enums.MessageEntityType, entity["type"].upper())
-        if entity["type"].upper() != "TEXT_MENTION"
     ]
 
 
@@ -49,10 +52,10 @@ def deserialize_entities(entities: Union[list[dict]] = None):
         Config.CMD_PREFIXES
     )
 )
-async def note_message(_: Client, message: Message):
+async def note_message(app: Client, message: Message):
     action = message.command[0]
     match action:
-        case "savenote" if await Config.IS_ADMIN(_, message):
+        case "savenote" if await Config.IS_ADMIN(app, message):
             if len(message.command) >= 2:
                 note_name = message.command[1]
                 if len(message.command) > 2:
@@ -109,15 +112,21 @@ async def note_message(_: Client, message: Message):
                 if note["type"] == "text":
                     await message.reply(
                         note["content"],
-                        entities=deserialize_entities(note["entities"])
+                        entities=await deserialize_entities(
+                            app,
+                            note["entities"]
+                        )
                     )
                 else:
                     await message.reply_cached_media(
                         note["file_id"],
                         caption=note["caption"],
-                        caption_entities=deserialize_entities(note["entities"])
+                        caption_entities=await deserialize_entities(
+                            app,
+                            note["entities"]
+                        )
                     )
-        case "delnote" if await Config.IS_ADMIN(_, message):
+        case "delnote" if await Config.IS_ADMIN(app, message):
             if len(message.command) != 2:
                 await message.reply(
                     f"{Config.CMD_PREFIXES[0]}delnote [note name]"
