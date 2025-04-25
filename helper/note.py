@@ -10,14 +10,14 @@ notes: dict = Config.getdata("notes") or {}
 @Client.on_message(
     Config.IS_ADMIN
     & filters.command(
-        ["addnote", "getnote", "delnote", "notes"],
+        ["savenote", "getnote", "delnote", "notes"],
         Config.CMD_PREFIXES
     )
 )
 async def note_message(_: Client, message: Message):
     action = message.command[0]
     match action:
-        case "addnote":
+        case "savenote":
             if len(message.command) >= 2:
                 note_name = message.command[1]
                 if len(message.command) > 2:
