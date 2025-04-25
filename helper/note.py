@@ -1,10 +1,42 @@
-from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram import Client, filters, enums
+from pyrogram.types import Message, MessageEntity
 
 from config import Config
 
 
 notes: dict = Config.getdata("notes") or {}
+
+
+def serialize_entities(entities: list[dict]):
+    return [
+        {
+            key: value.name.lower()
+            if isinstance(value, enums.MessageEntityType)
+            else value
+            for key, value in entity.__dict__.items()
+            if key not in ["_client", "user"]
+        }
+        for entity in entities
+    ]
+
+
+def deserialize_entities(entities: list[dict]):
+    return [
+        MessageEntity(
+            type=enums.MessageEntityType[entity["type"].upper()],
+            offset=entity["offset"],
+            length=entity["length"],
+            url=entity.get("url"),
+            user=None,
+            language=entity.get("language"),
+            custom_emoji_id=entity.get("document_id"),
+            expandable=entity.get("collapsed"),
+            client=None
+        )
+        for entity in entities
+        if hasattr(enums.MessageEntityType, entity["type"].upper())
+        if entity["type"].upper() != "TEXT_MENTION"
+    ]
 
 
 @Client.on_message(
@@ -21,15 +53,21 @@ async def note_message(_: Client, message: Message):
                 note_name = message.command[1]
                 if len(message.command) > 2:
                     note = message.text[len(action) + len(note_name) + 3:]
-                    notes[note_name] = {"type": "text", "content": note}
+                    notes[note_name] = {
+                        "type": "text",
+                        "content": note,
+                        "entities": serialize_entities(message.entities)
+                    }
                     Config.setdata("notes", notes)
                     await message.reply(f"Saved note `{note_name}`.")
                     return
                 elif message.reply_to_message:
-                    if message.reply_to_message.text:
+                    msg = message.reply_to_message
+                    if msg.text:
                         notes[note_name] = {
                             "type": "text",
-                            "content": message.reply_to_message.text
+                            "content": msg.text,
+                            "entities": serialize_entities(msg.entities)
                         }
                         Config.setdata("notes", notes)
                     else:
@@ -52,10 +90,12 @@ async def note_message(_: Client, message: Message):
                 await message.reply(f"Note **{note_name}** doesn't exist.")
                 return
             note = notes[note_name]
+            entities = None
             if isinstance(note, dict):
                 if note["type"] == "text":
+                    entities = deserialize_entities(note["entities"])
                     note = note["content"]
-            await message.reply(note)
+            await message.reply(note, entities=entities)
         case "delnote" if await Config.IS_ADMIN(_, message):
             if len(message.command) != 2:
                 await message.reply(
