@@ -38,6 +38,7 @@ async def note_message(_: Client, message: Message):
                 await message.reply(
                     f"{Config.CMD_PREFIXES[0]}getnote [note name]"
                 )
+                return
             note_name = message.command[1]
             if note_name not in notes:
                 await message.reply(f"Note **{note_name}** doesn't exist.")
@@ -52,6 +53,7 @@ async def note_message(_: Client, message: Message):
                 await message.reply(
                     f"{Config.CMD_PREFIXES[0]}delnote [note name]"
                 )
+                return
             note_name = message.command[1]
             if note_name not in notes:
                 await message.reply(f"Note **{note_name}** doesn't exist.")
