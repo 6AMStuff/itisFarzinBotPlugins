@@ -1,3 +1,4 @@
+from typing import Union
 from pyrogram import Client, filters, enums
 from pyrogram.types import Message, MessageEntity
 
@@ -20,7 +21,10 @@ def serialize_entities(entities: list[dict]):
     ]
 
 
-def deserialize_entities(entities: list[dict]):
+def deserialize_entities(entities: Union[list[dict]] = None):
+    if not entities:
+        return None
+
     return [
         MessageEntity(
             type=enums.MessageEntityType[entity["type"].upper()],
@@ -69,10 +73,21 @@ async def note_message(_: Client, message: Message):
                             "content": msg.text,
                             "entities": serialize_entities(msg.entities)
                         }
-                        Config.setdata("notes", notes)
+                    elif msg.media:
+                        notes[note_name] = {
+                            "type": msg.media.name.lower(),
+                            "file_id": getattr(
+                                msg, msg.media.name.lower()
+                            ).file_id,
+                            "caption": msg.caption,
+                            "entities": serialize_entities(
+                                msg.caption.entities
+                            ) if msg.caption else None
+                        }
                     else:
-                        await message.reply("Not supported for now.")
+                        await message.reply("Not supported.")
                         return
+                    Config.setdata("notes", notes)
                     await message.reply(f"Saved note `{note_name}`.")
                     return
             await message.reply(
@@ -90,12 +105,18 @@ async def note_message(_: Client, message: Message):
                 await message.reply(f"Note **{note_name}** doesn't exist.")
                 return
             note = notes[note_name]
-            entities = None
             if isinstance(note, dict):
                 if note["type"] == "text":
-                    entities = deserialize_entities(note["entities"])
-                    note = note["content"]
-            await message.reply(note, entities=entities)
+                    await message.reply(
+                        note["content"],
+                        entities=deserialize_entities(note["entities"])
+                    )
+                else:
+                    await message.reply_cached_media(
+                        note["file_id"],
+                        caption=note["caption"],
+                        caption_entities=deserialize_entities(note["entities"])
+                    )
         case "delnote" if await Config.IS_ADMIN(_, message):
             if len(message.command) != 2:
                 await message.reply(
