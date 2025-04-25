@@ -27,7 +27,16 @@ async def note_message(_: Client, message: Message):
                     await message.reply(f"Saved note `{note_name}`.")
                     return
                 elif message.reply_to_message:
-                    await message.reply("Not supported for now.")
+                    if message.reply_to_message.text:
+                        notes[note_name] = {
+                            "type": "text",
+                            "content": message.reply_to_message.text
+                        }
+                        Config.setdata("notes", notes)
+                    else:
+                        await message.reply("Not supported for now.")
+                        return
+                    await message.reply(f"Saved note `{note_name}`.")
                     return
             await message.reply(
                 f"{Config.CMD_PREFIXES[0]}addnote [note name]"
