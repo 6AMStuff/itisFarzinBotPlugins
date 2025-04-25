@@ -33,7 +33,17 @@ async def note_message(_: Client, message: Message):
                 f"{Config.CMD_PREFIXES[0]}addnote [note name]"
                 + " [the note or reply to the note message]"
             )
-            return
+        case "getnote":
+            if len(message.command) != 2:
+                await message.reply(
+                    f"{Config.CMD_PREFIXES[0]}getnote [note name]"
+                )
+            note_name = message.command[1]
+            if note_name not in notes:
+                await message.reply(f"Note **{note_name}** doesn't exist.")
+                return
+            note = notes[note_name]
+            await message.reply(note)
 
 
 __all__ = ["note_message"]
