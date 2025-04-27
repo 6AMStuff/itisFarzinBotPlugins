@@ -1,5 +1,8 @@
 import re
+import base64
+import hashlib
 from pyrogram import Client, filters
+from cryptography.fernet import Fernet
 from pyrogram.types import (
     InlineQuery, CallbackQuery, InlineQueryResultArticle, ChosenInlineResult,
     InputTextMessageContent, InlineKeyboardMarkup, InlineKeyboardButton
@@ -11,14 +14,22 @@ from config import Config
 whispers: dict = Config.getdata("whispers") or {}
 
 
+def generate_fernet(user_id: int | str) -> bytes:
+    user_id = int(user_id)
+    key_bytes = user_id.to_bytes(8, byteorder="big")
+    hashed = hashlib.sha256(key_bytes).digest()
+    fernet_key = base64.urlsafe_b64encode(hashed)
+    return fernet_key
+
+
 @Client.on_inline_query(
     filters.regex(
-        r"^(?P<sentence>.+?)\s+@(?P<username>[a-zA-Z_]{3,16})$",
+        r"^(.+?)\s+@(?P<username>[a-zA-Z_]{3,16})$",
         flags=re.DOTALL
     )
 )
 async def whisper_inline(_: Client, query: InlineQuery):
-    _, username = query.matches[0].groups()
+    username = query.matches[0].group("username")
     await query.answer(
         [
             InlineQueryResultArticle(
@@ -43,9 +54,9 @@ async def whisper_inline(_: Client, query: InlineQuery):
 
 @Client.on_chosen_inline_result()
 async def whisper_inline_result(_: Client, chosen: ChosenInlineResult):
-    whispers[chosen.inline_message_id] = {
-        "sentence": chosen.query.rsplit(" ", 1)[0]
-    }
+    cipher = Fernet(generate_fernet(chosen.from_user.id))
+    sentence = chosen.query.rsplit(" ", 1)[0].encode()
+    whispers[chosen.inline_message_id] = cipher.encrypt(sentence).decode()
     Config.setdata("whispers", whispers)
 
 
@@ -58,12 +69,13 @@ async def whisper_callback(_: Client, query: CallbackQuery):
         return
 
     receiver, sender = query.matches[0].groups()
-    sentence = whispers[query.inline_message_id]["sentence"]
+    text: str = whispers[query.inline_message_id]
     if any(
         id in (receiver, sender)
         for id in (str(query.from_user.id), query.from_user.username)
     ):
-        await query.answer(sentence, show_alert=True)
+        cipher = Fernet(generate_fernet(sender))
+        await query.answer(cipher.decrypt(text).decode(), show_alert=True)
 
 
 __all__ = ["whisper_inline", "whisper_inline_result", "whisper_callback"]
