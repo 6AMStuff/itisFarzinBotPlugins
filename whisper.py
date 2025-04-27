@@ -43,10 +43,8 @@ async def whisper_inline(_: Client, query: InlineQuery):
 
 @Client.on_chosen_inline_result()
 async def whisper_inline_result(_: Client, chosen: ChosenInlineResult):
-    sentence, username = chosen.query.rsplit(" @", 1)
     whispers[chosen.inline_message_id] = {
-        "sentence": sentence,
-        "user": username
+        "sentence": chosen.query.rsplit(" ", 1)[0]
     }
     Config.setdata("whispers", whispers)
 
@@ -60,10 +58,10 @@ async def whisper_callback(_: Client, query: CallbackQuery):
         return
 
     receiver, sender = query.matches[0].groups()
-    sentence, user = whispers[query.inline_message_id].values()
+    sentence = whispers[query.inline_message_id]["sentence"]
     if any(
         id in (receiver, sender)
-        for id in (str(query.from_user.id), user)
+        for id in (str(query.from_user.id), query.from_user.username)
     ):
         await query.answer(sentence, show_alert=True)
 
