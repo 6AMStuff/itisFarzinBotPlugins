@@ -51,9 +51,21 @@ async def whisper_inline_result(_: Client, chosen: ChosenInlineResult):
     Config.setdata("whispers", whispers)
 
 
-@Client.on_callback_query()
+@Client.on_callback_query(
+    filters.regex(r"^whisper (?P<receiver>.+),(?P<sender>.+)$")
+)
 async def whisper_callback(_: Client, query: CallbackQuery):
-    pass
+    if query.inline_message_id not in whispers:
+        await query.answer("Whisper not found.")
+        return
+
+    receiver, sender = query.matches[0].groups()
+    sentence, user = whispers[query.inline_message_id].values()
+    if any(
+        id in (receiver, sender)
+        for id in (str(query.from_user.id), user)
+    ):
+        await query.answer(sentence, show_alert=True)
 
 
 __all__ = ["whisper_inline", "whisper_inline_result", "whisper_callback"]
