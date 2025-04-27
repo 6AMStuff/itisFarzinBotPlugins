@@ -25,7 +25,7 @@ async def whisper_inline(_: Client, query: InlineQuery):
                 title=f"A whisper for {username}",
                 description="Only they can open it.",
                 input_message_content=InputTextMessageContent(
-                    f"A whisper for {username}, Only they can open it."
+                    f"A whisper for {username}, only they can open it."
                 ),
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton(
