@@ -13,7 +13,7 @@ def serialize_entities(entities: list[dict]):
         {
             key: value.name.lower()
             if isinstance(value, enums.MessageEntityType)
-            else value.id if key == "user"
+            else value.id if key == "user" and value
             else value
             for key, value in entity.__dict__.items()
             if key not in ["_client"]
@@ -35,7 +35,8 @@ async def deserialize_entities(
             offset=entity["offset"],
             length=entity["length"],
             url=entity.get("url"),
-            user=await client.get_users(entity.get("user")),
+            user=await client.get_users(entity["user"])
+            if entity.get("user") else None,
             language=entity.get("language"),
             custom_emoji_id=entity.get("document_id"),
             expandable=entity.get("collapsed"),
