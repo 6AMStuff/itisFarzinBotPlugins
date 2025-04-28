@@ -41,7 +41,7 @@ async def whisper_inline(_: Client, query: InlineQuery):
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton(
                         "Show the message",
-                        callback_data="whisper {},{}".format(
+                        callback_data="whisper {} {}".format(
                             username, query.from_user.id
                         )
                     )]
@@ -61,7 +61,7 @@ async def whisper_inline_result(_: Client, chosen: ChosenInlineResult):
 
 
 @Client.on_callback_query(
-    filters.regex(r"^whisper (?P<receiver>.+),(?P<sender>.+)$")
+    filters.regex(r"^whisper (?P<receiver>.+) (?P<sender>.+)$")
 )
 async def whisper_callback(_: Client, query: CallbackQuery):
     if query.inline_message_id not in whispers:
