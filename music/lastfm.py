@@ -1,10 +1,22 @@
 from pyrogram import Client
-from pyrogram.types import InlineQuery, ChosenInlineResult
+from pyrogram.types import (
+    InlineQuery, InlineQueryResultArticle, InputTextMessageContent,
+    ChosenInlineResult
+)
 
 
 @Client.on_inline_query()
 async def lastfm_inline(_: Client, query: InlineQuery):
-    pass
+    await query.answer(
+        [
+            InlineQueryResultArticle(
+                title="Status",
+                input_message_content=InputTextMessageContent("Status"),
+                id="status"
+            )
+        ],
+        cache_time=0
+    )
 
 
 @Client.on_chosen_inline_result()
