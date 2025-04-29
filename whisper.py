@@ -1,17 +1,23 @@
 import re
 import base64
 import hashlib
+from sqlalchemy import Text, select
 from pyrogram import Client, filters
 from cryptography.fernet import Fernet
+from sqlalchemy.orm import Session, Mapped, mapped_column
 from pyrogram.types import (
     InlineQuery, CallbackQuery, InlineQueryResultArticle, ChosenInlineResult,
     InputTextMessageContent, InlineKeyboardMarkup, InlineKeyboardButton
 )
 
-from config import Config
+from config import Config, DataBase
 
 
-whispers: dict = Config.getdata("whispers") or {}
+class WhisperDatabase(DataBase):
+    __tablename__ = "whispers"
+
+    message_id: Mapped[str] = mapped_column(Text(), primary_key=True)
+    text: Mapped[str] = mapped_column(Text())
 
 
 def generate_fernet(user_id: int | str) -> bytes:
@@ -56,26 +62,34 @@ async def whisper_inline(_: Client, query: InlineQuery):
 async def whisper_inline_result(_: Client, chosen: ChosenInlineResult):
     cipher = Fernet(generate_fernet(chosen.from_user.id))
     sentence = chosen.query.rsplit(" ", 1)[0].encode()
-    whispers[chosen.inline_message_id] = cipher.encrypt(sentence).decode()
-    Config.setdata("whispers", whispers)
+    with Session(Config.engine) as session:
+        session.merge(WhisperDatabase(
+            message_id=chosen.inline_message_id,
+            text=cipher.encrypt(sentence).decode()
+        ))
+        session.commit()
 
 
 @Client.on_callback_query(
     filters.regex(r"^whisper (?P<receiver>.+) (?P<sender>.+)$")
 )
 async def whisper_callback(_: Client, query: CallbackQuery):
-    if query.inline_message_id not in whispers:
-        await query.answer("Whisper not found.")
-        return
+    with Session(Config.engine) as session:
+        text = session.execute(
+            select(WhisperDatabase.text)
+            .where(WhisperDatabase.message_id == query.inline_message_id)
+        ).scalar()
+        if not text:
+            await query.answer("Whisper not found.")
+            return
 
-    receiver, sender = query.matches[0].groups()
-    text: str = whispers[query.inline_message_id]
-    if any(
-        id in (receiver, sender)
-        for id in (str(query.from_user.id), query.from_user.username)
-    ):
-        cipher = Fernet(generate_fernet(sender))
-        await query.answer(cipher.decrypt(text).decode(), show_alert=True)
+        receiver, sender = query.matches[0].groups()
+        if any(
+            id in (receiver, sender)
+            for id in (str(query.from_user.id), query.from_user.username)
+        ):
+            cipher = Fernet(generate_fernet(sender))
+            await query.answer(cipher.decrypt(text).decode(), show_alert=True)
 
 
 __all__ = ["whisper_inline", "whisper_inline_result", "whisper_callback"]
