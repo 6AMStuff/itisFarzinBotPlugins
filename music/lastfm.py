@@ -1,6 +1,6 @@
 import pylast
 import urllib.parse
-from pyrogram import Client, filters
+from pyrogram import Client, filters, errors
 from pyrogram.types import (
     InlineQuery, InlineQueryResultArticle, InputTextMessageContent,
     ChosenInlineResult, InlineKeyboardMarkup, InlineKeyboardButton,
@@ -66,23 +66,37 @@ async def lastfm_status(
         track.get_name(),
         urllib.parse.quote(str(track)),
     )
-    if with_cover:
-        await app.edit_inline_media(
-            message_id,
-            InputMediaPhoto(
-                track.get_cover_image(),
-                caption=text
+    try:
+        if with_cover:
+            await app.edit_inline_media(
+                message_id,
+                InputMediaPhoto(
+                    track.get_cover_image(),
+                    caption=text
+                ),
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🔄", "lastfm status with_cover")],
+                ])
             )
-        )
-    else:
-        await app.edit_inline_text(
-            message_id,
-            text,
-            link_preview_options=LinkPreviewOptions(is_disabled=True),
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("🖼", "lastfm status with_cover")]
-            ])
-        )
+        else:
+            await app.edit_inline_text(
+                message_id,
+                text,
+                link_preview_options=LinkPreviewOptions(is_disabled=True),
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("🖼", "lastfm status with_cover"),
+                        InlineKeyboardButton(
+                            "🔄",
+                            "lastfm status without_cover"
+                        )
+                    ],
+                ])
+            )
+    except errors.exceptions.bad_request_400.MessageNotModified:
+        pass
+    except Exception as e:
+        raise e
 
 
 def on_data_change():
@@ -134,6 +148,12 @@ async def lastfm_callback(app: Client, query: CallbackQuery):
                     app,
                     query.inline_message_id,
                     with_cover=True
+                )
+            case "without_cover":
+                await lastfm_status(
+                    app,
+                    query.inline_message_id,
+                    with_cover=False
                 )
 
 
