@@ -32,7 +32,7 @@ def set_up_lastfm():
         api_key=api_key,
         api_secret=api_secret,
         username=login_username,
-        password_hash=pylast.md5(password)
+        password_hash=pylast.md5(password),
     )
 
 
@@ -49,11 +49,11 @@ async def lastfm_inline(_: Client, query: InlineQuery):
     await query.answer(
         [
             InlineQueryResultArticle(
-                title="Status",
+                title="LastFM Status",
                 input_message_content=InputTextMessageContent("Status"),
-                id="status",
+                id="lastfm_status",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("Status", "None")]
+                    [InlineKeyboardButton("LastFM Status", "None")]
                 ])
             )
         ],
@@ -68,7 +68,7 @@ async def lastfm_inline_result(app: Client, chosen: ChosenInlineResult):
         return
 
     match chosen.result_id:
-        case "status":
+        case "lastfm_status":
             user = lastfm.get_user(USERNAME)
             now_playing = user.get_now_playing()
             recent_tracks = user.get_recent_tracks(limit=1)
