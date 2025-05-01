@@ -41,7 +41,7 @@ def set_up_lastfm():
             password_hash=password,
         )
     except Exception as e:
-        return str(e)
+        return f"**ERROR**: {e}"
 
 
 async def lastfm_status(
@@ -49,6 +49,10 @@ async def lastfm_status(
     message_id: str,
     with_cover: bool = False
 ):
+    if isinstance(lastfm, str):
+        await app.edit_inline_text(message_id, lastfm)
+        return
+
     user = lastfm.get_user(USERNAME)
     now_playing = user.get_now_playing()
     recent_tracks = user.get_recent_tracks(limit=1)
