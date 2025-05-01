@@ -161,5 +161,5 @@ async def lastfm_callback(app: Client, query: CallbackQuery):
                 )
 
 
-__all__ = ["lastfm_inline", "lastfm_inline_result"]
+__all__ = ["lastfm_inline", "lastfm_inline_result", "lastfm_callback"]
 __plugin__ = True
