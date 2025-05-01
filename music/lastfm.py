@@ -1,8 +1,10 @@
 import pylast
+import urllib.parse
 from pyrogram import Client
 from pyrogram.types import (
     InlineQuery, InlineQueryResultArticle, InputTextMessageContent,
-    ChosenInlineResult, InlineKeyboardMarkup, InlineKeyboardButton
+    ChosenInlineResult, InlineKeyboardMarkup, InlineKeyboardButton,
+    LinkPreviewOptions
 )
 
 from config import Config
@@ -75,17 +77,25 @@ async def lastfm_inline_result(app: Client, chosen: ChosenInlineResult):
             if not now_playing and len(recent_tracks) == 0:
                 await app.edit_inline_text(
                     chosen.inline_message_id,
-                    "No track found"
+                    "No track found."
                 )
                 return
             track = now_playing or recent_tracks[0].track
-            text = "{} {} listening to **{artist}** - **{track_name}**".format(
+            text = (
+                "{} {} listening to **{}** - [{}]"
+                "(https://www.last.fm/search/tracks?q={})"
+            ).format(
                 user.name,
                 "is now" if bool(now_playing) else "was",
-                artist=track.artist,
-                track_name=track.get_name()
+                track.artist,
+                track.get_name(),
+                urllib.parse.quote(str(track)),
             )
-            await app.edit_inline_text(chosen.inline_message_id, text)
+            await app.edit_inline_text(
+                chosen.inline_message_id,
+                text,
+                link_preview_options=LinkPreviewOptions(is_disabled=True)
+            )
 
 
 __all__ = ["lastfm_inline", "lastfm_inline_result"]
