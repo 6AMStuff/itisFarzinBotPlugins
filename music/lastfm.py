@@ -73,11 +73,13 @@ async def lastfm_status(
         )
         text += (
             "\n**{}** - [{}](https://www.last.fm/search/tracks?q={}){}"
+            ", {:,} plays"
         ).format(
             track.artist,
             track.get_name(),
             urllib.parse.quote(str(track)),
-            f", {time}" if played_track.timestamp else ""
+            f", {time}" if played_track.timestamp else "",
+            track.get_userplaycount()
         )
 
     buttons = []
@@ -90,6 +92,7 @@ async def lastfm_status(
                 )
             )
         )
+
     buttons.append(
         InlineKeyboardButton("🔄", "lastfm status {}with{}_cover".format(
             "expanded_" if expanded else "",
