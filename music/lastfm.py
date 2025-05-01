@@ -58,45 +58,27 @@ async def lastfm_status(
         return
 
     user = lastfm.get_user(USERNAME)
-    now_playing = user.get_now_playing()
-    recent_tracks = user.get_recent_tracks(limit=1)
-    if not now_playing and len(recent_tracks) == 0:
-        await app.edit_inline_text(message_id, "No track found.")
-        return
-    track = now_playing or recent_tracks[0].track
-    time = humanize.naturaltime(
-        datetime.datetime.fromtimestamp(int(recent_tracks[0].timestamp))
+    recent_tracks = user.get_recent_tracks(
+        limit=4 if expanded else 1,
+        now_playing=True
     )
-    text = (
-        "{} {} listening to"
-        "\n**{}** - [{}](https://www.last.fm/search/tracks?q={}){}"
-    ).format(
+    text = "{} {} listening to".format(
         user.name,
-        "is now" if bool(now_playing) else "was",
-        track.artist,
-        track.get_name(),
-        urllib.parse.quote(str(track)),
-        "" if bool(now_playing) else f", {time}",
+        "was" if recent_tracks[0].timestamp else "is now"
     )
-    if expanded:
-        number = 0
-        for played_track in user.get_recent_tracks(limit=3):
-            recent_track = played_track.track
-            if recent_track == track or number == 3:
-                continue
-
-            time = humanize.naturaltime(
-                datetime.datetime.fromtimestamp(int(played_track.timestamp))
-            )
-            text += (
-                "\n**{}** - [{}](https://www.last.fm/search/tracks?q={}), {}"
-            ).format(
-                recent_track.artist,
-                recent_track.get_name(),
-                urllib.parse.quote(str(recent_track)),
-                time
-            )
-            number += 1
+    for played_track in recent_tracks:
+        track = played_track.track
+        time = humanize.naturaltime(
+            datetime.datetime.fromtimestamp(int(played_track.timestamp or 0))
+        )
+        text += (
+            "\n**{}** - [{}](https://www.last.fm/search/tracks?q={}){}"
+        ).format(
+            track.artist,
+            track.get_name(),
+            urllib.parse.quote(str(track)),
+            f", {time}" if played_track.timestamp else ""
+        )
 
     buttons = []
     if not with_cover:
