@@ -33,6 +33,7 @@ def set_up_lastfm():
             "`python -c 'import hashlib; print(hashlib.md5(\"your password\""
             ".encode()).hexdigest())'`"
         ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
+
     try:
         return pylast.LastFMNetwork(
             api_key=api_key,
@@ -47,7 +48,8 @@ def set_up_lastfm():
 async def lastfm_status(
     app: Client,
     message_id: str,
-    with_cover: bool = False
+    with_cover: bool = False,
+    expanded: bool = False
 ):
     if isinstance(lastfm, str):
         await app.edit_inline_text(message_id, lastfm)
@@ -61,8 +63,8 @@ async def lastfm_status(
         return
     track = now_playing or recent_tracks[0].track
     text = (
-        "{} {} listening to **{}** - [{}]"
-        "(https://www.last.fm/search/tracks?q={})"
+        "{} {} listening to"
+        "\n**{}** - [{}](https://www.last.fm/search/tracks?q={})"
     ).format(
         user.name,
         "is now" if bool(now_playing) else "was",
@@ -70,6 +72,55 @@ async def lastfm_status(
         track.get_name(),
         urllib.parse.quote(str(track)),
     )
+    if expanded:
+        number = 0
+        for played_track in user.get_recent_tracks(limit=4):
+            recent_track = played_track.track
+            if recent_track == track or number == 3:
+                continue
+
+            text += (
+                "\n**{}** - [{}](https://www.last.fm/search/tracks?q={})"
+            ).format(
+                recent_track.artist,
+                recent_track.get_name(),
+                urllib.parse.quote(str(recent_track)),
+            )
+            number += 1
+
+    buttons = []
+    if not with_cover:
+        buttons.append(
+            InlineKeyboardButton(
+                "🖼",
+                "lastfm status {}with_cover".format(
+                    "expanded_" if expanded else ""
+                )
+            )
+        )
+    buttons.append(
+        InlineKeyboardButton("🔄", "lastfm status {}with{}_cover".format(
+            "expanded_" if expanded else "",
+            "" if with_cover else "out"
+        ))
+    )
+
+    if expanded:
+        buttons.append(
+            InlineKeyboardButton("➖", "lastfm status with{}_cover".format(
+                "" if with_cover else "out"
+            ))
+        )
+    else:
+        buttons.append(
+            InlineKeyboardButton(
+                "➕",
+                "lastfm status expanded_with{}_cover".format(
+                    "" if with_cover else "out"
+                )
+            )
+        )
+
     try:
         if with_cover:
             await app.edit_inline_media(
@@ -78,24 +129,14 @@ async def lastfm_status(
                     track.get_cover_image(),
                     caption=text
                 ),
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("🔄", "lastfm status with_cover")],
-                ])
+                reply_markup=InlineKeyboardMarkup([buttons])
             )
         else:
             await app.edit_inline_text(
                 message_id,
                 text,
                 link_preview_options=LinkPreviewOptions(is_disabled=True),
-                reply_markup=InlineKeyboardMarkup([
-                    [
-                        InlineKeyboardButton("🖼", "lastfm status with_cover"),
-                        InlineKeyboardButton(
-                            "🔄",
-                            "lastfm status without_cover"
-                        )
-                    ],
-                ])
+                reply_markup=InlineKeyboardMarkup([buttons])
             )
     except errors.exceptions.bad_request_400.MessageNotModified:
         pass
@@ -158,6 +199,20 @@ async def lastfm_callback(app: Client, query: CallbackQuery):
                     app,
                     query.inline_message_id,
                     with_cover=False
+                )
+            case "expanded_with_cover":
+                await lastfm_status(
+                    app,
+                    query.inline_message_id,
+                    with_cover=True,
+                    expanded=True
+                )
+            case "expanded_without_cover":
+                await lastfm_status(
+                    app,
+                    query.inline_message_id,
+                    with_cover=False,
+                    expanded=True
                 )
 
 
