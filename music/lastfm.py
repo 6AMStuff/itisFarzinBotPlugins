@@ -1,4 +1,6 @@
 import pylast
+import datetime
+import humanize
 import urllib.parse
 from pyrogram import Client, filters, errors
 from pyrogram.types import (
@@ -62,29 +64,37 @@ async def lastfm_status(
         await app.edit_inline_text(message_id, "No track found.")
         return
     track = now_playing or recent_tracks[0].track
+    time = humanize.naturaltime(
+        datetime.datetime.fromtimestamp(int(recent_tracks[0].timestamp))
+    )
     text = (
         "{} {} listening to"
-        "\n**{}** - [{}](https://www.last.fm/search/tracks?q={})"
+        "\n**{}** - [{}](https://www.last.fm/search/tracks?q={}){}"
     ).format(
         user.name,
         "is now" if bool(now_playing) else "was",
         track.artist,
         track.get_name(),
         urllib.parse.quote(str(track)),
+        "" if bool(now_playing) else f", {time}",
     )
     if expanded:
         number = 0
-        for played_track in user.get_recent_tracks(limit=4):
+        for played_track in user.get_recent_tracks(limit=3):
             recent_track = played_track.track
             if recent_track == track or number == 3:
                 continue
 
+            time = humanize.naturaltime(
+                datetime.datetime.fromtimestamp(int(played_track.timestamp))
+            )
             text += (
-                "\n**{}** - [{}](https://www.last.fm/search/tracks?q={})"
+                "\n**{}** - [{}](https://www.last.fm/search/tracks?q={}), {}"
             ).format(
                 recent_track.artist,
                 recent_track.get_name(),
                 urllib.parse.quote(str(recent_track)),
+                time
             )
             number += 1
 
