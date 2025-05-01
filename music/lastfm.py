@@ -1,10 +1,10 @@
 import pylast
 import urllib.parse
-from pyrogram import Client
+from pyrogram import Client, filters
 from pyrogram.types import (
     InlineQuery, InlineQueryResultArticle, InputTextMessageContent,
     ChosenInlineResult, InlineKeyboardMarkup, InlineKeyboardButton,
-    LinkPreviewOptions
+    LinkPreviewOptions, CallbackQuery, InputMediaPhoto
 )
 
 from config import Config
@@ -44,6 +44,47 @@ def set_up_lastfm():
         return str(e)
 
 
+async def lastfm_status(
+    app: Client,
+    message_id: str,
+    with_cover: bool = False
+):
+    user = lastfm.get_user(USERNAME)
+    now_playing = user.get_now_playing()
+    recent_tracks = user.get_recent_tracks(limit=1)
+    if not now_playing and len(recent_tracks) == 0:
+        await app.edit_inline_text(message_id, "No track found.")
+        return
+    track = now_playing or recent_tracks[0].track
+    text = (
+        "{} {} listening to **{}** - [{}]"
+        "(https://www.last.fm/search/tracks?q={})"
+    ).format(
+        user.name,
+        "is now" if bool(now_playing) else "was",
+        track.artist,
+        track.get_name(),
+        urllib.parse.quote(str(track)),
+    )
+    if with_cover:
+        await app.edit_inline_media(
+            message_id,
+            InputMediaPhoto(
+                track.get_cover_image(),
+                caption=text
+            )
+        )
+    else:
+        await app.edit_inline_text(
+            message_id,
+            text,
+            link_preview_options=LinkPreviewOptions(is_disabled=True),
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🖼", "lastfm status with_cover")]
+            ])
+        )
+
+
 def on_data_change():
     global lastfm
     lastfm = set_up_lastfm()
@@ -77,31 +118,23 @@ async def lastfm_inline_result(app: Client, chosen: ChosenInlineResult):
 
     match chosen.result_id:
         case "lastfm_status":
-            user = lastfm.get_user(USERNAME)
-            now_playing = user.get_now_playing()
-            recent_tracks = user.get_recent_tracks(limit=1)
-            if not now_playing and len(recent_tracks) == 0:
-                await app.edit_inline_text(
-                    chosen.inline_message_id,
-                    "No track found."
+            await lastfm_status(app, chosen.inline_message_id)
+
+
+@Client.on_callback_query(
+    filters.regex(r"^lastfm (?P<action>\w+) (?P<mode>\w+)$")
+)
+async def lastfm_callback(app: Client, query: CallbackQuery):
+    action, mode = query.matches[0].groups()
+
+    if action == "status":
+        match mode:
+            case "with_cover":
+                await lastfm_status(
+                    app,
+                    query.inline_message_id,
+                    with_cover=True
                 )
-                return
-            track = now_playing or recent_tracks[0].track
-            text = (
-                "{} {} listening to **{}** - [{}]"
-                "(https://www.last.fm/search/tracks?q={})"
-            ).format(
-                user.name,
-                "is now" if bool(now_playing) else "was",
-                track.artist,
-                track.get_name(),
-                urllib.parse.quote(str(track)),
-            )
-            await app.edit_inline_text(
-                chosen.inline_message_id,
-                text,
-                link_preview_options=LinkPreviewOptions(is_disabled=True)
-            )
 
 
 __all__ = ["lastfm_inline", "lastfm_inline_result"]
