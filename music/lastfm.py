@@ -28,14 +28,20 @@ def set_up_lastfm():
             "`{0}setdata {1} lastfm_api_secret [your_api_secret]`\n"
             "`{0}setdata {1} lastfm_username [your_username]` (Optional)\n"
             "`{0}setdata {1} lastfm_login_username [your_username]`\n"
-            "`{0}setdata {1} lastfm_login_password [your_password]`"
+            "`{0}setdata {1} lastfm_login_password [your_password_in_md5]`\n"
+            "For converting your password to md5 hash:\n"
+            "`python -c 'import hashlib; print(hashlib.md5(\"your password\""
+            ".encode()).hexdigest())'`"
         ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
-    return pylast.LastFMNetwork(
-        api_key=api_key,
-        api_secret=api_secret,
-        username=login_username,
-        password_hash=pylast.md5(password),
-    )
+    try:
+        return pylast.LastFMNetwork(
+            api_key=api_key,
+            api_secret=api_secret,
+            username=login_username,
+            password_hash=password,
+        )
+    except Exception as e:
+        return str(e)
 
 
 def on_data_change():
