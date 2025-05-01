@@ -117,13 +117,15 @@ async def lastfm_status(
         )
 
     try:
+        cover = ""
+        try:
+            cover = recent_tracks[0].track.get_cover_image()
+        except IndexError:
+            with_cover = False
         if with_cover:
             await app.edit_inline_media(
                 message_id,
-                InputMediaPhoto(
-                    track.get_cover_image(),
-                    caption=text
-                ),
+                InputMediaPhoto(cover, text),
                 reply_markup=InlineKeyboardMarkup([buttons])
             )
         else:
