@@ -160,6 +160,16 @@ async def lastfm_inline(_: Client, query: InlineQuery):
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("LastFM Status", "None")]
                 ])
+            ),
+            InlineQueryResultArticle(
+                title="LastFM Expanded Status",
+                input_message_content=InputTextMessageContent(
+                    "Expanded status"
+                ),
+                id="lastfm_expanded_status",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("LastFM Status", "None")]
+                ])
             )
         ],
         cache_time=0
@@ -175,6 +185,8 @@ async def lastfm_inline_result(app: Client, chosen: ChosenInlineResult):
     match chosen.result_id:
         case "lastfm_status":
             await lastfm_status(app, chosen.inline_message_id)
+        case "lastfm_expanded_status":
+            await lastfm_status(app, chosen.inline_message_id, expanded=True)
 
 
 @Client.on_callback_query(
