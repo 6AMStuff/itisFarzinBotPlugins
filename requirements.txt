@@ -1,3 +1,4 @@
 httpx==0.28.1
 mutagen==1.47.0
 cryptography==44.0.2
+sqlalchemy==2.0.40
