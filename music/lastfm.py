@@ -141,6 +141,54 @@ async def lastfm_status(
         raise e
 
 
+async def lastfm_top(
+    app: Client,
+    message_id: str,
+    mode: str,
+    time: str
+):
+    if isinstance(lastfm, str):
+        await app.edit_inline_text(message_id, lastfm)
+        return
+
+    user = lastfm.get_user(USERNAME)
+    _time = {
+        "1w": "7day",
+        "1m": "1month",
+        "3m": "3month",
+        "6m": "6month",
+        "1y": "12month",
+        "alltime": "overall",
+    }[time]
+    if mode == "artists":
+        tops = user.get_top_artists(_time, 5)
+    elif mode == "albums":
+        tops = user.get_top_albums(_time, 5)
+    else:
+        tops = user.get_top_tracks(_time, 5)
+    await app.edit_inline_text(message_id, "Wait.")
+
+    text = f"{user.name}'s top {mode} for {time}:\n"
+    if tops:
+        for i, top in enumerate(tops, start=1):
+            top.item.username = USERNAME  # Fixes user play count for artists
+            text += (
+                "\n{}. [{}](https://www.last.fm/search/tracks?q={}) ->"
+                " {} plays"
+            ).format(
+                i, top.item, urllib.parse.quote(str(top.item)),
+                top.item.get_userplaycount()
+            )
+    else:
+        text += "\nNothing were found."
+
+    await app.edit_inline_text(
+        message_id,
+        text,
+        link_preview_options=LinkPreviewOptions(is_disabled=True)
+    )
+
+
 def on_data_change():
     global lastfm
     lastfm = set_up_lastfm()
@@ -170,6 +218,18 @@ async def lastfm_inline(_: Client, query: InlineQuery):
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton("LastFM Status", "None")]
                 ])
+            ),
+            InlineQueryResultArticle(
+                title="Top artists/albums/tracks",
+                input_message_content=InputTextMessageContent("Choose type:"),
+                id="top",
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("Artists", "lastfm top artists"),
+                        InlineKeyboardButton("Albums", "lastfm top albums"),
+                        InlineKeyboardButton("Tracks", "lastfm top tracks")
+                    ]
+                ])
             )
         ],
         cache_time=0
@@ -190,10 +250,10 @@ async def lastfm_inline_result(app: Client, chosen: ChosenInlineResult):
 
 
 @Client.on_callback_query(
-    filters.regex(r"^lastfm (?P<action>\w+) (?P<mode>\w+)$")
+    filters.regex(r"^lastfm (?P<action>\w+) (?P<mode>\w+)(?: (?P<time>\w+))?$")
 )
 async def lastfm_callback(app: Client, query: CallbackQuery):
-    action, mode = query.matches[0].groups()
+    action, mode, time = query.matches[0].groups()
 
     if action == "status":
         match mode:
@@ -223,6 +283,27 @@ async def lastfm_callback(app: Client, query: CallbackQuery):
                     with_cover=False,
                     expanded=True
                 )
+    elif action == "top":
+        if not time:
+            await query.edit_message_text(
+                "Choose time period:",
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton("1W", f"lastfm top {mode} 1w"),
+                        InlineKeyboardButton("1M", f"lastfm top {mode} 1m"),
+                        InlineKeyboardButton("3M", f"lastfm top {mode} 3m")
+                    ],
+                    [
+                        InlineKeyboardButton("6M", f"lastfm top {mode} 6m"),
+                        InlineKeyboardButton("1Y", f"lastfm top {mode} 1y"),
+                        InlineKeyboardButton(
+                            "All time", f"lastfm top {mode} alltime"
+                        )
+                    ],
+                ])
+            )
+            return
+        await lastfm_top(app, query.inline_message_id, mode, time)
 
 
 __all__ = ["lastfm_inline", "lastfm_inline_result", "lastfm_callback"]
