@@ -86,50 +86,49 @@ async def note_message(app: Client, message: Message):
 
     match action:
         case "savenote" if await Config.IS_ADMIN(app, message):
-            if len(message.command) >= 2:
-                note_name = message.command[1]
-                if message.reply_to_message:
-                    msg = message.reply_to_message
-                    if msg.text:
-                        with Session(Config.engine) as session:
-                            session.merge(NotesDatabase(
-                                note_name=note_name,
-                                type="text",
-                                text=msg.text,
-                                entities=serialize_entities(msg.entities)
-                            ))
-                            session.commit()
-                    elif msg.media:
-                        with Session(Config.engine) as session:
-                            session.merge(NotesDatabase(
-                                note_name=note_name,
-                                type=msg.media.name.lower(),
-                                text=msg.text,
-                                entities=serialize_entities(
-                                    msg.caption.entities
-                                ) if msg.caption else None
-                            ))
-                            session.commit()
-                    else:
-                        await message.reply("Not supported.")
-                        return
-                    await message.reply(f"Saved note `{note_name}`.")
-                elif len(message.command) > 2:
-                    note = message.text[len(action) + len(note_name) + 3:]
-                    with Session(Config.engine) as session:
-                        session.merge(NotesDatabase(
-                            note_name=note_name,
-                            type="text",
-                            text=note,
-                            entities=serialize_entities(message.entities)
-                        ))
-                        session.commit()
-                    await message.reply(f"Saved note `{note_name}`.")
-            else:
+            if len(message.command) < 2:
                 await message.reply(
                     f"{Config.CMD_PREFIXES[0]}addnote [note name]"
                     + " [the note or reply to the note message]"
                 )
+            note_name = message.command[1]
+            if message.reply_to_message:
+                msg = message.reply_to_message
+                if msg.text:
+                    with Session(Config.engine) as session:
+                        session.merge(NotesDatabase(
+                            note_name=note_name,
+                            type="text",
+                            text=msg.text,
+                            entities=serialize_entities(msg.entities)
+                        ))
+                        session.commit()
+                elif msg.media:
+                    with Session(Config.engine) as session:
+                        session.merge(NotesDatabase(
+                            note_name=note_name,
+                            type=msg.media.name.lower(),
+                            text=msg.text,
+                            entities=serialize_entities(
+                                msg.caption.entities
+                            ) if msg.caption else None
+                        ))
+                        session.commit()
+                else:
+                    await message.reply("Not supported.")
+                    return
+                await message.reply(f"Saved note `{note_name}`.")
+            elif len(message.command) > 2:
+                note = message.text[len(action) + len(note_name) + 3:]
+                with Session(Config.engine) as session:
+                    session.merge(NotesDatabase(
+                        note_name=note_name,
+                        type="text",
+                        text=note,
+                        entities=serialize_entities(message.entities)
+                    ))
+                    session.commit()
+                await message.reply(f"Saved note `{note_name}`.")
         case "getnote":
             if len(message.command) != 2:
                 await message.reply(
