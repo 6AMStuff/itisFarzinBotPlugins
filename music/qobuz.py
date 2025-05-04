@@ -286,13 +286,25 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
 
         cover_path = album_path + "cover.jpg"
         if not os.path.exists(cover_path):
+            cover_url: str = album["image"]["large"]
             cover_msg = await query.message.reply("Downloading **cover.jpg**.")
-            await download_file(
-                album["image"]["large"],
-                cover_path,
-                progress=download_progress,
-                progress_args=("cover.jpg", time.time(), cover_msg)
-            )
+            for i, size in enumerate(("org", "600")):
+                url = cover_url.replace("600", size)
+                with httpx.Client() as client:
+                    response = client.head(url)
+                    file_size = response.headers.get(
+                        "Content-Length",
+                        None if i == 0 else 1
+                    )
+                    if file_size and int(file_size) > 4 * 1024 * 1024:
+                        continue
+                    await download_file(
+                        url,
+                        cover_path,
+                        progress=download_progress,
+                        progress_args=("cover.jpg", time.time(), cover_msg)
+                    )
+                    break
 
         for track in tracks:
             stream_data = qobuz.get_file_url(str(track["id"]))
