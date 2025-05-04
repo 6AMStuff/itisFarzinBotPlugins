@@ -19,7 +19,7 @@ class Qobuz:
         self._app_id = str(app_id)
         self._app_secret = app_secret
         self._auth_token = auth_token
-        self.session = httpx.Client()
+        self.session = httpx.AsyncClient()
 
     def headers(self) -> dict[str, str]:
         return {
@@ -33,11 +33,11 @@ class Qobuz:
             "/QP1A.190711.020) QobuzMobileAndroid/5.16.1.5-b21041415"
         }
 
-    def _get(self, url: str, params=None) -> dict:
+    async def _get(self, url: str, params=None) -> dict:
         if not params:
             params = {}
 
-        response = self.session.get(
+        response = await self.session.get(
             self.api_base + url,
             params=params,
             headers=self.headers()
@@ -48,7 +48,7 @@ class Qobuz:
 
         return response.json()
 
-    def check_token(self):
+    async def check_token(self):
         params = {
             "app_id": self._app_id,
         }
@@ -56,7 +56,7 @@ class Qobuz:
             "user/get", params
         )
 
-        response = self._get("user/get", params)
+        response = await self._get("user/get", params)
 
         if response["credential"]["parameters"]:
             pass
@@ -81,8 +81,13 @@ class Qobuz:
         signature = hashlib.md5(to_hash.encode()).hexdigest()
         return timestamp, signature
 
-    def search(self, query_type: str, query: str, limit: int = 10) -> dict:
-        return self._get(
+    async def search(
+        self,
+        query_type: str,
+        query: str,
+        limit: int = 10
+    ) -> dict:
+        return await self._get(
             "catalog/search",
             params={
                 "query": query,
@@ -92,7 +97,7 @@ class Qobuz:
             }
         )
 
-    def get_file_url(self, track_id: str, quality_id=27) -> dict:
+    async def get_file_url(self, track_id: str, quality_id=27) -> dict:
         params = {
             "track_id": track_id,
             "format_id": str(quality_id),
@@ -105,10 +110,10 @@ class Qobuz:
         signature = self.create_signature("track/getFileUrl", params)
         params["request_ts"], params["request_sig"] = signature
 
-        return self._get("track/getFileUrl", params=params)
+        return await self._get("track/getFileUrl", params=params)
 
-    def get_track(self, track_id: str) -> dict:
-        return self._get(
+    async def get_track(self, track_id: str) -> dict:
+        return await self._get(
             "track/get",
             params={
                 "track_id": track_id,
@@ -116,8 +121,8 @@ class Qobuz:
             }
         )
 
-    def get_playlist(self, playlist_id: str) -> dict:
-        return self._get(
+    async def get_playlist(self, playlist_id: str) -> dict:
+        return await self._get(
             "playlist/get",
             params={
                 "playlist_id": playlist_id,
@@ -128,8 +133,8 @@ class Qobuz:
             }
         )
 
-    def get_album(self, album_id: str) -> dict:
-        return self._get(
+    async def get_album(self, album_id: str) -> dict:
+        return await self._get(
             "album/get",
             params={
                 "album_id": album_id,
@@ -138,8 +143,8 @@ class Qobuz:
             }
         )
 
-    def get_artist(self, artist_id: str) -> dict:
-        return self._get(
+    async def get_artist(self, artist_id: str) -> dict:
+        return await self._get(
             "artist/get",
             params={
                 "artist_id": artist_id,
@@ -168,9 +173,9 @@ def set_up_qobuz():
     return Qobuz(app_id, app_secret, auth_token)
 
 
-def qobuz_search_keyboard(query: str):
+async def qobuz_search_keyboard(query: str):
     keyboard = []
-    result = qobuz.search("track", query)
+    result = await qobuz.search("track", query)
 
     for track in result["tracks"]["items"]:
         keyboard.append([InlineKeyboardButton(
@@ -207,7 +212,7 @@ async def qobuz_message(_: Client, message: Message):
     if query:
         await message.reply(
             f"Results for **{query}**:",
-            reply_markup=qobuz_search_keyboard(query)
+            reply_markup=await qobuz_search_keyboard(query)
         )
         return
     elif not album_id:
@@ -217,7 +222,7 @@ async def qobuz_message(_: Client, message: Message):
         return
 
     try:
-        album = qobuz.get_album(album_id)
+        album = await qobuz.get_album(album_id)
     except Exception as e:
         await message.reply("**ERROR**: " + str(e))
         return
@@ -261,7 +266,7 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
 
     if info["type"] in ["dlalbum", "dltrack"]:
         try:
-            qobuz.check_token()
+            await qobuz.check_token()
         except Exception as e:
             await query.answer("ERROR: " + str(e))
             return
@@ -273,11 +278,11 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
             use_env=True
         ) + "/"
         if info["type"] == "dlalbum":
-            album = qobuz.get_album(info["id"])
+            album = await qobuz.get_album(info["id"])
             tracks = album["tracks"]["items"]
         else:
-            _track = qobuz.get_track(info["id"])
-            album = qobuz.get_album(_track["album"]["id"])
+            _track = await qobuz.get_track(info["id"])
+            album = await qobuz.get_album(_track["album"]["id"])
             tracks = [_track]
         _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
         album_path = download_path + parse_data(_album_path, album) + "/"
@@ -290,8 +295,8 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
             cover_msg = await query.message.reply("Downloading **cover.jpg**.")
             for i, size in enumerate(("org", "600")):
                 url = cover_url.replace("600", size)
-                with httpx.Client() as client:
-                    response = client.head(url)
+                async with httpx.AsyncClient() as client:
+                    response = await client.head(url)
                     file_size = response.headers.get(
                         "Content-Length",
                         None if i == 0 else 1
@@ -307,7 +312,7 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
                     break
 
         for track in tracks:
-            stream_data = qobuz.get_file_url(str(track["id"]))
+            stream_data = await qobuz.get_file_url(str(track["id"]))
             track.update(stream_data)
             track["track_number"] = str(track["track_number"]).zfill(zfill)
             track_msg = await query.message.reply(
@@ -336,8 +341,8 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
             tag_file(full_path, cover_path, track)
         await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
-        track = qobuz.get_track(info["id"])
-        album = qobuz.get_album(track["album"]["id"])
+        track = await qobuz.get_track(info["id"])
+        album = await qobuz.get_album(track["album"]["id"])
         await query.message.reply_photo(
             album["image"]["large"],
             caption=parse_data("{name} - {artist}", track),
