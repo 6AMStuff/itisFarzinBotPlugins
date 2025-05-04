@@ -88,19 +88,7 @@ async def note_message(app: Client, message: Message):
         case "savenote" if await Config.IS_ADMIN(app, message):
             if len(message.command) >= 2:
                 note_name = message.command[1]
-                if len(message.command) > 2:
-                    note = message.text[len(action) + len(note_name) + 3:]
-                    with Session(Config.engine) as session:
-                        session.merge(NotesDatabase(
-                            note_name=note_name,
-                            type="text",
-                            text=note,
-                            entities=serialize_entities(message.entities)
-                        ))
-                        session.commit()
-                    await message.reply(f"Saved note `{note_name}`.")
-                    return
-                elif message.reply_to_message:
+                if message.reply_to_message:
                     msg = message.reply_to_message
                     if msg.text:
                         with Session(Config.engine) as session:
@@ -126,11 +114,22 @@ async def note_message(app: Client, message: Message):
                         await message.reply("Not supported.")
                         return
                     await message.reply(f"Saved note `{note_name}`.")
-                    return
-            await message.reply(
-                f"{Config.CMD_PREFIXES[0]}addnote [note name]"
-                + " [the note or reply to the note message]"
-            )
+                elif len(message.command) > 2:
+                    note = message.text[len(action) + len(note_name) + 3:]
+                    with Session(Config.engine) as session:
+                        session.merge(NotesDatabase(
+                            note_name=note_name,
+                            type="text",
+                            text=note,
+                            entities=serialize_entities(message.entities)
+                        ))
+                        session.commit()
+                    await message.reply(f"Saved note `{note_name}`.")
+            else:
+                await message.reply(
+                    f"{Config.CMD_PREFIXES[0]}addnote [note name]"
+                    + " [the note or reply to the note message]"
+                )
         case "getnote":
             if len(message.command) != 2:
                 await message.reply(
