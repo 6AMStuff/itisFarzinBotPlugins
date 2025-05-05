@@ -121,18 +121,6 @@ class Qobuz:
             }
         )
 
-    async def get_playlist(self, playlist_id: str) -> dict:
-        return await self._get(
-            "playlist/get",
-            params={
-                "playlist_id": playlist_id,
-                "app_id": self._app_id,
-                "limit": "2000",
-                "offset": "0",
-                "extra": "tracks,subscribers,focusAll"
-            }
-        )
-
     async def get_album(self, album_id: str) -> dict:
         return await self._get(
             "album/get",
@@ -140,19 +128,6 @@ class Qobuz:
                 "album_id": album_id,
                 "app_id": self._app_id,
                 "extra": "albumsFromSameArtist,focusAll"
-            }
-        )
-
-    async def get_artist(self, artist_id: str) -> dict:
-        return await self._get(
-            "artist/get",
-            params={
-                "artist_id": artist_id,
-                "app_id": self._app_id,
-                "extra": "albums,playlists,tracks_appears_on," +
-                "albums_with_last_release,focusAll",
-                "limit": "1000",
-                "offset": "0"
             }
         )
 
