@@ -313,6 +313,7 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
                 progress=download_progress,
                 progress_args=(track_name, time.time(), track_msg)
             )
+            track["source"] = "Qobuz"
             tag_file(full_path, cover_path, track)
         await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
