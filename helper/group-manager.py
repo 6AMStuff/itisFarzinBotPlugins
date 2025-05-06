@@ -19,7 +19,7 @@ async def restrict(app: Client, message: Message):
         return
 
     if not message.reply_to_message.from_user:
-        await message.reply("Can't restrict this user.")
+        await message.reply("Can't (un)restrict this user.")
         return
 
     chat_member = await app.get_chat_member(
