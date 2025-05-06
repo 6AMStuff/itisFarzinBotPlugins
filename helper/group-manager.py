@@ -1,11 +1,11 @@
-from pyrogram.types import Message
 from pyrogram import Client, filters, errors
+from pyrogram.types import Message, ChatPermissions
 
 from config import Config
 
 
 @Client.on_message(
-    filters.command(["ban", "unban", "kick"], Config.CMD_PREFIXES)
+    filters.command(["ban", "unban", "kick", "mute"], Config.CMD_PREFIXES)
 )
 async def restrict(app: Client, message: Message):
     action = message.command[0]
@@ -101,6 +101,18 @@ async def restrict(app: Client, message: Message):
             await message.reply(
                 "{} {}.".format(
                     "Kicked" if result else "Failed to kick",
+                    message.reply_to_message.from_user.mention
+                )
+            )
+        case "mute":
+            result = await app.restrict_chat_member(
+                message.chat.id,
+                message.reply_to_message.from_user.id,
+                ChatPermissions()
+            )
+            await message.reply(
+                "{} {}.".format(
+                    "Muted" if bool(result) else "Failed to mute",
                     message.reply_to_message.from_user.mention
                 )
             )
