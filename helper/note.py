@@ -89,7 +89,7 @@ async def note_message(app: Client, message: Message):
         case "savenote" if await Config.IS_ADMIN(app, message):
             if len(message.command) < 2:
                 await message.reply(
-                    f"{Config.CMD_PREFIXES[0]}addnote [note name]"
+                    f"{Config.CMD_PREFIXES[0]}{action} [note name]"
                     + " [the note or reply to the note message]"
                 )
             note_name = message.command[1]
@@ -133,7 +133,7 @@ async def note_message(app: Client, message: Message):
         case "getnote":
             if len(message.command) != 2:
                 await message.reply(
-                    f"{Config.CMD_PREFIXES[0]}getnote [note name]"
+                    f"{Config.CMD_PREFIXES[0]}{action} [note name]"
                 )
                 return
 
@@ -168,7 +168,7 @@ async def note_message(app: Client, message: Message):
         case "delnote" if await Config.IS_ADMIN(app, message):
             if len(message.command) != 2:
                 await message.reply(
-                    f"{Config.CMD_PREFIXES[0]}delnote [note name]"
+                    f"{Config.CMD_PREFIXES[0]}{action} [note name]"
                 )
                 return
 
