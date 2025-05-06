@@ -1,5 +1,5 @@
 from pyrogram.types import Message
-from pyrogram import Client, filters
+from pyrogram import Client, filters, errors
 
 from config import Config
 
@@ -27,10 +27,15 @@ async def restrict(app: Client, message: Message):
         message.chat.id,
         app.me.id
     )
-    replied_chat_member = await app.get_chat_member(
-        message.chat.id,
-        message.reply_to_message.from_user.id
-    )
+    try:
+        replied_chat_member = await app.get_chat_member(
+            message.chat.id,
+            message.reply_to_message.from_user.id
+        )
+    except errors.exceptions.bad_request_400.UserNotParticipant as e:
+        await message.reply(f"{e.MESSAGE}.")
+        return
+
     if (
         not chat_member.privileges
         or not chat_member.privileges.can_restrict_members
