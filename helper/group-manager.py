@@ -5,7 +5,7 @@ from config import Config
 
 
 @Client.on_message(
-    filters.command(["ban"], Config.CMD_PREFIXES)
+    filters.command(["ban", "unban", "kick"], Config.CMD_PREFIXES)
 )
 async def restrict(app: Client, message: Message):
     action = message.command[0]
@@ -36,7 +36,7 @@ async def restrict(app: Client, message: Message):
         or not chat_member.privileges.can_restrict_members
     ):
         await message.reply(
-            "You don't have the permission to restrict a user."
+            "You don't have the permission to (un)restrict a user."
         )
         return
 
@@ -45,12 +45,12 @@ async def restrict(app: Client, message: Message):
         or not bot_chat_member.privileges.can_restrict_members
     ):
         await message.reply(
-            "I don't have the permission to restrict a user."
+            "I don't have the permission to (un)restrict a user."
         )
         return
 
     if replied_chat_member.status.name.lower() in ("owner", "administrator"):
-        await message.reply("Can't restrict this user.")
+        await message.reply("Can't (un)restrict this user.")
         return
 
     match action:
@@ -62,6 +62,17 @@ async def restrict(app: Client, message: Message):
             await message.reply(
                 "{} {}.".format(
                     "Banned" if bool(result) else "Failed to ban",
+                    message.reply_to_message.from_user.mention
+                )
+            )
+        case "unban":
+            result = await app.unban_chat_member(
+                message.chat.id,
+                message.reply_to_message.from_user.id
+            )
+            await message.reply(
+                "{} {}.".format(
+                    "Unbanned" if result else "Failed to unban",
                     message.reply_to_message.from_user.mention
                 )
             )
