@@ -5,7 +5,10 @@ from config import Config
 
 
 @Client.on_message(
-    filters.command(["ban", "unban", "kick", "mute"], Config.CMD_PREFIXES)
+    filters.command(
+        ["ban", "unban", "kick", "mute", "unmute"],
+        Config.CMD_PREFIXES
+    )
 )
 async def restrict(app: Client, message: Message):
     action = message.command[0]
@@ -113,6 +116,18 @@ async def restrict(app: Client, message: Message):
             await message.reply(
                 "{} {}.".format(
                     "Muted" if bool(result) else "Failed to mute",
+                    message.reply_to_message.from_user.mention
+                )
+            )
+        case "unmute":
+            result = await app.restrict_chat_member(
+                message.chat.id,
+                message.reply_to_message.from_user.id,
+                message.chat.permissions
+            )
+            await message.reply(
+                "{} {}.".format(
+                    "Unmuted" if bool(result) else "Failed to unmute",
                     message.reply_to_message.from_user.mention
                 )
             )
