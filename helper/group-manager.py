@@ -81,7 +81,29 @@ async def restrict(app: Client, message: Message):
                     message.reply_to_message.from_user.mention
                 )
             )
+        case "kick":
+            result = await app.ban_chat_member(
+                message.chat.id,
+                message.reply_to_message.from_user.id
+            )
+            if not bool(result):
+                await message.reply(
+                    "Failed to kick {}.".format(
+                        message.reply_to_message.from_user.mention
+                    )
+                )
+                return
 
+            result = await app.unban_chat_member(
+                message.chat.id,
+                message.reply_to_message.from_user.id
+            )
+            await message.reply(
+                "{} {}.".format(
+                    "Kicked" if result else "Failed to kick",
+                    message.reply_to_message.from_user.mention
+                )
+            )
 
 __all__ = ["restrict"]
 __plugin__ = True
