@@ -26,19 +26,6 @@ async def restrict(app: Client, message: Message):
         message.chat.id,
         message.from_user.id
     )
-    bot_chat_member = await app.get_chat_member(
-        message.chat.id,
-        app.me.id
-    )
-    try:
-        replied_chat_member = await app.get_chat_member(
-            message.chat.id,
-            message.reply_to_message.from_user.id
-        )
-    except errors.exceptions.bad_request_400.UserNotParticipant as e:
-        await message.reply(f"{e.MESSAGE}.")
-        return
-
     if (
         not chat_member.privileges
         or not chat_member.privileges.can_restrict_members
@@ -48,6 +35,10 @@ async def restrict(app: Client, message: Message):
         )
         return
 
+    bot_chat_member = await app.get_chat_member(
+        message.chat.id,
+        app.me.id
+    )
     if (
         not bot_chat_member.privileges
         or not bot_chat_member.privileges.can_restrict_members
@@ -55,6 +46,15 @@ async def restrict(app: Client, message: Message):
         await message.reply(
             "I don't have the permission to (un)restrict a user."
         )
+        return
+
+    try:
+        replied_chat_member = await app.get_chat_member(
+            message.chat.id,
+            message.reply_to_message.from_user.id
+        )
+    except errors.exceptions.bad_request_400.UserNotParticipant as e:
+        await message.reply(f"{e.MESSAGE}.")
         return
 
     if replied_chat_member.status.name.lower() in ("owner", "administrator"):
