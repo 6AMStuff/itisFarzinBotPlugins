@@ -161,6 +161,14 @@ async def lastfm_top(
         "1y": "12month",
         "alltime": "overall",
     }[time]
+    time_text = {
+        "1w": "1 Week",
+        "1m": "1 Month",
+        "3m": "3 Months",
+        "6m": "6 Months",
+        "1y": "1 Year",
+        "alltime": "All Time",
+    }[time]
     if mode == "artists":
         tops = user.get_top_artists(_time, 5)
     elif mode == "albums":
@@ -168,7 +176,7 @@ async def lastfm_top(
     else:
         tops = user.get_top_tracks(_time, 5)
 
-    text = f"{user.name}'s top {mode} for {time}:\n"
+    text = f"{user.name}'s Top {mode.title()} of the Last {time_text}:\n"
     if tops:
         for i, top in enumerate(tops, start=1):
             top.item.username = USERNAME  # Fixes user play count for artists
