@@ -2,3 +2,5 @@ httpx==0.28.1
 mutagen==1.47.0
 cryptography==44.0.2
 sqlalchemy==2.0.40
+pylast==5.5.0
+humanize==4.12.3
