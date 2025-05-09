@@ -120,7 +120,8 @@ async def note_message(app: Client, message: Message):
                     return
                 await message.reply(f"Saved note `{note_name}`.")
             elif len(message.command) > 2:
-                note = message.text[len(action) + len(note_name) + 3:]
+                start_index = len(action) + len(note_name) + 3
+                note = message.text[start_index:]
                 with Session(Config.engine) as session:
                     session.merge(NotesDatabase(
                         note_name=note_name,
