@@ -167,7 +167,6 @@ async def lastfm_top(
         tops = user.get_top_albums(_time, 5)
     else:
         tops = user.get_top_tracks(_time, 5)
-    await app.edit_inline_text(message_id, "Wait.")
 
     text = f"{user.name}'s top {mode} for {time}:\n"
     if tops:
@@ -257,6 +256,7 @@ async def lastfm_callback(app: Client, query: CallbackQuery):
     action, mode, time = query.matches[0].groups()
 
     if action == "status":
+        await query.answer("Wait.")
         match mode:
             case "with_cover":
                 await lastfm_status(
@@ -304,6 +304,7 @@ async def lastfm_callback(app: Client, query: CallbackQuery):
                 ])
             )
             return
+        await query.answer("Wait.")
         await lastfm_top(app, query.inline_message_id, mode, time)
 
 
