@@ -2,8 +2,8 @@ import re
 import base64
 import hashlib
 from sqlalchemy import Text, select
-from pyrogram import Client, filters
 from cryptography.fernet import Fernet
+from pyrogram import Client, filters, errors
 from sqlalchemy.orm import Session, Mapped, mapped_column
 from pyrogram.types import (
     InlineQuery, CallbackQuery, InlineQueryResultArticle, ChosenInlineResult,
@@ -34,15 +34,20 @@ def generate_fernet(user_id: int | str) -> bytes:
         flags=re.DOTALL
     )
 )
-async def whisper_inline(_: Client, query: InlineQuery):
-    username = query.matches[0].group("username")
+async def whisper_inline(app: Client, query: InlineQuery):
+    full_name = username = query.matches[0].group("username")
+    try:
+        full_name = (await app.get_users(username)).full_name
+    except errors.PeerIdInvalid:
+        pass
+
     await query.answer(
         [
             InlineQueryResultArticle(
-                title=f"A whisper for {username}",
+                title=f"A whisper for {full_name}",
                 description="Only they can open it.",
                 input_message_content=InputTextMessageContent(
-                    f"A whisper for {username}, only they can open it."
+                    f"A whisper for {full_name}, only they can open it."
                 ),
                 reply_markup=InlineKeyboardMarkup([
                     [InlineKeyboardButton(
