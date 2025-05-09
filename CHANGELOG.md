@@ -1,3 +1,38 @@
+## v4.0.0 (2025-05-09)
+
+### Feat
+
+- **LastFM**: show a notification to the user to wait
+- **LastFM**: add user's top artists/albums/tracks
+- **LastFM**: add LastFM expanded status result query
+- **LastFM**: use the recent / playing now track cover
+- **LastFM**: add user play count to tracks
+- **LastFM**: fully utilize `get_recent_tracks`
+- **LastFM**: append relative time
+- **LastFM**: add expanded mode
+- **LastFM**: handle LastFM errors in `lastfm_status`
+- **LastFM**: add refresh button
+- **LastFM**: add show cover button
+- **LastFM**: save login password in md5
+- **LastFM**: hyperlink track title to search page
+- **LastFM**: add LastFM prefix to texts and id
+- **LastFM**: add LastFM status
+- **LastFM**: add status to inline query
+- **LastFM**: add basics
+
+### Fix
+
+- **LastFM**: add `lastfm_callback` to `__all__`
+
+### Refactor
+
+- **LastFM**: improve text for user's top artists, albums, and tracks
+- **LastFM**: [TMP] use `get_now_playing` alongside `get_recent_tracks`
+
+### Perf
+
+- **LastFM**: optimize play timestamp handling
+
 ## v3.4.0 (2025-05-09)
 
 ### Feat
