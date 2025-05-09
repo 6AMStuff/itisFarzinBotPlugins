@@ -70,8 +70,8 @@ async def lastfm_status(
     for played_track in recent_tracks:
         track = played_track.track
         time = humanize.naturaltime(
-            datetime.datetime.fromtimestamp(int(played_track.timestamp or 0))
-        )
+            datetime.datetime.fromtimestamp(int(played_track.timestamp))
+        ) if str(played_track.timestamp).isdigit() else None
         text += (
             "\n**{}** - [{}](https://www.last.fm/search/tracks?q={}){}"
             ", {:,} plays"
@@ -79,7 +79,7 @@ async def lastfm_status(
             track.artist,
             track.get_name(),
             urllib.parse.quote(str(track)),
-            f", {time}" if played_track.timestamp else "",
+            f", {time}" if time else "",
             track.get_userplaycount()
         )
 
