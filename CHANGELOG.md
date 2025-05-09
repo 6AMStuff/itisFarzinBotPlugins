@@ -1,3 +1,9 @@
+## v3.4.0 (2025-05-09)
+
+### Feat
+
+- **whisper**: display receiver's full name in whisper message
+
 ## v3.3.1 (2025-05-06)
 
 ### Refactor
