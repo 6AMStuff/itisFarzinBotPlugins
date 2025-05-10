@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pyrogram import Client, filters, errors, utils
 from pyrogram.types import Message, ChatPermissions
 
@@ -79,6 +79,9 @@ async def restrict(app: Client, message: Message):
         except ValueError:
             await message.reply("Incorrect time format.")
             return
+    formatted_date = date.astimezone(timezone.utc).strftime(
+        "%d/%m/%Y, %H:%M:%S %Z"
+    )
 
     match action:
         case "ban":
@@ -86,9 +89,10 @@ async def restrict(app: Client, message: Message):
                 message.chat.id, message.reply_to_message.from_user.id, date
             )
             await message.reply(
-                "{} {}.".format(
+                "{} {} {}.".format(
                     "Banned" if bool(result) else "Failed to ban",
                     message.reply_to_message.from_user.mention,
+                    "until " + formatted_date if duration else "forever",
                 )
             )
         case "unban":
@@ -130,9 +134,10 @@ async def restrict(app: Client, message: Message):
                 date,
             )
             await message.reply(
-                "{} {}.".format(
+                "{} {} {}.".format(
                     "Muted" if bool(result) else "Failed to mute",
                     message.reply_to_message.from_user.mention,
+                    "until " + formatted_date if duration else "forever",
                 )
             )
         case "unmute":
