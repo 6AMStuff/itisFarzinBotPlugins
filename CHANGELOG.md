@@ -1,3 +1,14 @@
+## v4.0.1 (2025-05-10)
+
+### Feat
+
+- **config**: configure pre commit
+- **config**: configure black and flake8
+
+### Refactor
+
+- **note**: simplify note extraction logic
+
 ## v4.0.0 (2025-05-09)
 
 ### Feat
