@@ -1,3 +1,23 @@
+## v5.0.0 (2025-05-10)
+
+### Feat
+
+- **group-manager**: add ban and mute durations to the message
+- **group-manager**: add support for duration in ban and mute command
+- **group-manager**: add unmute command
+- **group-manager**: add mute command
+- **group-manager**: add kick command
+- **group-manager**: add unban command
+- **group-manager**: add ban command
+
+### Fix
+
+- **group-manager**: handle case when user is not a member of the chat
+
+### Perf
+
+- **group-manager**: move around privilege if-statements
+
 ## v4.0.1 (2025-05-10)
 
 ### Feat
