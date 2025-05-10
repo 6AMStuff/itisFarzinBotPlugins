@@ -1,3 +1,9 @@
+## v5.0.1 (2025-05-10)
+
+### Fix
+
+- **LastFM**: handle if `get_now_playing` is None
+
 ## v5.0.0 (2025-05-10)
 
 ### Feat
