@@ -4,9 +4,15 @@ import humanize
 import urllib.parse
 from pyrogram import Client, filters, errors
 from pyrogram.types import (
-    InlineQuery, InlineQueryResultArticle, InputTextMessageContent,
-    ChosenInlineResult, InlineKeyboardMarkup, InlineKeyboardButton,
-    LinkPreviewOptions, CallbackQuery, InputMediaPhoto
+    InlineQuery,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+    ChosenInlineResult,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    LinkPreviewOptions,
+    CallbackQuery,
+    InputMediaPhoto,
 )
 
 from config import Config
@@ -32,7 +38,7 @@ def set_up_lastfm():
             "`{0}setdata {1} lastfm_login_username [your_username]`\n"
             "`{0}setdata {1} lastfm_login_password [your_password_in_md5]`\n"
             "For converting your password to md5 hash:\n"
-            "`python -c 'import hashlib; print(hashlib.md5(\"your password\""
+            '`python -c \'import hashlib; print(hashlib.md5("your password"'
             ".encode()).hexdigest())'`"
         ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
 
@@ -51,7 +57,7 @@ async def lastfm_status(
     app: Client,
     message_id: str,
     with_cover: bool = False,
-    expanded: bool = False
+    expanded: bool = False,
 ):
     if isinstance(lastfm, str):
         await app.edit_inline_text(message_id, lastfm)
@@ -64,14 +70,17 @@ async def lastfm_status(
     if expanded:
         recent_tracks += user.get_recent_tracks(limit=3)
     text = "{} {} listening to".format(
-        user.name,
-        "was" if recent_tracks[0].timestamp else "is now"
+        user.name, "was" if recent_tracks[0].timestamp else "is now"
     )
     for played_track in recent_tracks:
         track = played_track.track
-        time = humanize.naturaltime(
-            datetime.datetime.fromtimestamp(int(played_track.timestamp))
-        ) if str(played_track.timestamp).isdigit() else None
+        time = (
+            humanize.naturaltime(
+                datetime.datetime.fromtimestamp(int(played_track.timestamp))
+            )
+            if str(played_track.timestamp).isdigit()
+            else None
+        )
         text += (
             "\n**{}** - [{}](https://www.last.fm/search/tracks?q={}){}"
             ", {:,} plays"
@@ -80,7 +89,7 @@ async def lastfm_status(
             track.get_name(),
             urllib.parse.quote(str(track)),
             f", {time}" if time else "",
-            track.get_userplaycount()
+            track.get_userplaycount(),
         )
 
     buttons = []
@@ -90,22 +99,27 @@ async def lastfm_status(
                 "🖼",
                 "lastfm status {}with_cover".format(
                     "expanded_" if expanded else ""
-                )
+                ),
             )
         )
 
     buttons.append(
-        InlineKeyboardButton("🔄", "lastfm status {}with{}_cover".format(
-            "expanded_" if expanded else "",
-            "" if with_cover else "out"
-        ))
+        InlineKeyboardButton(
+            "🔄",
+            "lastfm status {}with{}_cover".format(
+                "expanded_" if expanded else "", "" if with_cover else "out"
+            ),
+        )
     )
 
     if expanded:
         buttons.append(
-            InlineKeyboardButton("➖", "lastfm status with{}_cover".format(
-                "" if with_cover else "out"
-            ))
+            InlineKeyboardButton(
+                "➖",
+                "lastfm status with{}_cover".format(
+                    "" if with_cover else "out"
+                ),
+            )
         )
     else:
         buttons.append(
@@ -113,7 +127,7 @@ async def lastfm_status(
                 "➕",
                 "lastfm status expanded_with{}_cover".format(
                     "" if with_cover else "out"
-                )
+                ),
             )
         )
 
@@ -127,14 +141,14 @@ async def lastfm_status(
             await app.edit_inline_media(
                 message_id,
                 InputMediaPhoto(cover, text),
-                reply_markup=InlineKeyboardMarkup([buttons])
+                reply_markup=InlineKeyboardMarkup([buttons]),
             )
         else:
             await app.edit_inline_text(
                 message_id,
                 text,
                 link_preview_options=LinkPreviewOptions(is_disabled=True),
-                reply_markup=InlineKeyboardMarkup([buttons])
+                reply_markup=InlineKeyboardMarkup([buttons]),
             )
     except errors.exceptions.bad_request_400.MessageNotModified:
         pass
@@ -142,12 +156,7 @@ async def lastfm_status(
         raise e
 
 
-async def lastfm_top(
-    app: Client,
-    message_id: str,
-    mode: str,
-    time: str
-):
+async def lastfm_top(app: Client, message_id: str, mode: str, time: str):
     if isinstance(lastfm, str):
         await app.edit_inline_text(message_id, lastfm)
         return
@@ -184,8 +193,10 @@ async def lastfm_top(
                 "\n{}. [{}](https://www.last.fm/search/tracks?q={}) ->"
                 " {} plays"
             ).format(
-                i, top.item, urllib.parse.quote(str(top.item)),
-                top.item.get_userplaycount()
+                i,
+                top.item,
+                urllib.parse.quote(str(top.item)),
+                top.item.get_userplaycount(),
             )
     else:
         text += "\nNothing were found."
@@ -193,7 +204,7 @@ async def lastfm_top(
     await app.edit_inline_text(
         message_id,
         text,
-        link_preview_options=LinkPreviewOptions(is_disabled=True)
+        link_preview_options=LinkPreviewOptions(is_disabled=True),
     )
 
 
@@ -213,9 +224,9 @@ async def lastfm_inline(_: Client, query: InlineQuery):
                 title="LastFM Status",
                 input_message_content=InputTextMessageContent("Status"),
                 id="lastfm_status",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("LastFM Status", "None")]
-                ])
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("LastFM Status", "None")]]
+                ),
             ),
             InlineQueryResultArticle(
                 title="LastFM Expanded Status",
@@ -223,24 +234,32 @@ async def lastfm_inline(_: Client, query: InlineQuery):
                     "Expanded status"
                 ),
                 id="lastfm_expanded_status",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("LastFM Status", "None")]
-                ])
+                reply_markup=InlineKeyboardMarkup(
+                    [[InlineKeyboardButton("LastFM Status", "None")]]
+                ),
             ),
             InlineQueryResultArticle(
                 title="Top artists/albums/tracks",
                 input_message_content=InputTextMessageContent("Choose type:"),
                 id="top",
-                reply_markup=InlineKeyboardMarkup([
+                reply_markup=InlineKeyboardMarkup(
                     [
-                        InlineKeyboardButton("Artists", "lastfm top artists"),
-                        InlineKeyboardButton("Albums", "lastfm top albums"),
-                        InlineKeyboardButton("Tracks", "lastfm top tracks")
+                        [
+                            InlineKeyboardButton(
+                                "Artists", "lastfm top artists"
+                            ),
+                            InlineKeyboardButton(
+                                "Albums", "lastfm top albums"
+                            ),
+                            InlineKeyboardButton(
+                                "Tracks", "lastfm top tracks"
+                            ),
+                        ]
                     ]
-                ])
-            )
+                ),
+            ),
         ],
-        cache_time=0
+        cache_time=0,
     )
 
 
@@ -268,48 +287,56 @@ async def lastfm_callback(app: Client, query: CallbackQuery):
         match mode:
             case "with_cover":
                 await lastfm_status(
-                    app,
-                    query.inline_message_id,
-                    with_cover=True
+                    app, query.inline_message_id, with_cover=True
                 )
             case "without_cover":
                 await lastfm_status(
-                    app,
-                    query.inline_message_id,
-                    with_cover=False
+                    app, query.inline_message_id, with_cover=False
                 )
             case "expanded_with_cover":
                 await lastfm_status(
                     app,
                     query.inline_message_id,
                     with_cover=True,
-                    expanded=True
+                    expanded=True,
                 )
             case "expanded_without_cover":
                 await lastfm_status(
                     app,
                     query.inline_message_id,
                     with_cover=False,
-                    expanded=True
+                    expanded=True,
                 )
     elif action == "top":
         if not time:
             await query.edit_message_text(
                 "Choose time period:",
-                reply_markup=InlineKeyboardMarkup([
+                reply_markup=InlineKeyboardMarkup(
                     [
-                        InlineKeyboardButton("1W", f"lastfm top {mode} 1w"),
-                        InlineKeyboardButton("1M", f"lastfm top {mode} 1m"),
-                        InlineKeyboardButton("3M", f"lastfm top {mode} 3m")
-                    ],
-                    [
-                        InlineKeyboardButton("6M", f"lastfm top {mode} 6m"),
-                        InlineKeyboardButton("1Y", f"lastfm top {mode} 1y"),
-                        InlineKeyboardButton(
-                            "All time", f"lastfm top {mode} alltime"
-                        )
-                    ],
-                ])
+                        [
+                            InlineKeyboardButton(
+                                "1W", f"lastfm top {mode} 1w"
+                            ),
+                            InlineKeyboardButton(
+                                "1M", f"lastfm top {mode} 1m"
+                            ),
+                            InlineKeyboardButton(
+                                "3M", f"lastfm top {mode} 3m"
+                            ),
+                        ],
+                        [
+                            InlineKeyboardButton(
+                                "6M", f"lastfm top {mode} 6m"
+                            ),
+                            InlineKeyboardButton(
+                                "1Y", f"lastfm top {mode} 1y"
+                            ),
+                            InlineKeyboardButton(
+                                "All time", f"lastfm top {mode} alltime"
+                            ),
+                        ],
+                    ]
+                ),
             )
             return
         await query.answer("Wait.")

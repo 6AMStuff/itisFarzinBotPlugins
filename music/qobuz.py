@@ -4,7 +4,10 @@ import httpx
 import hashlib
 from pyrogram import Client, filters
 from pyrogram.types import (
-    Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+    Message,
+    CallbackQuery,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
 )
 from .util import download_file, download_progress, parse_data, tag_file
 
@@ -23,14 +26,14 @@ class Qobuz:
 
     def headers(self) -> dict[str, str]:
         return {
-            'X-Device-Platform': 'android',
-            'X-Device-Model': 'Pixel 3',
-            'X-Device-Os-Version': '10',
-            'X-User-Auth-Token': self._auth_token,
+            "X-Device-Platform": "android",
+            "X-Device-Model": "Pixel 3",
+            "X-Device-Os-Version": "10",
+            "X-User-Auth-Token": self._auth_token,
             "X-Device-Manufacturer-Id": "482D8CB7-015D-402F-A93B-5EEF0E0996F3",
             "X-App-Version": "5.16.1.5",
-            "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 10; Pixel 3 Build" +
-            "/QP1A.190711.020) QobuzMobileAndroid/5.16.1.5-b21041415"
+            "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 10; Pixel 3 Build"
+            + "/QP1A.190711.020) QobuzMobileAndroid/5.16.1.5-b21041415",
         }
 
     async def _get(self, url: str, params=None) -> dict:
@@ -38,9 +41,7 @@ class Qobuz:
             params = {}
 
         response = await self.session.get(
-            self.api_base + url,
-            params=params,
-            headers=self.headers()
+            self.api_base + url, params=params, headers=self.headers()
         )
 
         if response.status_code not in [200, 201, 202]:
@@ -66,9 +67,7 @@ class Qobuz:
             raise Exception("Invalid UserID/Token")
 
     def create_signature(
-        self,
-        method: str,
-        parameters: dict
+        self, method: str, parameters: dict
     ) -> tuple[str, str]:
         timestamp = str(int(time.time()))
         to_hash = method.replace("/", "")
@@ -82,10 +81,7 @@ class Qobuz:
         return timestamp, signature
 
     async def search(
-        self,
-        query_type: str,
-        query: str,
-        limit: int = 10
+        self, query_type: str, query: str, limit: int = 10
     ) -> dict:
         return await self._get(
             "catalog/search",
@@ -93,8 +89,8 @@ class Qobuz:
                 "query": query,
                 "type": query_type + "s",
                 "limit": limit,
-                "app_id": self._app_id
-            }
+                "app_id": self._app_id,
+            },
         )
 
     async def get_file_url(self, track_id: str, quality_id=27) -> dict:
@@ -104,7 +100,7 @@ class Qobuz:
             "intent": "stream",
             "sample": "false",
             "app_id": self._app_id,
-            "user_auth_token": self._auth_token
+            "user_auth_token": self._auth_token,
         }
 
         signature = self.create_signature("track/getFileUrl", params)
@@ -114,11 +110,7 @@ class Qobuz:
 
     async def get_track(self, track_id: str) -> dict:
         return await self._get(
-            "track/get",
-            params={
-                "track_id": track_id,
-                "app_id": self._app_id
-            }
+            "track/get", params={"track_id": track_id, "app_id": self._app_id}
         )
 
     async def get_album(self, album_id: str) -> dict:
@@ -127,16 +119,15 @@ class Qobuz:
             params={
                 "album_id": album_id,
                 "app_id": self._app_id,
-                "extra": "albumsFromSameArtist,focusAll"
-            }
+                "extra": "albumsFromSameArtist,focusAll",
+            },
         )
 
 
 def set_up_qobuz():
     app_id = Config.getdata("qobuz_app_id", "579939560")
     app_secret = Config.getdata(
-        "qobuz_app_secret",
-        "fa31fc13e7a28e7d70bb61e91aa9e178"
+        "qobuz_app_secret", "fa31fc13e7a28e7d70bb61e91aa9e178"
     )
     auth_token = Config.getdata("qobuz_auth_token")
     if not auth_token or len(auth_token) == 0:
@@ -153,10 +144,14 @@ async def qobuz_search_keyboard(query: str):
     result = await qobuz.search("track", query)
 
     for track in result["tracks"]["items"]:
-        keyboard.append([InlineKeyboardButton(
-            parse_data("{time} | {name} - {artist}", track),
-            parse_data("qobuz trackinfo {id}", track)
-        )])
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    parse_data("{time} | {name} - {artist}", track),
+                    parse_data("qobuz trackinfo {id}", track),
+                )
+            ]
+        )
     return InlineKeyboardMarkup(keyboard)
 
 
@@ -171,7 +166,7 @@ qobuz = set_up_qobuz()
 @Client.on_message(
     Config.IS_ADMIN
     & filters.regex(
-        fr"^{Config.REGEX_CMD_PREFIXES}qobuz"
+        rf"^{Config.REGEX_CMD_PREFIXES}qobuz"
         r"(?: https://www\.qobuz\.com/.*/album/.*/(?P<id>\w+)"
         r"| (?P<query>.+))$"
     )
@@ -187,7 +182,7 @@ async def qobuz_message(_: Client, message: Message):
     if query:
         await message.reply(
             f"Results for **{query}**:",
-            reply_markup=await qobuz_search_keyboard(query)
+            reply_markup=await qobuz_search_keyboard(query),
         )
         return
     elif not album_id:
@@ -203,34 +198,35 @@ async def qobuz_message(_: Client, message: Message):
         return
 
     keyboard = [
-        [InlineKeyboardButton(
-            "Download the album", f"qobuz dlalbum {album_id}"
-        )],
+        [
+            InlineKeyboardButton(
+                "Download the album", f"qobuz dlalbum {album_id}"
+            )
+        ],
         [
             InlineKeyboardButton("—", "none"),
             InlineKeyboardButton("Tracks", "none"),
-            InlineKeyboardButton("—", "none")
-        ]
+            InlineKeyboardButton("—", "none"),
+        ],
     ]
     tracks = [
-        [InlineKeyboardButton(
-            parse_data("{time} | {name} - {artist}", track),
-            parse_data("qobuz dltrack {id}", track)
-        )] for track in album["tracks"]["items"]
+        [
+            InlineKeyboardButton(
+                parse_data("{time} | {name} - {artist}", track),
+                parse_data("qobuz dltrack {id}", track),
+            )
+        ]
+        for track in album["tracks"]["items"]
     ]
     await message.reply_photo(
         album["image"]["large"],
         caption=parse_data("{name} - {artist}", album),
-        reply_markup=InlineKeyboardMarkup(
-            keyboard
-            + tracks
-        )
+        reply_markup=InlineKeyboardMarkup(keyboard + tracks),
     )
 
 
 @Client.on_callback_query(
-    Config.IS_ADMIN
-    & filters.regex(r"^qobuz (?P<type>\w+) (?P<id>\w+)$")
+    Config.IS_ADMIN & filters.regex(r"^qobuz (?P<type>\w+) (?P<id>\w+)$")
 )
 async def qobuz_callback(_: Client, query: CallbackQuery):
     if isinstance(qobuz, str):
@@ -247,11 +243,9 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
             return
 
         await query.answer("Download is in process")
-        download_path = Config.getdata(
-            "download_path",
-            "downloads",
-            use_env=True
-        ) + "/"
+        download_path = (
+            Config.getdata("download_path", "downloads", use_env=True) + "/"
+        )
         if info["type"] == "dlalbum":
             album = await qobuz.get_album(info["id"])
             tracks = album["tracks"]["items"]
@@ -273,8 +267,7 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
                 async with httpx.AsyncClient() as client:
                     response = await client.head(url)
                     file_size = response.headers.get(
-                        "Content-Length",
-                        None if i == 0 else 1
+                        "Content-Length", None if i == 0 else 1
                     )
                     if file_size and int(file_size) > 4 * 1024 * 1024:
                         continue
@@ -282,7 +275,7 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
                         url,
                         cover_path,
                         progress=download_progress,
-                        progress_args=("cover.jpg", time.time(), cover_msg)
+                        progress_args=("cover.jpg", time.time(), cover_msg),
                     )
                     break
 
@@ -294,13 +287,9 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
                 parse_data("Downloading **{name}**.", track)
             )
             _track_name = Config.getdata(
-                "qobuz_track_name",
-                "{track_number} {name}"
+                "qobuz_track_name", "{track_number} {name}"
             )
-            track_name = parse_data(
-                _track_name + ".{format}",
-                track
-            )
+            track_name = parse_data(_track_name + ".{format}", track)
             full_path = album_path + track_name
             if os.path.exists(full_path):
                 await track_msg.edit(
@@ -311,7 +300,7 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
                 stream_data["url"],
                 full_path,
                 progress=download_progress,
-                progress_args=(track_name, time.time(), track_msg)
+                progress_args=(track_name, time.time(), track_msg),
             )
             track["source"] = "Qobuz"
             tag_file(full_path, cover_path, track)
@@ -322,12 +311,15 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
         await query.message.reply_photo(
             album["image"]["large"],
             caption=parse_data("{name} - {artist}", track),
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton(
-                    "Download",
-                    parse_data("qobuz dltrack {id}", track)
-                )]
-            ])
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            "Download", parse_data("qobuz dltrack {id}", track)
+                        )
+                    ]
+                ]
+            ),
         )
 
 

@@ -12,7 +12,7 @@ async def download_file(
     url: str,
     filename: str,
     progress: Callable = None,
-    progress_args: tuple = None
+    progress_args: tuple = None,
 ):
     progress_args = progress_args or ()
     async with httpx.AsyncClient() as client:
@@ -30,9 +30,7 @@ async def download_file(
                     if time.monotonic() - last_update >= 2:
                         if progress:
                             await progress(
-                                downloaded,
-                                total_size,
-                                *progress_args
+                                downloaded, total_size, *progress_args
                             )
                         last_update = time.monotonic()
             if progress:
@@ -44,13 +42,13 @@ async def download_progress(
     total: int,
     file_name: str,
     start_time: float,
-    message: Message
+    message: Message,
 ):
     elapsed_time = time.time() - start_time
     speed = current / elapsed_time if elapsed_time > 0 else 0
     percentage = current * 100 / total
     estimated_time = (total - current) / speed if speed > 0 else 0
-    megabytes = (1024 * 1024)
+    megabytes = 1024 * 1024
     file_size = total / megabytes
 
     if percentage == 100:
@@ -62,8 +60,7 @@ async def download_progress(
         )
     else:
         progress_bar = "[{} {}]".format(
-            "=" * int(percentage // 10),
-            " " * (10 - int(percentage // 10))
+            "=" * int(percentage // 10), " " * (10 - int(percentage // 10))
         )
         progress_text = (
             f"**Downloading**: **{file_name}**\n"
@@ -131,7 +128,7 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
         with open(image_path, "rb") as f:
             picture.data = f.read()
         picture.type = PictureType.COVER_FRONT
-        picture.mime = u"image/jpeg"
+        picture.mime = "image/jpeg"
         if len(picture.data) < 4 * 1024 * 1024:
             tagger.add_picture(picture)
 
@@ -150,7 +147,7 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
         tagger["comment"] = parse_data(
             "Downloaded by itisFarzin's bot, SOURCE: {source}",
             track_info,
-            "Unknown"
+            "Unknown",
         )
 
         tagger.save(file_path)
