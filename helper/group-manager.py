@@ -7,10 +7,7 @@ from config import Config
 
 
 def human_to_timedelta(duration: str):
-    match = re.match(
-        r'(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?',
-        duration
-    )
+    match = re.match(r"(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?", duration)
 
     if not match:
         raise ValueError("Invalid human-readable time format")
@@ -25,8 +22,7 @@ def human_to_timedelta(duration: str):
 
 @Client.on_message(
     filters.command(
-        ["ban", "unban", "kick", "mute", "unmute"],
-        Config.CMD_PREFIXES
+        ["ban", "unban", "kick", "mute", "unmute"], Config.CMD_PREFIXES
     )
 )
 async def restrict(app: Client, message: Message):
@@ -43,8 +39,7 @@ async def restrict(app: Client, message: Message):
         return
 
     chat_member = await app.get_chat_member(
-        message.chat.id,
-        message.from_user.id
+        message.chat.id, message.from_user.id
     )
     if (
         not chat_member.privileges
@@ -55,10 +50,7 @@ async def restrict(app: Client, message: Message):
         )
         return
 
-    bot_chat_member = await app.get_chat_member(
-        message.chat.id,
-        app.me.id
-    )
+    bot_chat_member = await app.get_chat_member(message.chat.id, app.me.id)
     if (
         not bot_chat_member.privileges
         or not bot_chat_member.privileges.can_restrict_members
@@ -70,8 +62,7 @@ async def restrict(app: Client, message: Message):
 
     try:
         replied_chat_member = await app.get_chat_member(
-            message.chat.id,
-            message.reply_to_message.from_user.id
+            message.chat.id, message.reply_to_message.from_user.id
         )
     except errors.exceptions.bad_request_400.UserNotParticipant as e:
         await message.reply(f"{e.MESSAGE}.")
@@ -92,31 +83,27 @@ async def restrict(app: Client, message: Message):
     match action:
         case "ban":
             result = await app.ban_chat_member(
-                message.chat.id,
-                message.reply_to_message.from_user.id,
-                date
+                message.chat.id, message.reply_to_message.from_user.id, date
             )
             await message.reply(
                 "{} {}.".format(
                     "Banned" if bool(result) else "Failed to ban",
-                    message.reply_to_message.from_user.mention
+                    message.reply_to_message.from_user.mention,
                 )
             )
         case "unban":
             result = await app.unban_chat_member(
-                message.chat.id,
-                message.reply_to_message.from_user.id
+                message.chat.id, message.reply_to_message.from_user.id
             )
             await message.reply(
                 "{} {}.".format(
                     "Unbanned" if result else "Failed to unban",
-                    message.reply_to_message.from_user.mention
+                    message.reply_to_message.from_user.mention,
                 )
             )
         case "kick":
             result = await app.ban_chat_member(
-                message.chat.id,
-                message.reply_to_message.from_user.id
+                message.chat.id, message.reply_to_message.from_user.id
             )
             if not bool(result):
                 await message.reply(
@@ -127,13 +114,12 @@ async def restrict(app: Client, message: Message):
                 return
 
             result = await app.unban_chat_member(
-                message.chat.id,
-                message.reply_to_message.from_user.id
+                message.chat.id, message.reply_to_message.from_user.id
             )
             await message.reply(
                 "{} {}.".format(
                     "Kicked" if result else "Failed to kick",
-                    message.reply_to_message.from_user.mention
+                    message.reply_to_message.from_user.mention,
                 )
             )
         case "mute":
@@ -141,26 +127,27 @@ async def restrict(app: Client, message: Message):
                 message.chat.id,
                 message.reply_to_message.from_user.id,
                 ChatPermissions(),
-                date
+                date,
             )
             await message.reply(
                 "{} {}.".format(
                     "Muted" if bool(result) else "Failed to mute",
-                    message.reply_to_message.from_user.mention
+                    message.reply_to_message.from_user.mention,
                 )
             )
         case "unmute":
             result = await app.restrict_chat_member(
                 message.chat.id,
                 message.reply_to_message.from_user.id,
-                message.chat.permissions
+                message.chat.permissions,
             )
             await message.reply(
                 "{} {}.".format(
                     "Unmuted" if bool(result) else "Failed to unmute",
-                    message.reply_to_message.from_user.mention
+                    message.reply_to_message.from_user.mention,
                 )
             )
+
 
 __all__ = ["restrict"]
 __plugin__ = True
