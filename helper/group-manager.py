@@ -1,7 +1,26 @@
-from pyrogram import Client, filters, errors
+import re
+from datetime import datetime, timedelta
+from pyrogram import Client, filters, errors, utils
 from pyrogram.types import Message, ChatPermissions
 
 from config import Config
+
+
+def human_to_timedelta(duration: str):
+    match = re.match(
+        r'(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?',
+        duration
+    )
+
+    if not match:
+        raise ValueError("Invalid human-readable time format")
+
+    days = int(match.group(1) or 0)
+    hours = int(match.group(2) or 0)
+    minutes = int(match.group(3) or 0)
+    seconds = int(match.group(4) or 0)
+
+    return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
 
 @Client.on_message(
@@ -12,9 +31,10 @@ from config import Config
 )
 async def restrict(app: Client, message: Message):
     action = message.command[0]
+    duration = (message.command[1:] or [None])[0]
     if not message.reply_to_message:
         await message.reply(
-            f"{Config.CMD_PREFIXES[0]}{action} [reply to a user]"
+            f"{Config.CMD_PREFIXES[0]}{action} [duration] *reply to a user"
         )
         return
 
@@ -61,11 +81,20 @@ async def restrict(app: Client, message: Message):
         await message.reply("Can't (un)restrict this user.")
         return
 
+    date = utils.zero_datetime()
+    if duration:
+        try:
+            date = datetime.now() + human_to_timedelta(duration)
+        except Exception:
+            await message.reply("Incorrect time format")
+            return
+
     match action:
         case "ban":
             result = await app.ban_chat_member(
                 message.chat.id,
-                message.reply_to_message.from_user.id
+                message.reply_to_message.from_user.id,
+                date
             )
             await message.reply(
                 "{} {}.".format(
@@ -111,7 +140,8 @@ async def restrict(app: Client, message: Message):
             result = await app.restrict_chat_member(
                 message.chat.id,
                 message.reply_to_message.from_user.id,
-                ChatPermissions()
+                ChatPermissions(),
+                date
             )
             await message.reply(
                 "{} {}.".format(
