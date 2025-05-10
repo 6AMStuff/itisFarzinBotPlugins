@@ -76,8 +76,8 @@ async def restrict(app: Client, message: Message):
     if duration:
         try:
             date = datetime.now() + human_to_timedelta(duration)
-        except Exception:
-            await message.reply("Incorrect time format")
+        except ValueError:
+            await message.reply("Incorrect time format.")
             return
 
     match action:
