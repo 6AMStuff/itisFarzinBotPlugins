@@ -33,6 +33,13 @@ def generate_fernet(user_id: int | str) -> bytes:
     return fernet_key
 
 
+async def whisper_chosen_filter(_, __, chosen: ChosenInlineResult):
+    return chosen.query.rsplit(" ", 1)[1].startswith("@")
+
+
+whisper_chosen = filters.create(whisper_chosen_filter)
+
+
 @Client.on_inline_query(
     filters.regex(
         r"^(.+?)\s+@(?P<username>[a-zA-Z0-9_]{3,16})$", flags=re.DOTALL
@@ -75,7 +82,7 @@ async def whisper_inline(app: Client, query: InlineQuery):
     )
 
 
-@Client.on_chosen_inline_result()
+@Client.on_chosen_inline_result(whisper_chosen)
 async def whisper_inline_result(_: Client, chosen: ChosenInlineResult):
     cipher = Fernet(generate_fernet(chosen.from_user.id))
     sentence = chosen.query.rsplit(" ", 1)[0].encode()
