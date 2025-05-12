@@ -75,6 +75,7 @@ async def deserialize_entities(
             client=client,
         )
         for entity in entities
+        if entity
         if hasattr(enums.MessageEntityType, entity["type"].upper())
         if entity["type"] != "bot_command"
     ]
