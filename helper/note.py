@@ -116,7 +116,7 @@ async def note_message(app: Client, message: Message):
                             NotesDatabase(
                                 note_name=note_name,
                                 type=msg.media.name.lower(),
-                                text=msg.text,
+                                text=msg.caption,
                                 file_id=getattr(
                                     msg, msg.media.name.lower()
                                 ).file_id,
