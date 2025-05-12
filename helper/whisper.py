@@ -34,7 +34,9 @@ def generate_fernet(user_id: int | str) -> bytes:
 
 
 @Client.on_inline_query(
-    filters.regex(r"^(.+?)\s+@(?P<username>[a-zA-Z_]{3,16})$", flags=re.DOTALL)
+    filters.regex(
+        r"^(.+?)\s+@(?P<username>[a-zA-Z0-9_]{3,16})$", flags=re.DOTALL
+    )
 )
 async def whisper_inline(app: Client, query: InlineQuery):
     full_name = username = query.matches[0].group("username")
