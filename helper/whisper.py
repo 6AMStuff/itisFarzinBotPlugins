@@ -40,7 +40,11 @@ async def whisper_inline(app: Client, query: InlineQuery):
     full_name = username = query.matches[0].group("username")
     try:
         full_name = (await app.get_users(username)).full_name
-    except errors.PeerIdInvalid:
+    except (
+        errors.PeerIdInvalid,
+        errors.UsernameInvalid,
+        errors.UsernameNotOccupied,
+    ):
         pass
 
     await query.answer(
