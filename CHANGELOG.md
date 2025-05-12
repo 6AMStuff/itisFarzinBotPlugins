@@ -1,3 +1,9 @@
+## v5.0.3 (2025-05-12)
+
+### Fix
+
+- **LastFM**: move inline query handler to group 1
+
 ## v5.0.2 (2025-05-12)
 
 ### Fix
