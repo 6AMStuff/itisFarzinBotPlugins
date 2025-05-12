@@ -1,3 +1,10 @@
+## v5.0.5 (2025-05-12)
+
+### Fix
+
+- **whisper**: add filter to handle only chosen inlines for whisper
+- **LastFM**: add filter to handle only chosen inlines for LastFM
+
 ## v5.0.4 (2025-05-12)
 
 ### Fix
