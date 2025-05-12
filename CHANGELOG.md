@@ -1,3 +1,13 @@
+## v5.0.6 (2025-05-12)
+
+### Feat
+
+- **config**: add pyproject.toml support for flake8
+
+### Fix
+
+- **note**: return None when entities is None in `serialize_entities`
+
 ## v5.0.5 (2025-05-12)
 
 ### Fix
