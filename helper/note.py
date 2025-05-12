@@ -46,6 +46,7 @@ def serialize_entities(entities: list[dict]):
             )
             for key, value in entity.__dict__.items()
             if key not in ["_client"]
+            if value is not None
         }
         for entity in entities
     ]
