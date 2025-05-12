@@ -117,6 +117,9 @@ async def note_message(app: Client, message: Message):
                                 note_name=note_name,
                                 type=msg.media.name.lower(),
                                 text=msg.text,
+                                file_id=getattr(
+                                    msg, msg.media.name.lower()
+                                ).file_id,
                                 entities=(
                                     serialize_entities(msg.caption.entities)
                                     if msg.caption
