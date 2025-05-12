@@ -1,3 +1,15 @@
+## v5.0.2 (2025-05-12)
+
+### Fix
+
+- **whisper**: update username regex to allow numbers
+- **whisper**: expand exception handling for usernames
+
+### Refactor
+
+- **whisper**: move it to the helper folder
+- **LastFM**: use LastFM direct track URL instead of search URL
+
 ## v5.0.1 (2025-05-10)
 
 ### Fix
