@@ -37,6 +37,9 @@ def upgrade_to_sql():
 
 
 def serialize_entities(entities: list[dict]):
+    if not entities:
+        return None
+
     return [
         {
             key: (
