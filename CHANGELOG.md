@@ -1,3 +1,15 @@
+## v5.0.4 (2025-05-12)
+
+### Fix
+
+- **note**: don't parse empty entity
+- **note**: save media caption
+- **note**: save media file_id
+
+### Perf
+
+- **note**: don't save entity parameters with None value
+
 ## v5.0.3 (2025-05-12)
 
 ### Fix
