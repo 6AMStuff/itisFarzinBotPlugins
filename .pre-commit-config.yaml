@@ -16,3 +16,4 @@ repos:
   hooks:
   -   id: flake8
       args: [--max-line-length=79]
+      additional_dependencies: [Flake8-pyproject]
