@@ -217,7 +217,7 @@ def on_data_change():
 lastfm = set_up_lastfm()
 
 
-@Client.on_inline_query()
+@Client.on_inline_query(group=1)
 async def lastfm_inline(_: Client, query: InlineQuery):
     await query.answer(
         [
