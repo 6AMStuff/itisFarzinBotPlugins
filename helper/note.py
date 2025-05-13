@@ -36,7 +36,7 @@ def upgrade_to_sql():
     Config.setdata("notes", {})
 
 
-def serialize_entities(entities: list[dict]):
+def serialize_entities(entities: Union[list[MessageEntity]] = None):
     if not entities:
         return None
 
@@ -56,7 +56,7 @@ def serialize_entities(entities: list[dict]):
 
 
 async def deserialize_entities(
-    client: Client, entities: Union[list[dict]] = None
+    client: Client, entities: Union[list[dict[str, str]]] = None
 ):
     if not entities:
         return None
