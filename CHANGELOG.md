@@ -1,3 +1,17 @@
+## v5.0.7 (2025-05-14)
+
+### Fix
+
+- **whisper**: disable parse mode in whisper notification message
+
+### Refactor
+
+- **note**: update the parameter types of `serialize_entities` and `deserialize_entities`
+
+### Perf
+
+- **whisper**: improve chosen inline handler filter
+
 ## v5.0.6 (2025-05-12)
 
 ### Feat
