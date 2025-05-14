@@ -3,7 +3,7 @@ import base64
 import hashlib
 from sqlalchemy import Text, select
 from cryptography.fernet import Fernet
-from pyrogram import Client, filters, errors
+from pyrogram import Client, filters, errors, enums
 from sqlalchemy.orm import Session, Mapped, mapped_column
 from pyrogram.types import (
     InlineQuery,
@@ -62,7 +62,8 @@ async def whisper_inline(app: Client, query: InlineQuery):
                 title=f"A whisper for {full_name}",
                 description="Only they can open it.",
                 input_message_content=InputTextMessageContent(
-                    f"A whisper for {full_name}, only they can open it."
+                    f"A whisper for {full_name}, only they can open it.",
+                    parse_mode=enums.ParseMode.DISABLED,
                 ),
                 id="whisper",
                 reply_markup=InlineKeyboardMarkup(
