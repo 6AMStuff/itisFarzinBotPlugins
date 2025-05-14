@@ -34,7 +34,7 @@ def generate_fernet(user_id: int | str) -> bytes:
 
 
 async def whisper_chosen_filter(_, __, chosen: ChosenInlineResult):
-    return chosen.query.rsplit(" ", 1)[1].startswith("@")
+    return chosen.result_id == "whisper"
 
 
 whisper_chosen = filters.create(whisper_chosen_filter)
@@ -64,6 +64,7 @@ async def whisper_inline(app: Client, query: InlineQuery):
                 input_message_content=InputTextMessageContent(
                     f"A whisper for {full_name}, only they can open it."
                 ),
+                id="whisper",
                 reply_markup=InlineKeyboardMarkup(
                     [
                         [
