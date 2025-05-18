@@ -1,3 +1,9 @@
+## v5.1.0 (2025-05-18)
+
+### Feat
+
+- **note**: reply with note if command is reply
+
 ## v5.0.7 (2025-05-14)
 
 ### Fix
