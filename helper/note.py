@@ -170,15 +170,20 @@ async def note_message(app: Client, message: Message):
                     return
 
                 note: NotesDatabase = data[0]
+                msg = (
+                    message.reply_to_message
+                    if message.reply_to_message
+                    else message
+                )
                 if note.type == "text":
-                    await message.reply(
+                    await msg.reply(
                         note.text,
                         entities=await deserialize_entities(
                             app, note.entities
                         ),
                     )
                 else:
-                    await message.reply_cached_media(
+                    await msg.reply_cached_media(
                         note.file_id,
                         caption=note.text,
                         caption_entities=await deserialize_entities(
