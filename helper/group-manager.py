@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timedelta, timezone
 from pyrogram import Client, filters, errors, utils
-from pyrogram.types import Message, ChatPermissions
+from pyrogram.types import Message, ChatPermissions, Chat, User
 
 from config import Config
 
@@ -18,6 +18,30 @@ def human_to_timedelta(duration: str):
     seconds = int(match.group(4) or 0)
 
     return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+
+
+async def unban(message: Message, chat: Chat, user: User, edit: bool = False):
+    result = await message._client.unban_chat_member(chat.id, user.id)
+    await (message.edit if edit else message.reply)(
+        "{} {}.".format(
+            "Unbanned" if result else "Failed to unban",
+            user.mention,
+        )
+    )
+
+
+async def unmute(message: Message, chat: Chat, user: User, edit: bool = False):
+    result = await message._client.restrict_chat_member(
+        chat.id,
+        user.id,
+        chat.permissions,
+    )
+    await (message.edit if edit else message.reply)(
+        "{} {}.".format(
+            "Unmuted" if bool(result) else "Failed to unmute",
+            user.mention,
+        )
+    )
 
 
 @Client.on_message(
@@ -96,14 +120,8 @@ async def restrict(app: Client, message: Message):
                 )
             )
         case "unban":
-            result = await app.unban_chat_member(
-                message.chat.id, message.reply_to_message.from_user.id
-            )
-            await message.reply(
-                "{} {}.".format(
-                    "Unbanned" if result else "Failed to unban",
-                    message.reply_to_message.from_user.mention,
-                )
+            await unban(
+                message, message.chat, message.reply_to_message.from_user
             )
         case "kick":
             result = await app.ban_chat_member(
@@ -141,16 +159,8 @@ async def restrict(app: Client, message: Message):
                 )
             )
         case "unmute":
-            result = await app.restrict_chat_member(
-                message.chat.id,
-                message.reply_to_message.from_user.id,
-                message.chat.permissions,
-            )
-            await message.reply(
-                "{} {}.".format(
-                    "Unmuted" if bool(result) else "Failed to unmute",
-                    message.reply_to_message.from_user.mention,
-                )
+            await unmute(
+                message, message.chat, message.reply_to_message.from_user
             )
 
 
