@@ -28,28 +28,44 @@ def human_to_timedelta(duration: str):
     return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
 
-async def unban(message: Message, chat: Chat, user: User, edit: bool = False):
+async def unban(message: Message, chat: Chat, user: User, by: User = None):
     result = await message._client.unban_chat_member(chat.id, user.id)
-    await (message.edit if edit else message.reply)(
-        "{} {}.".format(
+
+    if by:
+        text = "{} {} {}.".format(
+            by.mention,
+            "unbanned" if result else "failed to unban",
+            user.mention,
+        )
+    else:
+        text = "{} {}.".format(
             "Unbanned" if result else "Failed to unban",
             user.mention,
         )
-    )
+
+    await (message.edit if by else message.reply)(text)
 
 
-async def unmute(message: Message, chat: Chat, user: User, edit: bool = False):
+async def unmute(message: Message, chat: Chat, user: User, by: User = None):
     result = await message._client.restrict_chat_member(
         chat.id,
         user.id,
         chat.permissions,
     )
-    await (message.edit if edit else message.reply)(
-        "{} {}.".format(
-            "Unmuted" if bool(result) else "Failed to unmute",
+
+    if by:
+        text = "{} {} {}.".format(
+            by.mention,
+            "unmuted" if result else "failed to unmute",
             user.mention,
         )
-    )
+    else:
+        text = "{} {}.".format(
+            "Unmuted" if result else "Failed to unmute",
+            user.mention,
+        )
+
+    await (message.edit if by else message.reply)(text)
 
 
 @Client.on_message(
@@ -59,6 +75,7 @@ async def unmute(message: Message, chat: Chat, user: User, edit: bool = False):
 )
 async def restrict(app: Client, message: Message):
     action = message.command[0]
+    operation = "unrestrict" if action in ["unban", "unmute"] else "restrict"
     duration = (message.command[1:] or [None])[0]
 
     if not message.reply_to_message:
@@ -69,7 +86,7 @@ async def restrict(app: Client, message: Message):
 
     user = message.reply_to_message.from_user
     if not user:
-        await message.reply("Can't (un)restrict this user.")
+        await message.reply("I can't find this user.")
         return
 
     chat_member = await app.get_chat_member(
@@ -80,7 +97,7 @@ async def restrict(app: Client, message: Message):
         or not chat_member.privileges.can_restrict_members
     ):
         await message.reply(
-            "You don't have the permission to (un)restrict a user."
+            f"You don't have the permission to {operation} this user."
         )
         return
 
@@ -90,7 +107,7 @@ async def restrict(app: Client, message: Message):
         or not bot_chat_member.privileges.can_restrict_members
     ):
         await message.reply(
-            "I don't have the permission to (un)restrict a user."
+            f"I don't have the permission to {operation} this user."
         )
         return
 
@@ -103,7 +120,7 @@ async def restrict(app: Client, message: Message):
         return
 
     if replied_chat_member.status.name.lower() in ("owner", "administrator"):
-        await message.reply("Can't (un)restrict this user.")
+        await message.reply(f"You can't {operation} an owner or admin.")
         return
 
     date = utils.zero_datetime()
@@ -201,7 +218,7 @@ async def restrict_callback(app: Client, query: CallbackQuery):
         or not chat_member.privileges.can_restrict_members
     ):
         await query.answer(
-            "You don't have the permission to unrestrict a user."
+            "You don't have the permission to unrestrict this user."
         )
         return
 
@@ -210,7 +227,9 @@ async def restrict_callback(app: Client, query: CallbackQuery):
         not bot_chat_member.privileges
         or not bot_chat_member.privileges.can_restrict_members
     ):
-        await message.edit("I don't have the permission to unrestrict a user.")
+        await message.edit(
+            "I don't have the permission to unrestrict this user."
+        )
         return
 
     try:
@@ -228,9 +247,9 @@ async def restrict_callback(app: Client, query: CallbackQuery):
 
     match action:
         case "unban":
-            await unban(message, message.chat, user, edit=True)
+            await unban(message, message.chat, user, by=query.from_user)
         case "unmute":
-            await unmute(message, message.chat, user, edit=True)
+            await unmute(message, message.chat, user, by=query.from_user)
 
 
 __all__ = ["restrict", "restrict_callback"]
