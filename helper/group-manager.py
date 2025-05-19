@@ -210,9 +210,7 @@ async def restrict_callback(app: Client, query: CallbackQuery):
         not bot_chat_member.privileges
         or not bot_chat_member.privileges.can_restrict_members
     ):
-        await message.edit(
-            "I don't have the permission to unrestrict a user."
-        )
+        await message.edit("I don't have the permission to unrestrict a user.")
         return
 
     try:
