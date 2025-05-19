@@ -1,7 +1,15 @@
 import re
 from datetime import datetime, timedelta, timezone
 from pyrogram import Client, filters, errors, utils
-from pyrogram.types import Message, ChatPermissions, Chat, User
+from pyrogram.types import (
+    Message,
+    ChatPermissions,
+    Chat,
+    User,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    CallbackQuery,
+)
 
 from config import Config
 
@@ -52,13 +60,15 @@ async def unmute(message: Message, chat: Chat, user: User, edit: bool = False):
 async def restrict(app: Client, message: Message):
     action = message.command[0]
     duration = (message.command[1:] or [None])[0]
+
     if not message.reply_to_message:
         await message.reply(
             f"{Config.CMD_PREFIXES[0]}{action} [duration] *reply to a user"
         )
         return
 
-    if not message.reply_to_message.from_user:
+    user = message.reply_to_message.from_user
+    if not user:
         await message.reply("Can't (un)restrict this user.")
         return
 
@@ -86,10 +96,10 @@ async def restrict(app: Client, message: Message):
 
     try:
         replied_chat_member = await app.get_chat_member(
-            message.chat.id, message.reply_to_message.from_user.id
+            message.chat.id, user.id
         )
     except errors.exceptions.bad_request_400.UserNotParticipant as e:
-        await message.reply(f"{e.MESSAGE}.")
+        await message.reply(f"An error occurred: {e.MESSAGE}.")
         return
 
     if replied_chat_member.status.name.lower() in ("owner", "administrator"):
@@ -109,60 +119,121 @@ async def restrict(app: Client, message: Message):
 
     match action:
         case "ban":
-            result = await app.ban_chat_member(
-                message.chat.id, message.reply_to_message.from_user.id, date
-            )
+            result = await app.ban_chat_member(message.chat.id, user.id, date)
             await message.reply(
                 "{} {} {}.".format(
                     "Banned" if bool(result) else "Failed to ban",
-                    message.reply_to_message.from_user.mention,
+                    user.mention,
                     "until " + formatted_date if duration else "forever",
-                )
+                ),
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "Unban",
+                                f"restrict unban {user.id}",
+                            )
+                        ]
+                    ]
+                ),
             )
         case "unban":
-            await unban(
-                message, message.chat, message.reply_to_message.from_user
-            )
+            await unban(message, message.chat, user)
         case "kick":
-            result = await app.ban_chat_member(
-                message.chat.id, message.reply_to_message.from_user.id
-            )
+            result = await app.ban_chat_member(message.chat.id, user.id)
             if not bool(result):
-                await message.reply(
-                    "Failed to kick {}.".format(
-                        message.reply_to_message.from_user.mention
-                    )
-                )
+                await message.reply("Failed to kick {}.".format(user.mention))
                 return
 
-            result = await app.unban_chat_member(
-                message.chat.id, message.reply_to_message.from_user.id
-            )
+            result = await app.unban_chat_member(message.chat.id, user.id)
             await message.reply(
                 "{} {}.".format(
                     "Kicked" if result else "Failed to kick",
-                    message.reply_to_message.from_user.mention,
-                )
+                    user.mention,
+                ),
             )
         case "mute":
             result = await app.restrict_chat_member(
                 message.chat.id,
-                message.reply_to_message.from_user.id,
+                user.id,
                 ChatPermissions(),
                 date,
             )
             await message.reply(
                 "{} {} {}.".format(
                     "Muted" if bool(result) else "Failed to mute",
-                    message.reply_to_message.from_user.mention,
+                    user.mention,
                     "until " + formatted_date if duration else "forever",
-                )
+                ),
+                reply_markup=InlineKeyboardMarkup(
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "Unmute",
+                                f"restrict unmute {user.id}",
+                            )
+                        ]
+                    ]
+                ),
             )
         case "unmute":
-            await unmute(
-                message, message.chat, message.reply_to_message.from_user
-            )
+            await unmute(message, message.chat, user)
 
 
-__all__ = ["restrict"]
+@Client.on_callback_query(
+    filters.regex(r"^restrict (?P<action>\w+) (?P<user>\d+)$")
+)
+async def restrict_callback(app: Client, query: CallbackQuery):
+    action, user_id = query.matches[0].groups()
+    message = query.message
+
+    if not message:
+        return
+
+    if not message.chat:
+        return
+
+    chat_member = await app.get_chat_member(
+        message.chat.id, query.from_user.id
+    )
+    if (
+        not chat_member.privileges
+        or not chat_member.privileges.can_restrict_members
+    ):
+        await query.answer(
+            "You don't have the permission to unrestrict a user."
+        )
+        return
+
+    bot_chat_member = await app.get_chat_member(message.chat.id, app.me.id)
+    if (
+        not bot_chat_member.privileges
+        or not bot_chat_member.privileges.can_restrict_members
+    ):
+        await message.edit(
+            "I don't have the permission to unrestrict a user."
+        )
+        return
+
+    try:
+        restricted_chat_member = await app.get_chat_member(
+            message.chat.id, user_id
+        )
+    except errors.exceptions.bad_request_400.UserNotParticipant as e:
+        await message.edit(f"An error occurred: {e.MESSAGE}.")
+        return
+
+    user = restricted_chat_member.user
+    if not user:
+        await message.edit("Can't unrestrict this user.")
+        return
+
+    match action:
+        case "unban":
+            await unban(message, message.chat, user, edit=True)
+        case "unmute":
+            await unmute(message, message.chat, user, edit=True)
+
+
+__all__ = ["restrict", "restrict_callback"]
 __plugin__ = True
