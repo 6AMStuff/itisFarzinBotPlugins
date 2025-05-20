@@ -1,8 +1,8 @@
 from typing import Union
 from pyrogram import Client, filters, enums
-from sqlalchemy import Text, JSON, select, delete
 from pyrogram.types import Message, MessageEntity
 from sqlalchemy.orm import Session, Mapped, mapped_column
+from sqlalchemy import Text, JSON, Boolean, select, delete
 
 from config import Config, DataBase
 
@@ -15,6 +15,7 @@ class NotesDatabase(DataBase):
     text: Mapped[str] = mapped_column(Text(), nullable=True)
     file_id: Mapped[str] = mapped_column(Text(), nullable=True)
     entities: Mapped[list] = mapped_column(JSON(), nullable=True)
+    private: Mapped[bool] = mapped_column(Boolean(), default=False)
 
 
 _notes: dict = Config.getdata("notes") or {}
@@ -101,7 +102,9 @@ async def note_message(app: Client, message: Message):
                     f"{Config.CMD_PREFIXES[0]}{action} [note name]"
                     + " [the note or reply to the note message]"
                 )
+
             note_name = message.command[1]
+            flag = message.command[-1]
             if message.reply_to_message:
                 msg = message.reply_to_message
                 if msg.text:
@@ -112,6 +115,7 @@ async def note_message(app: Client, message: Message):
                                 type="text",
                                 text=msg.text,
                                 entities=serialize_entities(msg.entities),
+                                private=flag in ["-p", "--private"],
                             )
                         )
                         session.commit()
@@ -130,6 +134,7 @@ async def note_message(app: Client, message: Message):
                                     if msg.caption
                                     else None
                                 ),
+                                private=flag in ["-p", "--private"],
                             )
                         )
                         session.commit()
@@ -139,14 +144,23 @@ async def note_message(app: Client, message: Message):
                 await message.reply(f"Saved note `{note_name}`.")
             elif len(message.command) > 2:
                 start_index = len(action) + len(note_name) + 3
-                note = message.text[start_index:]
+                text = message.text[start_index:].removesuffix(flag)
+
+                if len(text) == 0:
+                    await message.reply(
+                        f"{Config.CMD_PREFIXES[0]}{action} [note name]"
+                        + " [the note or reply to the note message]"
+                    )
+                    return
+
                 with Session(Config.engine) as session:
                     session.merge(
                         NotesDatabase(
                             note_name=note_name,
                             type="text",
-                            text=note,
+                            text=text,
                             entities=serialize_entities(message.entities),
+                            private=flag in ["-p", "--private"],
                         )
                     )
                     session.commit()
@@ -175,6 +189,11 @@ async def note_message(app: Client, message: Message):
                     if message.reply_to_message
                     else message
                 )
+
+                if note.private and not await Config.IS_ADMIN(app, message):
+                    await message.reply("You don't have access to this note.")
+                    return
+
                 if note.type == "text":
                     await msg.reply(
                         note.text,
@@ -216,14 +235,18 @@ async def note_message(app: Client, message: Message):
                 await message.reply(f"Note **{note_name}** has been deleted.")
         case "notes":
             with Session(Config.engine) as session:
-                notes = session.execute(select(NotesDatabase.note_name)).all()
-                note_names = [note[0] for note in notes]
-                if len(note_names) == 0:
+                notes = session.execute(
+                    select(NotesDatabase.note_name, NotesDatabase.private)
+                ).all()
+                notes: dict[str, bool] = {note[0]: note[1] for note in notes}
+                if len(notes) == 0:
                     msg = "There are no notes saved."
                 else:
                     msg = "List of notes:\n"
-                    for note in note_names:
-                        msg += f" - `{note}`\n"
+                    for note in notes:
+                        msg += " - `{}`{}\n".format(
+                            note, " *private" if notes[note] else ""
+                        )
                     msg += (
                         "You can retrieve these notes by using `/getnote"
                         + " [notename]`"
