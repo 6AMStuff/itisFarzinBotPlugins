@@ -64,15 +64,9 @@ async def lastfm_status(
         return
 
     user = lastfm.get_user(USERNAME)
-    now_playing = user.get_now_playing()
-
-    if now_playing:
-        recent_tracks = [pylast.PlayedTrack(now_playing, None, None, None)]
-        if expanded:
-            recent_tracks += user.get_recent_tracks(limit=3)
-    else:
-        limit = 4 if expanded else 1
-        recent_tracks = user.get_recent_tracks(limit=limit)
+    recent_tracks = user.get_recent_tracks(
+        limit=4 if expanded else 1, now_playing=True
+    )
     text = "{} {} listening to".format(
         user.name, "was" if recent_tracks[0].timestamp else "is now"
     )
