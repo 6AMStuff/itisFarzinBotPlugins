@@ -1,3 +1,13 @@
+## v5.2.0 (2025-05-20)
+
+### BREAKING CHANGE
+
+- Adds a new column
+
+### Feat
+
+- **note**: add support for private notes
+
 ## v5.1.1 (2025-05-20)
 
 ### Perf
