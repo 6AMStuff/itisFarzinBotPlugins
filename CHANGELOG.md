@@ -1,3 +1,9 @@
+## v5.1.1 (2025-05-20)
+
+### Perf
+
+- **LastFM**: only use `get_recent_tracks`
+
 ## v5.1.0 (2025-05-18)
 
 ### Feat
