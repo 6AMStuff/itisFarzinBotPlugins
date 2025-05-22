@@ -100,8 +100,9 @@ async def restrict(app: Client, message: Message):
     duration = (message.command[1:] or [None])[0]
 
     if not message.reply_to_message:
+        arg_hint = " [duration]" if action in ["ban", "mute"] else ""
         await message.reply(
-            f"{Config.CMD_PREFIXES[0]}{action} [duration] *reply to a user"
+            f"{Config.CMD_PREFIXES[0]}{action}{arg_hint} *reply to a user"
         )
         return
 
