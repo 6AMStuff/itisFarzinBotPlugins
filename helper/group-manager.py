@@ -99,10 +99,25 @@ async def restrict(app: Client, message: Message):
     operation = "unrestrict" if action in ["unban", "unmute"] else "restrict"
     duration = (message.command[1:] or [None])[0]
 
+    if duration is not None and duration[-1] not in [
+        "y",
+        "w",
+        "d",
+        "h",
+        "m",
+        "s",
+    ]:
+        duration = None
+
+    start_index = len(action) + (len(duration) + 1 if duration else 0) + 2
+    reason = message.text[start_index:]
+
     if not message.reply_to_message:
         arg_hint = " [duration]" if action in ["ban", "mute"] else ""
+        arg_hint_2 = " [reason]" if action in ["ban", "mute", "kick"] else ""
         await message.reply(
             f"{Config.CMD_PREFIXES[0]}{action}{arg_hint} *reply to a user"
+            + arg_hint_2
         )
         return
 
@@ -169,10 +184,11 @@ async def restrict(app: Client, message: Message):
                 await message.reply("Use a lower duration.")
                 return
             await message.reply(
-                "{} {} {}.".format(
+                "{} {} {}.{}".format(
                     "Banned" if bool(result) else "Failed to ban",
                     user.mention,
                     "until " + formatted_date if duration else "forever",
+                    f"\nFor reason: **{reason}**" if reason else "",
                 ),
                 reply_markup=InlineKeyboardMarkup(
                     [
@@ -195,9 +211,10 @@ async def restrict(app: Client, message: Message):
 
             result = await app.unban_chat_member(message.chat.id, user.id)
             await message.reply(
-                "{} {}.".format(
+                "{} {}.{}".format(
                     "Kicked" if result else "Failed to kick",
                     user.mention,
+                    f"\nFor reason: **{reason}**" if reason else "",
                 ),
             )
         case "mute":
@@ -212,10 +229,11 @@ async def restrict(app: Client, message: Message):
                 await message.reply("Use a lower duration.")
                 return
             await message.reply(
-                "{} {} {}.".format(
+                "{} {} {}.{}".format(
                     "Muted" if bool(result) else "Failed to mute",
                     user.mention,
                     "until " + formatted_date if duration else "forever",
+                    f"\nFor reason: **{reason}**" if reason else "",
                 ),
                 reply_markup=InlineKeyboardMarkup(
                     [
