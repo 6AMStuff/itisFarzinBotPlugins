@@ -110,7 +110,7 @@ async def restrict(app: Client, message: Message):
         duration = None
 
     start_index = len(action) + (len(duration) + 1 if duration else 0) + 2
-    reason = message.text[start_index:]
+    reason = message.text[start_index:].strip()
 
     if not message.reply_to_message:
         arg_hint = " [duration]" if action in ["ban", "mute"] else ""
