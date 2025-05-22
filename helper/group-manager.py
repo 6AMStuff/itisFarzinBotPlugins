@@ -15,22 +15,37 @@ from config import Config
 
 
 def human_to_timedelta(duration: str):
+    regex_pattern = (
+        r"(?:(\d+)y)?\s*"
+        r"(?:(\d+)w)?\s*"
+        r"(?:(\d+)d)?\s*"
+        r"(?:(\d+)h)?\s*"
+        r"(?:(\d+)m)?\s*"
+        r"(?:(\d+)s)?"
+    )
     match = re.match(
-        r"(?:(\d+)w)?\s*(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?",
+        regex_pattern,
         duration,
     )
 
     if not match:
         raise ValueError("Invalid human-readable time format")
 
-    weeks = int(match.group(1) or 0)
-    days = int(match.group(2) or 0)
-    hours = int(match.group(3) or 0)
-    minutes = int(match.group(4) or 0)
-    seconds = int(match.group(5) or 0)
+    years = int(match.group(1) or 0)
+    weeks = int(match.group(2) or 0)
+    days = int(match.group(3) or 0)
+    hours = int(match.group(4) or 0)
+    minutes = int(match.group(5) or 0)
+    seconds = int(match.group(6) or 0)
+
+    total_days = (years * 365) + days
 
     return timedelta(
-        weeks=weeks, days=days, hours=hours, minutes=minutes, seconds=seconds
+        weeks=weeks,
+        days=total_days,
+        hours=hours,
+        minutes=minutes,
+        seconds=seconds,
     )
 
 
