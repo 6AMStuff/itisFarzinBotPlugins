@@ -15,17 +15,23 @@ from config import Config
 
 
 def human_to_timedelta(duration: str):
-    match = re.match(r"(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?", duration)
+    match = re.match(
+        r"(?:(\d+)w)?\s*(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?",
+        duration,
+    )
 
     if not match:
         raise ValueError("Invalid human-readable time format")
 
-    days = int(match.group(1) or 0)
-    hours = int(match.group(2) or 0)
-    minutes = int(match.group(3) or 0)
-    seconds = int(match.group(4) or 0)
+    weeks = int(match.group(1) or 0)
+    days = int(match.group(2) or 0)
+    hours = int(match.group(3) or 0)
+    minutes = int(match.group(4) or 0)
+    seconds = int(match.group(5) or 0)
 
-    return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+    return timedelta(
+        weeks=weeks, days=days, hours=hours, minutes=minutes, seconds=seconds
+    )
 
 
 async def unban(message: Message, chat: Chat, user: User, by: User = None):
