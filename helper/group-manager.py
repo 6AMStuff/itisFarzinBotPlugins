@@ -152,13 +152,22 @@ async def restrict(app: Client, message: Message):
         except ValueError:
             await message.reply("Incorrect time format.")
             return
+        except OverflowError:
+            await message.reply("Use a lower duration.")
+            return
     formatted_date = date.astimezone(timezone.utc).strftime(
         "%d/%m/%Y, %H:%M:%S %Z"
     )
 
     match action:
         case "ban":
-            result = await app.ban_chat_member(message.chat.id, user.id, date)
+            try:
+                result = await app.ban_chat_member(
+                    message.chat.id, user.id, date
+                )
+            except OverflowError:
+                await message.reply("Use a lower duration.")
+                return
             await message.reply(
                 "{} {} {}.".format(
                     "Banned" if bool(result) else "Failed to ban",
@@ -192,12 +201,16 @@ async def restrict(app: Client, message: Message):
                 ),
             )
         case "mute":
-            result = await app.restrict_chat_member(
-                message.chat.id,
-                user.id,
-                ChatPermissions(),
-                date,
-            )
+            try:
+                result = await app.restrict_chat_member(
+                    message.chat.id,
+                    user.id,
+                    ChatPermissions(),
+                    date,
+                )
+            except OverflowError:
+                await message.reply("Use a lower duration.")
+                return
             await message.reply(
                 "{} {} {}.".format(
                     "Muted" if bool(result) else "Failed to mute",
