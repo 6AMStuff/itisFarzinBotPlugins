@@ -1,3 +1,23 @@
+## v5.3.0 (2025-05-22)
+
+### Feat
+
+- **group-manager**: add support for reason in ban, mute, and kick
+- **group-manager**: add year duration support
+- **group-manager**: add week duration support
+- **group-manager**: add unban/unmute buttons to ban/mute messages
+
+### Fix
+
+- **group-manager**: strip leading whitespace from reason string
+- **group-manager**: handle duration overflows
+- **group-manager**: avoid showing duration hint for non-duration commands
+
+### Refactor
+
+- **group-manager**: improve user experience
+- **group-manager**: move unban and unmute logic to dedicated functions
+
 ## v5.2.0 (2025-05-20)
 
 ### BREAKING CHANGE
