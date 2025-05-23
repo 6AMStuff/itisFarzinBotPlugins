@@ -4,6 +4,7 @@ from time import time
 from math import ceil
 from random import randint
 from typing import Optional
+
 # from cryptography.hazmat.backends import default_backend
 # from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
@@ -28,7 +29,7 @@ class DeezerAPI:
         client_id: str,
         client_secret: str,
         bf_secret: str,
-        proxy: Optional[str] = None
+        proxy: Optional[str] = None,
     ):
         self.gw_light_url = "https://www.deezer.com/ajax/gw-light.php"
         self.api_token = ""
@@ -38,18 +39,21 @@ class DeezerAPI:
         self.bf_secret = bf_secret.encode("ascii")
 
         self.session = httpx.Client(proxy=proxy)
-        self.session.headers.update({
-            'accept': '*/*',
-            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
-            + ' (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
-            'content-type': 'text/plain;charset=UTF-8',
-            'origin': 'https://www.deezer.com',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'same-origin',
-            'sec-fetch-dest': 'empty',
-            'referer': 'https://www.deezer.com/',
-            'accept-language': 'en-US,en;q=0.9',
-        })
+        self.session.headers.update(
+            {
+                "accept": "*/*",
+                "user-agent": "Mozilla/5.0 (X11; Linux x86_64)"
+                + " AppleWebKit/537.36 (KHTML, like Gecko)"
+                + " Chrome/96.0.4664.110 Safari/537.36",
+                "content-type": "text/plain;charset=UTF-8",
+                "origin": "https://www.deezer.com",
+                "sec-fetch-site": "same-origin",
+                "sec-fetch-mode": "same-origin",
+                "sec-fetch-dest": "empty",
+                "referer": "https://www.deezer.com/",
+                "accept-language": "en-US,en;q=0.9",
+            }
+        )
 
     def _api_call(self, method: str, payload: Optional[dict] = None):
         api_token = (
@@ -66,9 +70,7 @@ class DeezerAPI:
         }
 
         resp = self.session.post(
-            self.gw_light_url,
-            params=params,
-            json=payload or {}
+            self.gw_light_url, params=params, json=payload or {}
         ).json()
 
         if resp["error"]:
@@ -105,15 +107,16 @@ class DeezerAPI:
             "app_id": self.client_id,
             "login": email,
             "password": password,
-            "hash": hashlib.md5((
-                self.client_id + email + password + self.client_secret
-            ).encode()).hexdigest(),
+            "hash": hashlib.md5(
+                (
+                    self.client_id + email + password + self.client_secret
+                ).encode()
+            ).hexdigest(),
         }
 
         # server sends set-cookie header with account sid
         json = self.session.get(
-            "https://connect.deezer.com/oauth/user_auth.php",
-            params=params
+            "https://connect.deezer.com/oauth/user_auth.php", params=params
         ).json()
 
         if "error" in json:
@@ -147,13 +150,12 @@ class DeezerAPI:
     def get_track_contributors(self, id: str):
         return self._api_call(
             "song.getData",
-            {"sng_id": id, "array_default": ["SNG_CONTRIBUTORS"]}
+            {"sng_id": id, "array_default": ["SNG_CONTRIBUTORS"]},
         )["SNG_CONTRIBUTORS"]
 
     def get_track_cover(self, id: str):
         return self._api_call(
-            "song.getData",
-            {"sng_id": id, "array_default": ["ALB_PICTURE"]}
+            "song.getData", {"sng_id": id, "array_default": ["ALB_PICTURE"]}
         )["ALB_PICTURE"]
 
     def get_track_data_by_isrc(self, isrc: str):
@@ -169,14 +171,13 @@ class DeezerAPI:
             "VERSION": resp["title_version"],
             "ARTISTS": [{"ART_NAME": a["name"]} for a in resp["contributors"]],
             "EXPLICIT_LYRICS": str(int(resp["explicit_lyrics"])),
-            "ALB_TITLE": resp["album"]["title"]
+            "ALB_TITLE": resp["album"]["title"],
         }
 
     def get_album(self, id: str):
         try:
             return self._api_call(
-                "deezer.pageAlbum",
-                {"alb_id": id, "lang": self.language}
+                "deezer.pageAlbum", {"alb_id": id, "lang": self.language}
             )
         except APIError as e:
             if e.payload:
@@ -184,8 +185,8 @@ class DeezerAPI:
                     "deezer.pageAlbum",
                     {
                         "alb_id": e.payload["FALLBACK"]["ALB_ID"],
-                        "lang": self.language
-                    }
+                        "lang": self.language,
+                    },
                 )
             else:
                 raise e
@@ -200,14 +201,13 @@ class DeezerAPI:
                 "lang": self.language,
                 "tab": 0,
                 "tags": True,
-                "header": True
-            }
+                "header": True,
+            },
         )
 
     def get_artist_name(self, id: str):
         return self._api_call(
-            "artist.getData",
-            {"art_id": id, "array_default": ["ART_NAME"]}
+            "artist.getData", {"art_id": id, "array_default": ["ART_NAME"]}
         )["ART_NAME"]
 
     def search(self, query: str, type: str, start: str, nb: str):
@@ -218,16 +218,12 @@ class DeezerAPI:
                 "start": start,
                 "nb": nb,
                 "filter": "ALL",
-                "output": type.upper()
-            }
+                "output": type.upper(),
+            },
         )
 
     def get_artist_album_ids(
-        self,
-        id: str,
-        start: str,
-        nb: str,
-        credited_albums: bool
+        self, id: str, start: str, nb: str, credited_albums: bool
     ):
         payload = {
             "art_id": id,
@@ -236,17 +232,13 @@ class DeezerAPI:
             "filter_role_id": [0, 5] if credited_albums else [0],
             "nb_songs": 0,
             "discography_mode": "all" if credited_albums else None,
-            "array_default": ["ALB_ID"]
+            "array_default": ["ALB_ID"],
         }
         resp = self._api_call("album.getDiscography", payload)
         return [a["ALB_ID"] for a in resp["data"]]
 
     def get_track_url(
-        self,
-        id: str,
-        track_token: str,
-        track_token_expiry: str,
-        format: str
+        self, id: str, track_token: str, track_token_expiry: str, format: str
     ):
         # renews license token
         if time() - self.renew_timestamp >= 3600:
@@ -256,7 +248,7 @@ class DeezerAPI:
         if time() - track_token_expiry >= 0:
             track_token = self._api_call(
                 "song.getData",
-                {"sng_id": id, "array_default": ["TRACK_TOKEN"]}
+                {"sng_id": id, "array_default": ["TRACK_TOKEN"]},
             )["TRACK_TOKEN"]
 
         json = {
@@ -264,27 +256,25 @@ class DeezerAPI:
             "media": [
                 {
                     "type": "FULL",
-                    "formats": [{"cipher": "BF_CBC_STRIPE", "format": format}]
+                    "formats": [{"cipher": "BF_CBC_STRIPE", "format": format}],
                 }
             ],
-            "track_tokens": [track_token]
+            "track_tokens": [track_token],
         }
         resp = self.session.post(
-            "https://media.deezer.com/v1/get_url",
-            json=json
+            "https://media.deezer.com/v1/get_url", json=json
         ).json()
         return resp["data"][0]["media"][0]["sources"][0]["url"]
 
     def _get_blowfish_key(self, track_id: str):
         # yeah, you use the bytes of the hex digest of the hash. bruh moment
-        md5_id = hashlib.md5(
-            str(track_id).encode()
-        ).hexdigest().encode("ascii")
+        md5_id = (
+            hashlib.md5(str(track_id).encode()).hexdigest().encode("ascii")
+        )
 
-        key = bytes([
-            md5_id[i] ^ md5_id[i + 16] ^ self.bf_secret[i]
-            for i in range(16)
-        ])
+        key = bytes(
+            [md5_id[i] ^ md5_id[i + 16] ^ self.bf_secret[i] for i in range(16)]
+        )
 
         return key
 
@@ -314,8 +304,7 @@ class DeezerAPI:
 def set_up_deezer():
     client_id = Config.getdata("deezer_client_id", "579939560")
     client_secret = Config.getdata(
-        "deezer_client_secret",
-        "fa31fc13e7a28e7d70bb61e91aa9e178"
+        "deezer_client_secret", "fa31fc13e7a28e7d70bb61e91aa9e178"
     )
     bf_secret = Config.getdata("deezer_bf_secret", "g4el58wc0zvf9na1")
     arl = Config.getdata("deezer_arl")
