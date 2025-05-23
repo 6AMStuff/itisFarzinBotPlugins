@@ -138,22 +138,22 @@ class DeezerAPI:
 
         return user_data
 
-    def get_track(self, id: str):
+    def get_track(self, id: str | int):
         return self._api_call("deezer.pageTrack", {"sng_id": id})
 
-    def get_track_data(self, id: str):
+    def get_track_data(self, id: str | int):
         return self._api_call("song.getData", {"sng_id": id})
 
-    def get_track_lyrics(self, id: str):
+    def get_track_lyrics(self, id: str | int):
         return self._api_call("song.getLyrics", {"sng_id": id})
 
-    def get_track_contributors(self, id: str):
+    def get_track_contributors(self, id: str | int):
         return self._api_call(
             "song.getData",
             {"sng_id": id, "array_default": ["SNG_CONTRIBUTORS"]},
         )["SNG_CONTRIBUTORS"]
 
-    def get_track_cover(self, id: str):
+    def get_track_cover(self, id: str | int):
         return self._api_call(
             "song.getData", {"sng_id": id, "array_default": ["ALB_PICTURE"]}
         )["ALB_PICTURE"]
@@ -174,7 +174,7 @@ class DeezerAPI:
             "ALB_TITLE": resp["album"]["title"],
         }
 
-    def get_album(self, id: str):
+    def get_album(self, id: str | int):
         try:
             return self._api_call(
                 "deezer.pageAlbum", {"alb_id": id, "lang": self.language}
@@ -191,7 +191,7 @@ class DeezerAPI:
             else:
                 raise e
 
-    def get_playlist(self, id: str, nb: str, start: str):
+    def get_playlist(self, id: str | int, nb: int, start: int):
         return self._api_call(
             "deezer.pagePlaylist",
             {
@@ -205,12 +205,12 @@ class DeezerAPI:
             },
         )
 
-    def get_artist_name(self, id: str):
+    def get_artist_name(self, id: str | int):
         return self._api_call(
             "artist.getData", {"art_id": id, "array_default": ["ART_NAME"]}
         )["ART_NAME"]
 
-    def search(self, query: str, type: str, start: str, nb: str):
+    def search(self, query: str, type: str, start: int, nb: int):
         return self._api_call(
             "search.music",
             {
@@ -223,7 +223,7 @@ class DeezerAPI:
         )
 
     def get_artist_album_ids(
-        self, id: str, start: str, nb: str, credited_albums: bool
+        self, id: str | int, start: int, nb: int, credited_albums: bool
     ):
         payload = {
             "art_id": id,
@@ -238,7 +238,11 @@ class DeezerAPI:
         return [a["ALB_ID"] for a in resp["data"]]
 
     def get_track_url(
-        self, id: str, track_token: str, track_token_expiry: str, format: str
+        self,
+        id: str | int,
+        track_token: str,
+        track_token_expiry: str,
+        format: str,
     ):
         # renews license token
         if time() - self.renew_timestamp >= 3600:
@@ -301,6 +305,38 @@ class DeezerAPI:
     #             file.write(chunk)
 
 
+class Deezer(DeezerAPI):
+    def __init__(
+        self, client_id: str, client_secret: str, bf_secret: str, arl: str
+    ):
+        super().__init__(client_id, client_secret, bf_secret)
+        self.login_via_arl(arl)
+
+    def search_track(self, query: str, limit: int = 10):
+        results = super().search(query, "track", 0, limit)["data"]
+        return [
+            dict(
+                id=result["SNG_ID"],
+                name=result["SNG_TITLE"],
+                artist={"name": result["ART_NAME"]},
+                time=result["SNG_ID"],
+                duration=result["DURATION"],
+                disc_number=result["DISK_NUMBER"],
+                track_number=result["TRACK_NUMBER"],
+                total_discs=None,
+                date=result["DISK_NUMBER"],
+                composer={
+                    "name": ", ".join(
+                        result["SNG_CONTRIBUTORS"].get("composer", [])
+                    )
+                },
+                copyright=result.get("COPYRIGHT"),
+                source="Deezer",
+            )
+            for result in results
+        ]
+
+
 def set_up_deezer():
     client_id = Config.getdata("deezer_client_id", "579939560")
     client_secret = Config.getdata(
@@ -314,8 +350,7 @@ def set_up_deezer():
             "Set your arl via: `{}setdata {} deezer_arl"
             " [your arl]`"
         ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
-    deezer = DeezerAPI(client_id, client_secret, bf_secret)
-    deezer.login_via_arl(arl)
+    deezer = Deezer(client_id, client_secret, bf_secret, arl)
     return deezer
 
 
