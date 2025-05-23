@@ -125,17 +125,29 @@ class Qobuz:
 
 
 def set_up_qobuz():
-    app_id = Config.getdata("qobuz_app_id", "579939560")
-    app_secret = Config.getdata(
-        "qobuz_app_secret", "fa31fc13e7a28e7d70bb61e91aa9e178"
-    )
+    app_id = Config.getdata("qobuz_app_id")
+    app_secret = Config.getdata("qobuz_app_secret")
     auth_token = Config.getdata("qobuz_auth_token")
+
+    missing_data: list[str] = []
+    if not app_id:
+        missing_data.append("qobuz_app_id")
+    if not app_secret:
+        missing_data.append("qobuz_app_secret")
     if not auth_token or len(auth_token) == 0:
-        return (
-            "**ERROR**: No qobuz token were provided.\n"
-            "Set your qobuz token via: `{}setdata {} qobuz_auth_token"
-            " [your auth token]`"
-        ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
+        missing_data.append("qobuz_auth_token")
+
+    if missing_data:
+        error_message = "**ERROR**: Missing data detected:\n"
+        for item in missing_data:
+            error_message += "`{}setdata {} {} [your_{}]`\n".format(
+                Config.CMD_PREFIXES[0],
+                __name__.split(".")[-1],
+                item,
+                item.replace("qobuz_", ""),
+            )
+        return error_message
+
     return Qobuz(app_id, app_secret, auth_token)
 
 
