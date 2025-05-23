@@ -319,6 +319,11 @@ def set_up_deezer():
     return deezer
 
 
+def on_data_change():
+    global deezer
+    deezer = set_up_deezer()
+
+
 deezer = set_up_deezer()
 
 __plugin__ = True
