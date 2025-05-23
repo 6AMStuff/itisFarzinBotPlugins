@@ -315,29 +315,31 @@ class Deezer(DeezerAPI):
         super().__init__(client_id, client_secret, bf_secret)
         self.login_via_arl(arl)
 
+    def _track(self, data: dict[str, str]):
+        return dict(
+            id=data["SNG_ID"],
+            name=data["SNG_TITLE"],
+            artist={"name": data["ART_NAME"]},
+            time=data["SNG_ID"],
+            duration=data["DURATION"],
+            disc_number=data["DISK_NUMBER"],
+            track_number=data["TRACK_NUMBER"],
+            total_discs=None,
+            date=data["DISK_NUMBER"],
+            composer={
+                "name": ", ".join(data["SNG_CONTRIBUTORS"].get("composer", []))
+            },
+            copyright=data.get("COPYRIGHT"),
+            source="Deezer",
+        )
+
     def search_track(self, query: str, limit: int = 10):
         results = super().search(query, "track", 0, limit)["data"]
-        return [
-            dict(
-                id=result["SNG_ID"],
-                name=result["SNG_TITLE"],
-                artist={"name": result["ART_NAME"]},
-                time=result["SNG_ID"],
-                duration=result["DURATION"],
-                disc_number=result["DISK_NUMBER"],
-                track_number=result["TRACK_NUMBER"],
-                total_discs=None,
-                date=result["DISK_NUMBER"],
-                composer={
-                    "name": ", ".join(
-                        result["SNG_CONTRIBUTORS"].get("composer", [])
-                    )
-                },
-                copyright=result.get("COPYRIGHT"),
-                source="Deezer",
-            )
-            for result in results
-        ]
+        return [self._track(result) for result in results]
+
+    def get_track(self, id: str | int):
+        track = super().get_track(id)["DATA"]
+        return self._track(track)
 
 
 def set_up_deezer():
