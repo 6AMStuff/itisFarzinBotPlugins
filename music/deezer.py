@@ -4,6 +4,9 @@ from time import time
 from math import ceil
 from random import randint
 from typing import Optional
+from .util import parse_data
+from pyrogram import Client, filters
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 # from cryptography.hazmat.backends import default_backend
 # from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -361,4 +364,35 @@ def on_data_change():
 
 deezer = set_up_deezer()
 
+
+@Client.on_message(
+    Config.IS_ADMIN
+    & filters.regex(f"^{Config.REGEX_CMD_PREFIXES}deezer (?P<query>.+)$")
+)
+async def deezer_message(_: Client, message: Message):
+    if isinstance(deezer, str):
+        await message.reply(deezer)
+        return
+
+    keyboard = []
+    query = message.matches[0].group("query")
+    tracks = deezer.search_track(query)
+
+    for track in tracks:
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    parse_data("{time} | {name} - {artist}", track),
+                    parse_data("deezer trackinfo {id}", track),
+                )
+            ]
+        )
+
+    await message.reply(
+        f"Results for **{query}**:",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+
+
+__all__ = ["deezer_message"]
 __plugin__ = True
