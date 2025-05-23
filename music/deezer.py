@@ -327,6 +327,7 @@ class Deezer(DeezerAPI):
             artist={"name": data["ART_NAME"]},
             time=data["SNG_ID"],
             duration=data["DURATION"],
+            album_picture=data["ALB_PICTURE"],
             disc_number=data["DISK_NUMBER"],
             track_number=data["TRACK_NUMBER"],
             total_discs=None,
@@ -346,8 +347,19 @@ class Deezer(DeezerAPI):
         track = super().get_track(id)["DATA"]
         return self._track(track)
 
-    def get_track_cover(self, id: str | int, resolution: int = 3000):
-        cover_hash = super().get_track_cover(id)
+    def get_track_cover(
+        self,
+        id: Optional[str | int] = None,
+        track: Optional[dict[str, str]] = None,
+        resolution: int = 3000
+    ):
+        if not id and not track:
+            return
+
+        if id:
+            cover_hash = super().get_track_cover(id)
+        else:
+            cover_hash = track["album_picture"]
         resolution = 3000 if resolution > 3000 else resolution
         compression = 50
 
@@ -423,7 +435,7 @@ async def deezer_callback(_: Client, query: CallbackQuery):
 
     if info["type"] == "trackinfo":
         track = deezer.get_track(info["id"])
-        cover = deezer.get_track_cover(info["id"])
+        cover = deezer.get_track_cover(track=track)
         await query.message.reply_photo(
             cover,
             caption=parse_data("{name} - {artist}", track),
