@@ -28,19 +28,34 @@ def set_up_lastfm():
     login_username = Config.getdata("lastfm_login_username")
     USERNAME = str(Config.getdata("lastfm_username", login_username))
     password = Config.getdata("lastfm_login_password")
-    if not all([api_key, api_secret, login_username, password]):
-        return (
-            "**ERROR**: Some data are missing.\n"
-            "Set your Last.fm credentials via:\n"
-            "`{0}setdata {1} lastfm_api_key [your_api_key]`\n"
-            "`{0}setdata {1} lastfm_api_secret [your_api_secret]`\n"
-            "`{0}setdata {1} lastfm_username [your_username]` (Optional)\n"
-            "`{0}setdata {1} lastfm_login_username [your_username]`\n"
-            "`{0}setdata {1} lastfm_login_password [your_password_in_md5]`\n"
-            "For converting your password to md5 hash:\n"
-            '`python -c \'import hashlib; print(hashlib.md5("your password"'
-            ".encode()).hexdigest())'`"
-        ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
+    missing_data: list[str] = []
+
+    if not api_key:
+        missing_data.append("lastfm_api_key")
+    if not api_secret:
+        missing_data.append("lastfm_api_secret")
+    if not login_username:
+        missing_data.append("lastfm_login_username")
+    if not password:
+        missing_data.append("lastfm_login_password")
+
+    if missing_data:
+        error_message = "**ERROR**: Missing data detected:\n"
+        for item in missing_data:
+            error_message += "`{}setdata {} {} [your_{}]`\n".format(
+                Config.CMD_PREFIXES[0],
+                __name__.split(".")[-1],
+                item,
+                item.replace("lastfm_", ""),
+            )
+
+        if "lastfm_login_password" in missing_data:
+            error_message += (
+                "\nFor converting your password to md5 hash:\n"
+                "`python -c 'import hashlib;"
+                ' print(hashlib.md5("your password".encode()).hexdigest())\'`'
+            )
+        return error_message
 
     try:
         return pylast.LastFMNetwork(
