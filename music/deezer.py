@@ -411,5 +411,34 @@ async def deezer_message(_: Client, message: Message):
     )
 
 
+@Client.on_callback_query(
+    Config.IS_ADMIN & filters.regex(r"^deezer (?P<type>\w+) (?P<id>\w+)$")
+)
+async def deezer_callback(_: Client, query: CallbackQuery):
+    if isinstance(deezer, str):
+        await query.answer(deezer)
+        return
+
+    info = query.matches[0].groupdict()
+
+    if info["type"] == "trackinfo":
+        track = deezer.get_track(info["id"])
+        cover = deezer.get_track_cover(info["id"])
+        await query.message.reply_photo(
+            cover,
+            caption=parse_data("{name} - {artist}", track),
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(
+                            "Download",
+                            parse_data("deezer dltrack {id}", track),
+                        )
+                    ]
+                ]
+            ),
+        )
+
+
 __all__ = ["deezer_message"]
 __plugin__ = True
