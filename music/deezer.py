@@ -4,7 +4,8 @@ from time import time
 from math import ceil
 from random import randint
 from typing import Optional
-# from Crypto.Cipher import Blowfish
+# from cryptography.hazmat.backends import default_backend
+# from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from config import Config
 
@@ -297,12 +298,16 @@ class DeezerAPI:
     #             # every 3rd chunk is encrypted
     #             if i % 3 == 0 and len(chunk) == 2048:
     #                 # reset the cipher on every chunk
-    #                 cipher = Blowfish.new(
-    #                     bf_key,
-    #                     Blowfish.MODE_CBC,
-    #                     b"\x00\x01\x02\x03\x04\x05\x06\x07"
+    #                 cipher = Cipher(
+    #                     algorithms.Blowfish(bf_key),
+    #                     modes.CBC(b"\x00\x01\x02\x03\x04\x05\x06\x07"),
+    #                     backend=default_backend(),
     #                 )
-    #                 chunk = cipher.decrypt(chunk)
+    #                 decryptor = cipher.decryptor()
+    #                 chunk = (
+    #                     decryptor.update(chunk) + decryptor.finalize()
+    #                 )
+
     #             file.write(chunk)
 
 
