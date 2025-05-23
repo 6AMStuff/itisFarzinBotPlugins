@@ -6,7 +6,12 @@ from random import randint
 from typing import Optional
 from .util import parse_data
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import (
+    Message,
+    CallbackQuery,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+)
 
 # from cryptography.hazmat.backends import default_backend
 # from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -340,6 +345,16 @@ class Deezer(DeezerAPI):
     def get_track(self, id: str | int):
         track = super().get_track(id)["DATA"]
         return self._track(track)
+
+    def get_track_cover(self, id: str | int, resolution: int = 3000):
+        cover_hash = super().get_track_cover(id)
+        resolution = 3000 if resolution > 3000 else resolution
+        compression = 50
+
+        return (
+            f"https://cdn-images.dzcdn.net/images/cover/{cover_hash}/"
+            + f"{resolution}x0-000000-{compression}-0-0.jpg"
+        )
 
 
 def set_up_deezer():
