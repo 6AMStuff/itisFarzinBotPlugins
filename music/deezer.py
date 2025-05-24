@@ -523,7 +523,7 @@ async def deezer_callback(_: Client, query: CallbackQuery):
             tracks = deezer.get_album_songs(info["id"])
         else:
             _track = deezer.get_track(info["id"])
-            album = deezer.get_album(_track["album"]["id"])
+            album = deezer.get_album(_track["album_id"])
             tracks = [_track]
         _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
         album_path = download_path + parse_data(_album_path, album) + "/"
