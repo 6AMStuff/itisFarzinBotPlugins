@@ -327,6 +327,7 @@ class Deezer(DeezerAPI):
             artist={"name": data["ART_NAME"]},
             time=data["SNG_ID"],
             duration=data["DURATION"],
+            album_id=data["ALB_ID"],
             album_picture=data["ALB_PICTURE"],
             disc_number=data["DISK_NUMBER"],
             track_number=data["TRACK_NUMBER"],
@@ -337,6 +338,15 @@ class Deezer(DeezerAPI):
             },
             copyright=data.get("COPYRIGHT"),
             source="Deezer",
+        )
+
+    def _cover(self, hash: str, resolution: int = 3000):
+        resolution = 3000 if resolution > 3000 else resolution
+        compression = 50
+
+        return (
+            f"https://cdn-images.dzcdn.net/images/cover/{hash}/"
+            + f"{resolution}x0-000000-{compression}-0-0.jpg"
         )
 
     def search_track(self, query: str, limit: int = 10):
@@ -351,7 +361,7 @@ class Deezer(DeezerAPI):
         self,
         id: Optional[str | int] = None,
         track: Optional[dict[str, str]] = None,
-        resolution: int = 3000
+        resolution: int = 3000,
     ):
         if not id and not track:
             return
@@ -360,12 +370,18 @@ class Deezer(DeezerAPI):
             cover_hash = super().get_track_cover(id)
         else:
             cover_hash = track["album_picture"]
-        resolution = 3000 if resolution > 3000 else resolution
-        compression = 50
 
-        return (
-            f"https://cdn-images.dzcdn.net/images/cover/{cover_hash}/"
-            + f"{resolution}x0-000000-{compression}-0-0.jpg"
+        return self._cover(cover_hash, resolution=resolution)
+
+    def get_album(self, id: str | int):
+        data = super().get_album(id)["DATA"]
+        return dict(
+            id=data["ALB_ID"],
+            name=data["ALB_TITLE"],
+            artist={"name": data["ART_NAME"]},
+            tracks_count=data["NUMBER_TRACK"],
+            duration=data["DURATION"],
+            cover=self._cover(data["ALB_PICTURE"]),
         )
 
 
