@@ -296,7 +296,7 @@ class Deezer(DeezerAPI):
     def __init__(
         self, client_id: str, client_secret: str, bf_secret: str, arl: str
     ):
-        super().__init__(client_id, client_secret, bf_secret)
+        super().__init__(client_id, client_secret, bf_secret, Config.PROXY)
         self.login_via_arl(arl)
 
     def _track(self, data: dict[str, str]):
