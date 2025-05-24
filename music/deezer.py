@@ -376,6 +376,11 @@ class Deezer(DeezerAPI):
             cover=self._cover(data["ALB_PICTURE"]),
         )
 
+    def get_album_songs(self, id: str | int, start: int = 0, limit: int = 500):
+        return [self._track(track) for track in self._api_call(
+            "song.getListByAlbum", {"alb_id": id, "start": start, "nb": limit}
+        )["data"]]
+
     def get_file_url(self, track: dict[str, str]):
         return super().get_track_url(
             track["id"],
@@ -426,30 +431,75 @@ deezer = set_up_deezer()
 
 @Client.on_message(
     Config.IS_ADMIN
-    & filters.regex(f"^{Config.REGEX_CMD_PREFIXES}deezer (?P<query>.+)$")
+    & filters.regex(
+        rf"^{Config.REGEX_CMD_PREFIXES}deezer"
+        r"(?: https://www\.deezer\.com/(?:[a-z]{2}/)?album/(?P<id>\d+)"
+        r"| (?P<query>.+))$"
+    )
 )
 async def deezer_message(_: Client, message: Message):
     if isinstance(deezer, str):
         await message.reply(deezer)
         return
 
-    keyboard = []
+    album_id = message.matches[0].group("id")
     query = message.matches[0].group("query")
-    tracks = deezer.search_track(query)
 
-    for track in tracks:
-        keyboard.append(
-            [
-                InlineKeyboardButton(
-                    parse_data("{time} | {name} - {artist}", track),
-                    parse_data("deezer trackinfo {id}", track),
-                )
-            ]
+    if query:
+        keyboard = []
+        tracks = deezer.search_track(query)
+
+        for track in tracks:
+            keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        parse_data("{time} | {name} - {artist}", track),
+                        parse_data("deezer trackinfo {id}", track),
+                    )
+                ]
+            )
+
+        await message.reply(
+            f"Results for **{query}**:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
         )
+    elif not album_id:
+        await message.reply(
+            f"{Config.CMD_PREFIXES[0]}deezer [album url] | [query to search]"
+        )
+        return
 
-    await message.reply(
-        f"Results for **{query}**:",
-        reply_markup=InlineKeyboardMarkup(keyboard),
+    try:
+        album = deezer.get_album(album_id)
+    except Exception as e:
+        await message.reply("**ERROR**: " + str(e))
+        return
+
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "Download the album", f"deezer dlalbum {album_id}"
+            )
+        ],
+        [
+            InlineKeyboardButton("—", "none"),
+            InlineKeyboardButton("Tracks", "none"),
+            InlineKeyboardButton("—", "none"),
+        ],
+    ]
+    tracks = [
+        [
+            InlineKeyboardButton(
+                parse_data("{time} | {name} - {artist}", track),
+                parse_data("deezer dltrack {id}", track),
+            )
+        ]
+        for track in deezer.get_album_songs(album_id)
+    ]
+    await message.reply_photo(
+        album["cover"],
+        caption=parse_data("{name} - {artist}", album),
+        reply_markup=InlineKeyboardMarkup(keyboard + tracks),
     )
 
 
@@ -463,14 +513,18 @@ async def deezer_callback(_: Client, query: CallbackQuery):
 
     info = query.matches[0].groupdict()
 
-    if info["type"] == "dltrack":
+    if info["type"] in ["dltrack", "dlalbum"]:
         await query.answer("Download is in process")
         download_path = (
             Config.getdata("download_path", "downloads", use_env=True) + "/"
         )
-        _track = deezer.get_track(info["id"])
-        album = deezer.get_album(_track["album_id"])
-        tracks = [_track]
+        if info["type"] == "dlalbum":
+            album = deezer.get_album(info["id"])
+            tracks = deezer.get_album_songs(info["id"])
+        else:
+            _track = deezer.get_track(info["id"])
+            album = deezer.get_album(_track["album"]["id"])
+            tracks = [_track]
         _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
         album_path = download_path + parse_data(_album_path, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
