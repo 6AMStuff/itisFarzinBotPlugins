@@ -11,6 +11,9 @@ from mutagen.flac import FLAC, Picture
 async def download_file(
     url: str,
     filename: str,
+    chunk_size: int = None,
+    chunk_process: Callable = None,
+    chunk_process_args: tuple = None,
     progress: Callable = None,
     progress_args: tuple = None,
 ):
@@ -23,7 +26,12 @@ async def download_file(
             last_update = time.monotonic()
 
             with open(filename, "wb") as file:
-                async for chunk in response.aiter_bytes():
+                i = 0
+                async for chunk in response.aiter_bytes(chunk_size):
+                    if chunk_process:
+                        chunk = await chunk_process(
+                            i, chunk, *chunk_process_args
+                        )
                     file.write(chunk)
                     downloaded += len(chunk)
 
@@ -33,6 +41,7 @@ async def download_file(
                                 downloaded, total_size, *progress_args
                             )
                         last_update = time.monotonic()
+                    i += 1
             if progress:
                 await progress(downloaded, total_size, *progress_args)
 

@@ -1,10 +1,10 @@
+import os
 import httpx
 import hashlib
 from time import time
 from math import ceil
 from random import randint
 from typing import Optional
-from .util import parse_data
 from pyrogram import Client, filters
 from pyrogram.types import (
     Message,
@@ -12,9 +12,10 @@ from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
 )
-
-# from cryptography.hazmat.backends import default_backend
-# from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from .util import download_file, download_progress, parse_data, tag_file
+from cryptography.hazmat.decrepit.ciphers import algorithms
+from cryptography.hazmat.primitives.ciphers import Cipher, modes
 
 from config import Config
 
@@ -278,7 +279,7 @@ class DeezerAPI:
         ).json()
         return resp["data"][0]["media"][0]["sources"][0]["url"]
 
-    def _get_blowfish_key(self, track_id: str):
+    def _get_blowfish_key(self, track_id: str | int):
         # yeah, you use the bytes of the hex digest of the hash. bruh moment
         md5_id = (
             hashlib.md5(str(track_id).encode()).hexdigest().encode("ascii")
@@ -290,28 +291,6 @@ class DeezerAPI:
 
         return key
 
-    # def dl_track(self, id, url, path):
-    #     bf_key = self._get_blowfish_key(id)
-    #     req = self.session.get(url, stream=True)
-    #     req.raise_for_status()
-
-    #     with open(path, "ab") as file:
-    #         for i, chunk in enumerate(req.iter_content(2048)):
-    #             # every 3rd chunk is encrypted
-    #             if i % 3 == 0 and len(chunk) == 2048:
-    #                 # reset the cipher on every chunk
-    #                 cipher = Cipher(
-    #                     algorithms.Blowfish(bf_key),
-    #                     modes.CBC(b"\x00\x01\x02\x03\x04\x05\x06\x07"),
-    #                     backend=default_backend(),
-    #                 )
-    #                 decryptor = cipher.decryptor()
-    #                 chunk = (
-    #                     decryptor.update(chunk) + decryptor.finalize()
-    #                 )
-
-    #             file.write(chunk)
-
 
 class Deezer(DeezerAPI):
     def __init__(
@@ -321,24 +300,35 @@ class Deezer(DeezerAPI):
         self.login_via_arl(arl)
 
     def _track(self, data: dict[str, str]):
-        return dict(
+        result = dict(
             id=data["SNG_ID"],
             name=data["SNG_TITLE"],
             artist={"name": data["ART_NAME"]},
             time=data["SNG_ID"],
             duration=data["DURATION"],
+            track_token=data["TRACK_TOKEN"],
+            track_token_expire=data["TRACK_TOKEN_EXPIRE"],
             album_id=data["ALB_ID"],
             album_picture=data["ALB_PICTURE"],
             disc_number=data["DISK_NUMBER"],
             track_number=data["TRACK_NUMBER"],
-            total_discs=None,
-            date=data["DISK_NUMBER"],
             composer={
                 "name": ", ".join(data["SNG_CONTRIBUTORS"].get("composer", []))
             },
             copyright=data.get("COPYRIGHT"),
-            source="Deezer",
         )
+
+        result["format"] = ""
+        for _format in ["FLAC", "MP3_320", "MP3_128"]:
+            if f"FILESIZE_{_format}" in data:
+                format = data[f"FILESIZE_{_format}"]
+                if format != "0":
+                    result[_format.lower()] = data[f"FILESIZE_{_format}"]
+
+                if not result["format"]:
+                    result["format"] = _format.lower()
+
+        return result
 
     def _cover(self, hash: str, resolution: int = 3000):
         resolution = 3000 if resolution > 3000 else resolution
@@ -380,9 +370,32 @@ class Deezer(DeezerAPI):
             name=data["ALB_TITLE"],
             artist={"name": data["ART_NAME"]},
             tracks_count=data["NUMBER_TRACK"],
+            release_date=data["ORIGINAL_RELEASE_DATE"],
             duration=data["DURATION"],
             cover=self._cover(data["ALB_PICTURE"]),
         )
+
+    def get_file_url(self, track: dict[str, str]):
+        return super().get_track_url(
+            track["id"],
+            track["track_token"],
+            track["track_token_expire"],
+            track["format"].upper()
+        )
+
+    async def decrypt_chunk(self, index: int, chunk: str, id: str | int):
+        bf_key = self._get_blowfish_key(id)
+        cipher = Cipher(
+            algorithms.Blowfish(bf_key),
+            modes.CBC(b"\x00\x01\x02\x03\x04\x05\x06\x07"),
+            backend=default_backend(),
+        )
+        if index % 3 == 0 and len(chunk) == 2048:
+            decryptor = cipher.decryptor()
+            chunk = (
+                decryptor.update(chunk) + decryptor.finalize()
+            )
+        return chunk
 
 
 def set_up_deezer():
@@ -449,7 +462,65 @@ async def deezer_callback(_: Client, query: CallbackQuery):
 
     info = query.matches[0].groupdict()
 
-    if info["type"] == "trackinfo":
+    if info["type"] == "dltrack":
+        await query.answer("Download is in process")
+        download_path = (
+            Config.getdata("download_path", "downloads", use_env=True) + "/"
+        )
+        _track = deezer.get_track(info["id"])
+        album = deezer.get_album(_track["album_id"])
+        tracks = [_track]
+        _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
+        album_path = download_path + parse_data(_album_path, album) + "/"
+        zfill = max(2, len(str(album["tracks_count"])))
+        os.makedirs(album_path, exist_ok=True)
+
+        cover_path = album_path + "cover.jpg"
+        if not os.path.exists(cover_path):
+            cover_url: str = album["cover"]
+            cover_msg = await query.message.reply("Downloading **cover.jpg**.")
+            await download_file(
+                cover_url,
+                cover_path,
+                progress=download_progress,
+                progress_args=("cover.jpg", time(), cover_msg),
+            )
+
+        for track in tracks:
+            url = deezer.get_file_url(track)
+            track["track_number"] = str(track["track_number"]).zfill(zfill)
+            track_msg = await query.message.reply(
+                parse_data("Downloading **{name}**.", track)
+            )
+            _track_name = Config.getdata(
+                "deezer_track_name", "{track_number} {name}"
+            )
+            track_name = parse_data(_track_name + ".{format}", track)
+            full_path = album_path + track_name
+            if os.path.exists(full_path):
+                await track_msg.edit(
+                    parse_data("Track **{name}** already exists.", track)
+                )
+                continue
+            await download_file(
+                url,
+                full_path,
+                chunk_size=2048,
+                chunk_process=deezer.decrypt_chunk,
+                chunk_process_args=(track["id"],),
+                progress=download_progress,
+                progress_args=(track_name, time(), track_msg),
+            )
+            track["source"] = "Deezer"
+            track["album"] = {
+                "title": album["name"],
+                "artist": album["artist"],
+                "tracks_count": album["tracks_count"],
+                "media_count": ""
+            }
+            track["date"] = album["release_date"]
+            tag_file(full_path, cover_path, track)
+    elif info["type"] == "trackinfo":
         track = deezer.get_track(info["id"])
         cover = deezer.get_track_cover(track=track)
         await query.message.reply_photo(
