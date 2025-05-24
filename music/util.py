@@ -90,7 +90,9 @@ async def download_progress(
 class DefaultDictMissing(dict):
     def __init__(self, *args, missing_text: str = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.missing_text = missing_text or "{{{key}}}"
+        self.missing_text = (
+            missing_text if missing_text is not None else "{{{key}}}"
+        )
 
     def __missing__(self, key):
         return self.missing_text.format(key=key)

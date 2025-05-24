@@ -302,7 +302,7 @@ class Deezer(DeezerAPI):
     def _track(self, data: dict[str, str]):
         result = dict(
             id=data["SNG_ID"],
-            name=data["SNG_TITLE"],
+            title=data["SNG_TITLE"],
             artist={"name": data["ART_NAME"]},
             time=data["SNG_ID"],
             duration=data["DURATION"],
@@ -367,9 +367,10 @@ class Deezer(DeezerAPI):
         data = super().get_album(id)["DATA"]
         return dict(
             id=data["ALB_ID"],
-            name=data["ALB_TITLE"],
+            title=data["ALB_TITLE"],
             artist={"name": data["ART_NAME"]},
             tracks_count=data["NUMBER_TRACK"],
+            media_count="",
             release_date=data["ORIGINAL_RELEASE_DATE"],
             duration=data["DURATION"],
             cover=self._cover(data["ALB_PICTURE"]),
@@ -512,12 +513,7 @@ async def deezer_callback(_: Client, query: CallbackQuery):
                 progress_args=(track_name, time(), track_msg),
             )
             track["source"] = "Deezer"
-            track["album"] = {
-                "title": album["name"],
-                "artist": album["artist"],
-                "tracks_count": album["tracks_count"],
-                "media_count": ""
-            }
+            track["album"] = album
             track["date"] = album["release_date"]
             tag_file(full_path, cover_path, track)
     elif info["type"] == "trackinfo":
