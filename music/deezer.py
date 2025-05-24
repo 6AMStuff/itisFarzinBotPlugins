@@ -371,22 +371,26 @@ class Deezer(DeezerAPI):
             artist={"name": data["ART_NAME"]},
             tracks_count=data["NUMBER_TRACK"],
             media_count="",
-            release_date=data["ORIGINAL_RELEASE_DATE"],
+            release_date=data.get("ORIGINAL_RELEASE_DATE", ""),
             duration=data["DURATION"],
             cover=self._cover(data["ALB_PICTURE"]),
         )
 
     def get_album_songs(self, id: str | int, start: int = 0, limit: int = 500):
-        return [self._track(track) for track in self._api_call(
-            "song.getListByAlbum", {"alb_id": id, "start": start, "nb": limit}
-        )["data"]]
+        return [
+            self._track(track)
+            for track in self._api_call(
+                "song.getListByAlbum",
+                {"alb_id": id, "start": start, "nb": limit},
+            )["data"]
+        ]
 
     def get_file_url(self, track: dict[str, str]):
         return super().get_track_url(
             track["id"],
             track["track_token"],
             track["track_token_expire"],
-            track["format"].upper()
+            track["format"].upper(),
         )
 
     async def decrypt_chunk(self, index: int, chunk: str, id: str | int):
@@ -398,9 +402,7 @@ class Deezer(DeezerAPI):
         )
         if index % 3 == 0 and len(chunk) == 2048:
             decryptor = cipher.decryptor()
-            chunk = (
-                decryptor.update(chunk) + decryptor.finalize()
-            )
+            chunk = decryptor.update(chunk) + decryptor.finalize()
         return chunk
 
 
@@ -550,6 +552,7 @@ async def deezer_callback(_: Client, query: CallbackQuery):
             _track_name = Config.getdata(
                 "deezer_track_name", "{track_number} {name}"
             )
+            track["format"] = track["format"].split("_")[0]
             track_name = parse_data(_track_name + ".{format}", track)
             full_path = album_path + track_name
             if os.path.exists(full_path):
