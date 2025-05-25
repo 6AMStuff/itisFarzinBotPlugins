@@ -371,10 +371,11 @@ class Deezer(DeezerAPI):
             title=data["ALB_TITLE"],
             artist={"name": data["ART_NAME"]},
             tracks_count=data["NUMBER_TRACK"],
-            songs=[
-                self._track(track)
-                for track in album["SONGS"]["data"]
-            ] if "SONGS" in album else [],
+            songs=(
+                [self._track(track) for track in album["SONGS"]["data"]]
+                if "SONGS" in album
+                else []
+            ),
             media_count="",
             release_date=data.get("ORIGINAL_RELEASE_DATE", ""),
             duration=data["DURATION"],
