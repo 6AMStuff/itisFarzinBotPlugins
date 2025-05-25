@@ -364,12 +364,17 @@ class Deezer(DeezerAPI):
         return self._cover(cover_hash, resolution=resolution)
 
     def get_album(self, id: str | int):
-        data = super().get_album(id)["DATA"]
+        album = super().get_album(id)
+        data = album["DATA"]
         return dict(
             id=data["ALB_ID"],
             title=data["ALB_TITLE"],
             artist={"name": data["ART_NAME"]},
             tracks_count=data["NUMBER_TRACK"],
+            songs=[
+                self._track(track)
+                for track in album["SONGS"]["data"]
+            ] if "SONGS" in album else [],
             media_count="",
             release_date=data.get("ORIGINAL_RELEASE_DATE", ""),
             duration=data["DURATION"],
@@ -501,7 +506,7 @@ async def deezer_message(_: Client, message: Message):
                 parse_data("deezer dltrack {id}", track),
             )
         ]
-        for track in deezer.get_album_songs(album_id)
+        for track in album["songs"]
     ]
     await message.reply_photo(
         album["cover"],
@@ -527,7 +532,7 @@ async def deezer_callback(_: Client, query: CallbackQuery):
         )
         if info["type"] == "dlalbum":
             album = deezer.get_album(info["id"])
-            tracks = deezer.get_album_songs(info["id"])
+            tracks = album["songs"]
         else:
             _track = deezer.get_track(info["id"])
             album = deezer.get_album(_track["album_id"])
