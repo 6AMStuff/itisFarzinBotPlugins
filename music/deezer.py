@@ -407,20 +407,25 @@ class Deezer(DeezerAPI):
 
 
 def set_up_deezer():
-    client_id = Config.getdata("deezer_client_id", "579939560")
-    client_secret = Config.getdata(
-        "deezer_client_secret", "fa31fc13e7a28e7d70bb61e91aa9e178"
-    )
-    bf_secret = Config.getdata("deezer_bf_secret", "g4el58wc0zvf9na1")
     arl = Config.getdata("deezer_arl")
-    if not arl or len(arl) == 0:
+    if len(arl) == 0:
         return (
             "**ERROR**: No deezer arl were provided.\n"
             "Set your arl via: `{}setdata {} deezer_arl"
             " [your arl]`"
         ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
-    deezer = Deezer(client_id, client_secret, bf_secret, arl)
-    return deezer
+
+    try:
+        client_id = Config.getdata("deezer_client_id", "579939560")
+        client_secret = Config.getdata(
+            "deezer_client_secret", "fa31fc13e7a28e7d70bb61e91aa9e178"
+        )
+        bf_secret = Config.getdata("deezer_bf_secret", "g4el58wc0zvf9na1")
+        if len(arl) > 0:
+            deezer = Deezer(client_id, client_secret, bf_secret, arl)
+        return deezer
+    except Exception as e:
+        return f"**ERROR**: {e}"
 
 
 def on_data_change():
