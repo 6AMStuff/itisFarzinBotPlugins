@@ -475,6 +475,7 @@ async def deezer_message(_: Client, message: Message):
             f"Results for **{query}**:",
             reply_markup=InlineKeyboardMarkup(keyboard),
         )
+        return
     elif not album_id:
         await message.reply(
             f"{Config.CMD_PREFIXES[0]}deezer [album url] | [query to search]"
