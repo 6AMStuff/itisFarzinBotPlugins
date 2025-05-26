@@ -47,7 +47,7 @@ class DeezerAPI:
 
         self.bf_secret = bf_secret.encode("ascii")
 
-        self.session = httpx.Client(proxy=proxy)
+        self.session = httpx.AsyncClient(proxy=proxy)
         self.session.headers.update(
             {
                 "accept": "*/*",
@@ -64,7 +64,7 @@ class DeezerAPI:
             }
         )
 
-    def _api_call(self, method: str, payload: Optional[dict] = None):
+    async def _api_call(self, method: str, payload: Optional[dict] = None):
         api_token = (
             self.api_token
             if method not in ("deezer.getUserData", "user.getArl")
@@ -78,8 +78,10 @@ class DeezerAPI:
             "cid": randint(0, 1_000_000_000),
         }
 
-        resp = self.session.post(
-            self.gw_light_url, params=params, json=payload or {}
+        resp = (
+            await self.session.post(
+                self.gw_light_url, params=params, json=payload or {}
+            )
         ).json()
 
         if resp["error"]:
@@ -106,9 +108,9 @@ class DeezerAPI:
 
         return resp["results"]
 
-    def login_via_email(self, email: str, password: str):
+    async def login_via_email(self, email: str, password: str):
         # server sends set-cookie header with anonymous sid
-        self.session.get("https://www.deezer.com")
+        await self.session.get("https://www.deezer.com")
 
         password = hashlib.md5(password.encode()).hexdigest()
 
@@ -124,8 +126,10 @@ class DeezerAPI:
         }
 
         # server sends set-cookie header with account sid
-        json = self.session.get(
-            "https://connect.deezer.com/oauth/user_auth.php", params=params
+        json = (
+            await self.session.get(
+                "https://connect.deezer.com/oauth/user_auth.php", params=params
+            )
         ).json()
 
         if "error" in json:
@@ -133,13 +137,13 @@ class DeezerAPI:
                 "Error while getting access token, check your credentials"
             )
 
-        arl = self._api_call("user.getArl")
+        arl = await self._api_call("user.getArl")
 
         return arl, self.login_via_arl(arl)
 
-    def login_via_arl(self, arl: str):
+    async def login_via_arl(self, arl: str):
         self.session.cookies.set("arl", arl, domain=".deezer.com")
-        user_data = self._api_call("deezer.getUserData")
+        user_data = await self._api_call("deezer.getUserData")
 
         if not user_data["USER"]["USER_ID"]:
             self.session.cookies.clear()
@@ -147,28 +151,33 @@ class DeezerAPI:
 
         return user_data
 
-    def get_track(self, id: str | int):
-        return self._api_call("deezer.pageTrack", {"sng_id": id})
+    async def get_track(self, id: str | int):
+        return await self._api_call("deezer.pageTrack", {"sng_id": id})
 
-    def get_track_data(self, id: str | int):
-        return self._api_call("song.getData", {"sng_id": id})
+    async def get_track_data(self, id: str | int):
+        return await self._api_call("song.getData", {"sng_id": id})
 
-    def get_track_lyrics(self, id: str | int):
-        return self._api_call("song.getLyrics", {"sng_id": id})
+    async def get_track_lyrics(self, id: str | int):
+        return await self._api_call("song.getLyrics", {"sng_id": id})
 
-    def get_track_contributors(self, id: str | int):
-        return self._api_call(
-            "song.getData",
-            {"sng_id": id, "array_default": ["SNG_CONTRIBUTORS"]},
+    async def get_track_contributors(self, id: str | int):
+        return (
+            await self._api_call(
+                "song.getData",
+                {"sng_id": id, "array_default": ["SNG_CONTRIBUTORS"]},
+            )
         )["SNG_CONTRIBUTORS"]
 
-    def get_track_cover(self, id: str | int):
-        return self._api_call(
-            "song.getData", {"sng_id": id, "array_default": ["ALB_PICTURE"]}
+    async def get_track_cover(self, id: str | int):
+        return (
+            await self._api_call(
+                "song.getData",
+                {"sng_id": id, "array_default": ["ALB_PICTURE"]},
+            )
         )["ALB_PICTURE"]
 
-    def get_track_data_by_isrc(self, isrc: str):
-        resp = self.session.get(
+    async def get_track_data_by_isrc(self, isrc: str):
+        resp = await self.session.get(
             f"https://api.deezer.com/track/isrc:{isrc}"
         ).json()
         if "error" in resp:
@@ -183,14 +192,14 @@ class DeezerAPI:
             "ALB_TITLE": resp["album"]["title"],
         }
 
-    def get_album(self, id: str | int):
+    async def get_album(self, id: str | int):
         try:
-            return self._api_call(
+            return await self._api_call(
                 "deezer.pageAlbum", {"alb_id": id, "lang": self.language}
             )
         except APIError as e:
             if e.payload:
-                return self._api_call(
+                return await self._api_call(
                     "deezer.pageAlbum",
                     {
                         "alb_id": e.payload["FALLBACK"]["ALB_ID"],
@@ -200,8 +209,8 @@ class DeezerAPI:
             else:
                 raise e
 
-    def get_playlist(self, id: str | int, nb: int, start: int):
-        return self._api_call(
+    async def get_playlist(self, id: str | int, nb: int, start: int):
+        return await self._api_call(
             "deezer.pagePlaylist",
             {
                 "nb": nb,
@@ -214,13 +223,15 @@ class DeezerAPI:
             },
         )
 
-    def get_artist_name(self, id: str | int):
-        return self._api_call(
-            "artist.getData", {"art_id": id, "array_default": ["ART_NAME"]}
+    async def get_artist_name(self, id: str | int):
+        return (
+            await self._api_call(
+                "artist.getData", {"art_id": id, "array_default": ["ART_NAME"]}
+            )
         )["ART_NAME"]
 
-    def search(self, query: str, type: str, start: int, nb: int):
-        return self._api_call(
+    async def search(self, query: str, type: str, start: int, nb: int):
+        return await self._api_call(
             "search.music",
             {
                 "query": query,
@@ -231,7 +242,7 @@ class DeezerAPI:
             },
         )
 
-    def get_artist_album_ids(
+    async def get_artist_album_ids(
         self, id: str | int, start: int, nb: int, credited_albums: bool
     ):
         payload = {
@@ -243,10 +254,10 @@ class DeezerAPI:
             "discography_mode": "all" if credited_albums else None,
             "array_default": ["ALB_ID"],
         }
-        resp = self._api_call("album.getDiscography", payload)
+        resp = await self._api_call("album.getDiscography", payload)
         return [a["ALB_ID"] for a in resp["data"]]
 
-    def get_track_url(
+    async def get_track_url(
         self,
         id: str | int,
         track_token: str,
@@ -255,13 +266,15 @@ class DeezerAPI:
     ):
         # renews license token
         if time() - self.renew_timestamp >= 3600:
-            self._api_call("deezer.getUserData")
+            await self._api_call("deezer.getUserData")
 
         # renews track token
         if time() - track_token_expiry >= 0:
-            track_token = self._api_call(
-                "song.getData",
-                {"sng_id": id, "array_default": ["TRACK_TOKEN"]},
+            track_token = (
+                await self._api_call(
+                    "song.getData",
+                    {"sng_id": id, "array_default": ["TRACK_TOKEN"]},
+                )
             )["TRACK_TOKEN"]
 
         json = {
@@ -274,8 +287,10 @@ class DeezerAPI:
             ],
             "track_tokens": [track_token],
         }
-        resp = self.session.post(
-            "https://media.deezer.com/v1/get_url", json=json
+        resp = (
+            await self.session.post(
+                "https://media.deezer.com/v1/get_url", json=json
+            )
         ).json()
         return resp["data"][0]["media"][0]["sources"][0]["url"]
 
@@ -294,10 +309,21 @@ class DeezerAPI:
 
 class Deezer(DeezerAPI):
     def __init__(
-        self, client_id: str, client_secret: str, bf_secret: str, arl: str
+        self,
+        client_id: str,
+        client_secret: str,
+        bf_secret: str,
+        proxy: str = None,
     ):
-        super().__init__(client_id, client_secret, bf_secret, Config.PROXY)
-        self.login_via_arl(arl)
+        super().__init__(client_id, client_secret, bf_secret, proxy)
+
+    @classmethod
+    async def create(
+        cls, client_id: str, client_secret: str, bf_secret: str, arl: str
+    ):
+        instance = cls(client_id, client_secret, bf_secret, Config.PROXY)
+        await instance.login_via_arl(arl)
+        return instance
 
     def _track(self, data: dict[str, str]):
         result = dict(
@@ -339,15 +365,15 @@ class Deezer(DeezerAPI):
             + f"{resolution}x0-000000-{compression}-0-0.jpg"
         )
 
-    def search_track(self, query: str, limit: int = 10):
-        results = super().search(query, "track", 0, limit)["data"]
+    async def search_track(self, query: str, limit: int = 10):
+        results = (await super().search(query, "track", 0, limit))["data"]
         return [self._track(result) for result in results]
 
-    def get_track(self, id: str | int):
-        track = super().get_track(id)["DATA"]
+    async def get_track(self, id: str | int):
+        track = (await super().get_track(id))["DATA"]
         return self._track(track)
 
-    def get_track_cover(
+    async def get_track_cover(
         self,
         id: Optional[str | int] = None,
         track: Optional[dict[str, str]] = None,
@@ -357,14 +383,14 @@ class Deezer(DeezerAPI):
             return
 
         if id:
-            cover_hash = super().get_track_cover(id)
+            cover_hash = await super().get_track_cover(id)
         else:
             cover_hash = track["album_picture"]
 
         return self._cover(cover_hash, resolution=resolution)
 
-    def get_album(self, id: str | int):
-        album = super().get_album(id)
+    async def get_album(self, id: str | int):
+        album = await super().get_album(id)
         data = album["DATA"]
         return dict(
             id=data["ALB_ID"],
@@ -382,17 +408,21 @@ class Deezer(DeezerAPI):
             cover=self._cover(data["ALB_PICTURE"]),
         )
 
-    def get_album_songs(self, id: str | int, start: int = 0, limit: int = 500):
+    async def get_album_songs(
+        self, id: str | int, start: int = 0, limit: int = 500
+    ):
         return [
             self._track(track)
-            for track in self._api_call(
-                "song.getListByAlbum",
-                {"alb_id": id, "start": start, "nb": limit},
+            for track in (
+                await self._api_call(
+                    "song.getListByAlbum",
+                    {"alb_id": id, "start": start, "nb": limit},
+                )
             )["data"]
         ]
 
-    def get_file_url(self, track: dict[str, str]):
-        return super().get_track_url(
+    async def get_file_url(self, track: dict[str, str]):
+        return await super().get_track_url(
             track["id"],
             track["track_token"],
             track["track_token_expire"],
@@ -412,7 +442,7 @@ class Deezer(DeezerAPI):
         return chunk
 
 
-def set_up_deezer():
+async def set_up_deezer():
     arl = Config.getdata("deezer_arl")
     if len(arl) == 0:
         return (
@@ -427,19 +457,17 @@ def set_up_deezer():
             "deezer_client_secret", "fa31fc13e7a28e7d70bb61e91aa9e178"
         )
         bf_secret = Config.getdata("deezer_bf_secret", "g4el58wc0zvf9na1")
-        if len(arl) > 0:
-            deezer = Deezer(client_id, client_secret, bf_secret, arl)
-        return deezer
+        return await Deezer.create(client_id, client_secret, bf_secret, arl)
     except Exception as e:
         return f"**ERROR**: {e}"
 
 
-def on_data_change():
+async def on_data_change():
     global deezer
-    deezer = set_up_deezer()
+    deezer = await set_up_deezer()
 
 
-deezer = set_up_deezer()
+deezer = None
 
 
 @Client.on_message(
@@ -451,6 +479,10 @@ deezer = set_up_deezer()
     )
 )
 async def deezer_message(_: Client, message: Message):
+    global deezer
+    if deezer is None:
+        deezer = await set_up_deezer()
+
     if isinstance(deezer, str):
         await message.reply(deezer)
         return
@@ -460,7 +492,7 @@ async def deezer_message(_: Client, message: Message):
 
     if query:
         keyboard = []
-        tracks = deezer.search_track(query)
+        tracks = await deezer.search_track(query)
 
         for track in tracks:
             keyboard.append(
@@ -484,7 +516,7 @@ async def deezer_message(_: Client, message: Message):
         return
 
     try:
-        album = deezer.get_album(album_id)
+        album = await deezer.get_album(album_id)
     except Exception as e:
         await message.reply("**ERROR**: " + str(e))
         return
@@ -521,6 +553,10 @@ async def deezer_message(_: Client, message: Message):
     Config.IS_ADMIN & filters.regex(r"^deezer (?P<type>\w+) (?P<id>\w+)$")
 )
 async def deezer_callback(_: Client, query: CallbackQuery):
+    global deezer
+    if deezer is None:
+        deezer = await set_up_deezer()
+
     if isinstance(deezer, str):
         await query.answer(deezer)
         return
@@ -533,11 +569,11 @@ async def deezer_callback(_: Client, query: CallbackQuery):
             Config.getdata("download_path", "downloads", use_env=True) + "/"
         )
         if info["type"] == "dlalbum":
-            album = deezer.get_album(info["id"])
+            album = await deezer.get_album(info["id"])
             tracks = album["songs"]
         else:
-            _track = deezer.get_track(info["id"])
-            album = deezer.get_album(_track["album_id"])
+            _track = await deezer.get_track(info["id"])
+            album = await deezer.get_album(_track["album_id"])
             tracks = [_track]
         _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
         album_path = download_path + parse_data(_album_path, album) + "/"
@@ -556,7 +592,7 @@ async def deezer_callback(_: Client, query: CallbackQuery):
             )
 
         for track in tracks:
-            url = deezer.get_file_url(track)
+            url = await deezer.get_file_url(track)
             track["track_number"] = str(track["track_number"]).zfill(zfill)
             track_msg = await query.message.reply(
                 parse_data("Downloading **{name}**.", track)
@@ -586,8 +622,8 @@ async def deezer_callback(_: Client, query: CallbackQuery):
             track["date"] = album["release_date"]
             tag_file(full_path, cover_path, track)
     elif info["type"] == "trackinfo":
-        track = deezer.get_track(info["id"])
-        cover = deezer.get_track_cover(track=track)
+        track = await deezer.get_track(info["id"])
+        cover = await deezer.get_track_cover(track=track)
         await query.message.reply_photo(
             cover,
             caption=parse_data("{name} - {artist}", track),
