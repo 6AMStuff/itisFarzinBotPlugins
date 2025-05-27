@@ -46,6 +46,7 @@ whisper_chosen = filters.create(whisper_chosen_filter)
         r"^(.+?)\s+@(?P<username>[a-zA-Z0-9_]{3,16})$", flags=re.DOTALL
     )
 )
+@Bot.is_public_use
 async def whisper_inline(app: Bot, query: InlineQuery):
     full_name = username = query.matches[0].group("username")
     try:
@@ -99,6 +100,8 @@ async def whisper_inline_result(_: Bot, chosen: ChosenInlineResult):
         session.commit()
 
 
+# If I use decorator Bot.is_public_use for this, the other person most likely
+# can't open the whisper
 @Bot.on_callback_query(
     filters.regex(r"^whisper (?P<receiver>.+) (?P<sender>.+)$")
 )

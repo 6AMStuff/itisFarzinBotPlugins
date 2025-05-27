@@ -233,6 +233,7 @@ lastfm_chosen = filters.create(lastfm_chosen_filter)
 
 
 @Bot.on_inline_query(group=1)
+@Bot.is_public_use
 async def lastfm_inline(_: Bot, query: InlineQuery):
     await query.answer(
         [
@@ -280,6 +281,7 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
 
 
 @Bot.on_chosen_inline_result(lastfm_chosen)
+@Bot.is_public_use
 async def lastfm_inline_result(app: Bot, chosen: ChosenInlineResult):
     if isinstance(lastfm, str):
         await app.edit_inline_text(chosen.inline_message_id, lastfm)
@@ -295,6 +297,7 @@ async def lastfm_inline_result(app: Bot, chosen: ChosenInlineResult):
 @Bot.on_callback_query(
     filters.regex(r"^lastfm (?P<action>\w+) (?P<mode>\w+)(?: (?P<time>\w+))?$")
 )
+@Bot.is_public_use
 async def lastfm_callback(app: Bot, query: CallbackQuery):
     action, mode, time = query.matches[0].groups()
 
