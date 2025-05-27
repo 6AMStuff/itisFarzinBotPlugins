@@ -1,3 +1,41 @@
+## v6.0.0 (2025-05-27)
+
+### Feat
+
+- **deezer**: use async for requests
+- **deezer**: add support for MP3 tracks
+- **deezer**: add support for downloading an album
+- **deezer**: use defined proxy for requests
+- **deezer**: add download track feature
+- **deezer**: implement `get_album` method
+- **deezer**: add `trackinfo` callback query
+- **deezer**: implement `get_track_cover` method
+- **deezer**: implement my own `get_track` method
+- **deezer**: add search command
+- **deezer**: add my own deezer class
+- **deezer**: implement `on_data_change` hook
+- **deezer**: add basics
+- **deezer**: add proxy support
+- **deezer**: add Deezer API
+
+### Fix
+
+- **deezer**: stop execution after handling search query
+- **deezer**: improve failure handling during Deezer setup
+- **deezer**: fix `get_album` on a track inside an album
+- **deezer**: improve track taging
+
+### Refactor
+
+- **deezer**: pycryptodome -> cryptography
+- **qobuz**: improve missing data error message
+- **lastfm**: improve missing data error message
+
+### Perf
+
+- **deezer**: improve songs fetch for albums
+- **deezer**: improve `get_track_cover` method
+
 ## v5.3.0 (2025-05-22)
 
 ### Feat
