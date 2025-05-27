@@ -1,9 +1,10 @@
 import re
 import base64
 import hashlib
+from bot import Bot
 from sqlalchemy import Text, select
 from cryptography.fernet import Fernet
-from pyrogram import Client, filters, errors, enums
+from pyrogram import filters, errors, enums
 from sqlalchemy.orm import Session, Mapped, mapped_column
 from pyrogram.types import (
     InlineQuery,
@@ -40,12 +41,12 @@ async def whisper_chosen_filter(_, __, chosen: ChosenInlineResult):
 whisper_chosen = filters.create(whisper_chosen_filter)
 
 
-@Client.on_inline_query(
+@Bot.on_inline_query(
     filters.regex(
         r"^(.+?)\s+@(?P<username>[a-zA-Z0-9_]{3,16})$", flags=re.DOTALL
     )
 )
-async def whisper_inline(app: Client, query: InlineQuery):
+async def whisper_inline(app: Bot, query: InlineQuery):
     full_name = username = query.matches[0].group("username")
     try:
         full_name = (await app.get_users(username)).full_name
@@ -84,8 +85,8 @@ async def whisper_inline(app: Client, query: InlineQuery):
     )
 
 
-@Client.on_chosen_inline_result(whisper_chosen)
-async def whisper_inline_result(_: Client, chosen: ChosenInlineResult):
+@Bot.on_chosen_inline_result(whisper_chosen)
+async def whisper_inline_result(_: Bot, chosen: ChosenInlineResult):
     cipher = Fernet(generate_fernet(chosen.from_user.id))
     sentence = chosen.query.rsplit(" ", 1)[0].encode()
     with Session(Config.engine) as session:
@@ -98,10 +99,10 @@ async def whisper_inline_result(_: Client, chosen: ChosenInlineResult):
         session.commit()
 
 
-@Client.on_callback_query(
+@Bot.on_callback_query(
     filters.regex(r"^whisper (?P<receiver>.+) (?P<sender>.+)$")
 )
-async def whisper_callback(_: Client, query: CallbackQuery):
+async def whisper_callback(_: Bot, query: CallbackQuery):
     with Session(Config.engine) as session:
         text = session.execute(
             select(WhisperDatabase.text).where(
