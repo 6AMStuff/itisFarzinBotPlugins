@@ -2,7 +2,8 @@ import os
 import time
 import httpx
 import hashlib
-from pyrogram import Client, filters
+from bot import Bot
+from pyrogram import filters
 from pyrogram.types import (
     Message,
     CallbackQuery,
@@ -188,7 +189,7 @@ def on_data_change():
 qobuz = set_up_qobuz()
 
 
-@Client.on_message(
+@Bot.on_message(
     Config.IS_ADMIN
     & filters.regex(
         rf"^{Config.REGEX_CMD_PREFIXES}qobuz"
@@ -196,7 +197,7 @@ qobuz = set_up_qobuz()
         r"| (?P<query>.+))$"
     )
 )
-async def qobuz_message(_: Client, message: Message):
+async def qobuz_message(_: Bot, message: Message):
     if isinstance(qobuz, str):
         await message.reply(qobuz)
         return
@@ -250,10 +251,10 @@ async def qobuz_message(_: Client, message: Message):
     )
 
 
-@Client.on_callback_query(
+@Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^qobuz (?P<type>\w+) (?P<id>\w+)$")
 )
-async def qobuz_callback(_: Client, query: CallbackQuery):
+async def qobuz_callback(_: Bot, query: CallbackQuery):
     if isinstance(qobuz, str):
         await query.answer(qobuz)
         return
@@ -348,10 +349,10 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
         )
 
 
-@Client.on_callback_query(
+@Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^qose (?P<query>.+?) (?P<page>\d+)$")
 )
-async def qobuz_search(_: Client, query: CallbackQuery):
+async def qobuz_search(_: Bot, query: CallbackQuery):
     if isinstance(qobuz, str):
         await query.answer(qobuz)
         return

@@ -1,11 +1,12 @@
 import os
 import httpx
 import hashlib
+from bot import Bot
 from time import time
 from math import ceil
 from random import randint
 from typing import Optional
-from pyrogram import Client, filters
+from pyrogram import filters
 from pyrogram.types import (
     Message,
     CallbackQuery,
@@ -497,7 +498,7 @@ async def on_data_change():
 deezer = None
 
 
-@Client.on_message(
+@Bot.on_message(
     Config.IS_ADMIN
     & filters.regex(
         rf"^{Config.REGEX_CMD_PREFIXES}deezer"
@@ -505,7 +506,7 @@ deezer = None
         r"| (?P<query>.+))$"
     )
 )
-async def deezer_message(_: Client, message: Message):
+async def deezer_message(_: Bot, message: Message):
     global deezer
     if deezer is None:
         deezer = await set_up_deezer()
@@ -563,10 +564,10 @@ async def deezer_message(_: Client, message: Message):
     )
 
 
-@Client.on_callback_query(
+@Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^deezer (?P<type>\w+) (?P<id>\w+)$")
 )
-async def deezer_callback(_: Client, query: CallbackQuery):
+async def deezer_callback(_: Bot, query: CallbackQuery):
     global deezer
     if deezer is None:
         deezer = await set_up_deezer()
@@ -654,10 +655,10 @@ async def deezer_callback(_: Client, query: CallbackQuery):
         )
 
 
-@Client.on_callback_query(
+@Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^dese (?P<query>.+?) (?P<page>\d+)$")
 )
-async def deezer_search(_: Client, query: CallbackQuery):
+async def deezer_search(_: Bot, query: CallbackQuery):
     global deezer
     if deezer is None:
         deezer = await set_up_deezer()

@@ -1,6 +1,7 @@
 import re
+from bot import Bot
 from datetime import datetime, timedelta
-from pyrogram import Client, filters, errors, utils
+from pyrogram import filters, errors, utils
 from pyrogram.types import (
     Message,
     ChatPermissions,
@@ -89,12 +90,12 @@ async def unmute(message: Message, chat: Chat, user: User, by: User = None):
     await (message.edit if by else message.reply)(text)
 
 
-@Client.on_message(
+@Bot.on_message(
     filters.command(
         ["ban", "unban", "kick", "mute", "unmute"], Config.CMD_PREFIXES
     )
 )
-async def restrict(app: Client, message: Message):
+async def restrict(app: Bot, message: Message):
     action = message.command[0]
     operation = "unrestrict" if action in ["unban", "unmute"] else "restrict"
     duration = (message.command[1:] or [None])[0]
@@ -250,10 +251,10 @@ async def restrict(app: Client, message: Message):
             await unmute(message, message.chat, user)
 
 
-@Client.on_callback_query(
+@Bot.on_callback_query(
     filters.regex(r"^restrict (?P<action>\w+) (?P<user>\d+)$")
 )
-async def restrict_callback(app: Client, query: CallbackQuery):
+async def restrict_callback(app: Bot, query: CallbackQuery):
     action, user_id = query.matches[0].groups()
     message = query.message
 

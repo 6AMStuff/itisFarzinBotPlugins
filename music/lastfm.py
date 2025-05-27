@@ -2,7 +2,8 @@ import pylast
 import datetime
 import humanize
 import urllib.parse
-from pyrogram import Client, filters, errors
+from bot import Bot
+from pyrogram import filters, errors
 from pyrogram.types import (
     InlineQuery,
     InlineQueryResultArticle,
@@ -69,7 +70,7 @@ def set_up_lastfm():
 
 
 async def lastfm_status(
-    app: Client,
+    app: Bot,
     message_id: str,
     with_cover: bool = False,
     expanded: bool = False,
@@ -166,7 +167,7 @@ async def lastfm_status(
         raise e
 
 
-async def lastfm_top(app: Client, message_id: str, mode: str, time: str):
+async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
     if isinstance(lastfm, str):
         await app.edit_inline_text(message_id, lastfm)
         return
@@ -231,8 +232,8 @@ lastfm = set_up_lastfm()
 lastfm_chosen = filters.create(lastfm_chosen_filter)
 
 
-@Client.on_inline_query(group=1)
-async def lastfm_inline(_: Client, query: InlineQuery):
+@Bot.on_inline_query(group=1)
+async def lastfm_inline(_: Bot, query: InlineQuery):
     await query.answer(
         [
             InlineQueryResultArticle(
@@ -278,8 +279,8 @@ async def lastfm_inline(_: Client, query: InlineQuery):
     )
 
 
-@Client.on_chosen_inline_result(lastfm_chosen)
-async def lastfm_inline_result(app: Client, chosen: ChosenInlineResult):
+@Bot.on_chosen_inline_result(lastfm_chosen)
+async def lastfm_inline_result(app: Bot, chosen: ChosenInlineResult):
     if isinstance(lastfm, str):
         await app.edit_inline_text(chosen.inline_message_id, lastfm)
         return
@@ -291,10 +292,10 @@ async def lastfm_inline_result(app: Client, chosen: ChosenInlineResult):
             await lastfm_status(app, chosen.inline_message_id, expanded=True)
 
 
-@Client.on_callback_query(
+@Bot.on_callback_query(
     filters.regex(r"^lastfm (?P<action>\w+) (?P<mode>\w+)(?: (?P<time>\w+))?$")
 )
-async def lastfm_callback(app: Client, query: CallbackQuery):
+async def lastfm_callback(app: Bot, query: CallbackQuery):
     action, mode, time = query.matches[0].groups()
 
     if action == "status":

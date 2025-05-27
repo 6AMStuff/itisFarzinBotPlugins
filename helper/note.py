@@ -1,6 +1,7 @@
+from bot import Bot
 from typing import Union
+from pyrogram import filters, enums, errors
 from pyrogram.types import Message, MessageEntity
-from pyrogram import Client, filters, enums, errors
 from sqlalchemy.orm import Session, Mapped, mapped_column
 from sqlalchemy import Text, JSON, Boolean, select, delete
 
@@ -57,7 +58,7 @@ def serialize_entities(entities: Union[list[MessageEntity]] = None):
 
 
 async def deserialize_entities(
-    client: Client, entities: Union[list[dict[str, str]]] = None
+    client: Bot, entities: Union[list[dict[str, str]]] = None
 ):
     if not entities:
         return None
@@ -85,12 +86,12 @@ async def deserialize_entities(
     ]
 
 
-@Client.on_message(
+@Bot.on_message(
     filters.command(
         ["savenote", "getnote", "delnote", "notes"], Config.CMD_PREFIXES
     )
 )
-async def note_message(app: Client, message: Message):
+async def note_message(app: Bot, message: Message):
     action = message.command[0]
     if len(_notes) > 0:
         upgrade_to_sql()
