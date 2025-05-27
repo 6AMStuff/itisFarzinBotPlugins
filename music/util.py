@@ -2,15 +2,33 @@ import copy
 import time
 import httpx
 import datetime
+from mutagen.mp3 import MP3
 from typing import Callable
 from pyrogram.types import Message
 from mutagen.id3 import PictureType
 from mutagen.flac import FLAC, Picture
+from mutagen.id3 import (
+    TIT2,
+    TPE1,
+    TALB,
+    TCOM,
+    TCON,
+    TDRC,
+    TCOP,
+    COMM,
+    TPE2,
+    TRCK,
+    TPOS,
+    APIC,
+)
 
 
 async def download_file(
     url: str,
     filename: str,
+    chunk_size: int = None,
+    chunk_process: Callable = None,
+    chunk_process_args: tuple = None,
     progress: Callable = None,
     progress_args: tuple = None,
 ):
@@ -23,7 +41,12 @@ async def download_file(
             last_update = time.monotonic()
 
             with open(filename, "wb") as file:
-                async for chunk in response.aiter_bytes():
+                i = 0
+                async for chunk in response.aiter_bytes(chunk_size):
+                    if chunk_process:
+                        chunk = await chunk_process(
+                            i, chunk, *chunk_process_args
+                        )
                     file.write(chunk)
                     downloaded += len(chunk)
 
@@ -33,6 +56,7 @@ async def download_file(
                                 downloaded, total_size, *progress_args
                             )
                         last_update = time.monotonic()
+                    i += 1
             if progress:
                 await progress(downloaded, total_size, *progress_args)
 
@@ -81,7 +105,9 @@ async def download_progress(
 class DefaultDictMissing(dict):
     def __init__(self, *args, missing_text: str = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.missing_text = missing_text or "{{{key}}}"
+        self.missing_text = (
+            missing_text if missing_text is not None else "{{{key}}}"
+        )
 
     def __missing__(self, key):
         return self.missing_text.format(key=key)
@@ -151,6 +177,76 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
         )
 
         tagger.save(file_path)
+
+    elif track_type == "mp3":
+        audio = MP3(file_path)
+        audio.add_tags()
+
+        with open(image_path, "rb") as f:
+            audio.tags.add(
+                APIC(
+                    encoding=3,
+                    mime="image/jpeg",
+                    type=3,
+                    desc="Cover",
+                    data=f.read(),
+                )
+            )
+
+        audio.tags["TIT2"] = TIT2(
+            encoding=3, text=[parse_data("{name}", track_info)]
+        )
+        audio.tags["TPE1"] = TPE1(
+            encoding=3, text=[parse_data("{artist}", track_info)]
+        )
+        audio.tags["TALB"] = TALB(
+            encoding=3, text=[parse_data("{album_name}", track_info)]
+        )
+        audio.tags["TPE2"] = TPE2(
+            encoding=3, text=[parse_data("{album_artist}", track_info)]
+        )
+        audio.tags["TRCK"] = TRCK(
+            encoding=3,
+            text=[
+                parse_data("{track_number}", track_info)
+                + "/"
+                + parse_data("{total_tracks}", track_info)
+            ],
+        )
+        audio.tags["TPOS"] = TPOS(
+            encoding=3,
+            text=[
+                parse_data("{disc_number}", track_info)
+                + "/"
+                + parse_data("{total_discs}", track_info)
+            ],
+        )
+        audio.tags["TDRC"] = TDRC(
+            encoding=3, text=[parse_data("{date}", track_info, "")]
+        )
+        audio.tags["TCON"] = TCON(
+            encoding=3, text=[parse_data("{genre}", track_info, "")]
+        )
+        audio.tags["TCOM"] = TCOM(
+            encoding=3, text=[parse_data("{composer}", track_info)]
+        )
+        audio.tags["TCOP"] = TCOP(
+            encoding=3, text=[parse_data("{copyright}", track_info)]
+        )
+        audio.tags["COMM"] = COMM(
+            encoding=3,
+            lang="eng",
+            desc="Comment",
+            text=[
+                parse_data(
+                    "Downloaded by itisFarzin's bot, SOURCE: {source}",
+                    track_info,
+                    "Unknown",
+                )
+            ],
+        )
+
+        audio.save()
 
 
 __util__ = True
