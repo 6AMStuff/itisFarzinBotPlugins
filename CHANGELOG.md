@@ -1,3 +1,9 @@
+## v6.0.1 (2025-05-28)
+
+### Feat
+
+- **group-manager**: use settings timezone
+
 ## v6.0.0 (2025-05-27)
 
 ### Feat
