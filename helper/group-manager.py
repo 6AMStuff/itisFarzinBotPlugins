@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pyrogram import Client, filters, errors, utils
 from pyrogram.types import (
     Message,
@@ -170,7 +170,7 @@ async def restrict(app: Client, message: Message):
         except OverflowError:
             await message.reply("Use a lower duration.")
             return
-    formatted_date = date.astimezone(timezone.utc).strftime(
+    formatted_date = date.astimezone(Config.TIMEZONE).strftime(
         "%d/%m/%Y, %H:%M:%S %Z"
     )
 
