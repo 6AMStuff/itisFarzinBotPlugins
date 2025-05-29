@@ -1,6 +1,6 @@
 from typing import Union
-from pyrogram import Client, filters, enums
 from pyrogram.types import Message, MessageEntity
+from pyrogram import Client, filters, enums, errors
 from sqlalchemy.orm import Session, Mapped, mapped_column
 from sqlalchemy import Text, JSON, Boolean, select, delete
 
@@ -166,13 +166,15 @@ async def note_message(app: Client, message: Message):
                     session.commit()
                 await message.reply(f"Saved note `{note_name}`.")
         case "getnote":
-            if len(message.command) != 2:
+            if len(message.command) < 2:
                 await message.reply(
                     f"{Config.CMD_PREFIXES[0]}{action} [note name]"
                 )
                 return
 
             note_name = message.command[1]
+            flag = message.command[-1]
+            quote = True
             with Session(Config.engine) as session:
                 data = session.execute(
                     select(NotesDatabase).where(
@@ -194,9 +196,19 @@ async def note_message(app: Client, message: Message):
                     await message.reply("You don't have access to this note.")
                     return
 
+                if flag in ["-d", "--delete"] and await Config.IS_ADMIN(
+                    app, message
+                ):
+                    try:
+                        await message.delete()
+                        quote = False
+                    except errors.MessageDeleteForbidden:
+                        pass
+
                 if note.type == "text":
                     await msg.reply(
                         note.text,
+                        quote=quote,
                         entities=await deserialize_entities(
                             app, note.entities
                         ),
@@ -204,6 +216,7 @@ async def note_message(app: Client, message: Message):
                 else:
                     await msg.reply_cached_media(
                         note.file_id,
+                        quote=quote,
                         caption=note.text,
                         caption_entities=await deserialize_entities(
                             app, note.entities
