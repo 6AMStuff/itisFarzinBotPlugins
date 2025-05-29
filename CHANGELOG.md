@@ -1,3 +1,9 @@
+## v6.0.2 (2025-05-29)
+
+### Feat
+
+- **note**: allow auto-deletion of /getnote command message
+
 ## v6.0.1 (2025-05-28)
 
 ### Feat
