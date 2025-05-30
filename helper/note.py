@@ -201,7 +201,7 @@ async def note_message(app: Client, message: Message):
                 ):
                     try:
                         await message.delete()
-                        quote = False
+                        quote = bool(message.reply_to_message)
                     except errors.MessageDeleteForbidden:
                         pass
 
