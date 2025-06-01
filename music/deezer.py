@@ -662,6 +662,10 @@ async def deezer_search(_: Client, query: CallbackQuery):
     if deezer is None:
         deezer = await set_up_deezer()
 
+    if isinstance(deezer, str):
+        await query.answer(deezer)
+        return
+
     search_query, page = query.matches[0].groups()
     await query.edit_message_reply_markup(
         await deezer_search_keyboard(search_query, int(page))

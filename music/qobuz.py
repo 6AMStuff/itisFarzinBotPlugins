@@ -352,6 +352,10 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
     Config.IS_ADMIN & filters.regex(r"^qose (?P<query>.+?) (?P<page>\d+)$")
 )
 async def qobuz_search(_: Client, query: CallbackQuery):
+    if isinstance(qobuz, str):
+        await query.answer(qobuz)
+        return
+
     search_query, page = query.matches[0].groups()
     await query.edit_message_reply_markup(
         await qobuz_search_keyboard(search_query, int(page))
