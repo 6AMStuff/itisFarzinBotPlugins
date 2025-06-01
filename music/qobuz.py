@@ -81,7 +81,7 @@ class Qobuz:
         return timestamp, signature
 
     async def search(
-        self, query_type: str, query: str, limit: int = 10
+        self, query_type: str, query: str, offset: int = 0, limit: int = 10
     ) -> dict:
         return await self._get(
             "catalog/search",
@@ -89,6 +89,7 @@ class Qobuz:
                 "query": query,
                 "type": query_type + "s",
                 "limit": limit,
+                "offset": offset,
                 "app_id": self._app_id,
             },
         )
