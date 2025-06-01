@@ -365,8 +365,8 @@ class Deezer(DeezerAPI):
             + f"{resolution}x0-000000-{compression}-0-0.jpg"
         )
 
-    async def search_track(self, query: str, limit: int = 10):
-        results = (await super().search(query, "track", 0, limit))["data"]
+    async def search_track(self, query: str, offset: int = 0, limit: int = 10):
+        results = (await super().search(query, "track", offset, limit))["data"]
         return [self._track(result) for result in results]
 
     async def get_track(self, id: str | int):
