@@ -1,3 +1,17 @@
+## v6.1.0 (2025-06-02)
+
+### Feat
+
+- **deezer**: implement pagination for search results
+- **deezer**: add `offset` to the `search_track` method
+- **qobuz**: implement pagination for search results
+- **qobuz**: add `offset` to the `search` method
+
+### Fix
+
+- **deezer,qobuz**: handle client initialization failure
+- **note**: `getnote` command reply consistently even with -d flag
+
 ## v6.0.2 (2025-05-29)
 
 ### Feat
