@@ -81,7 +81,7 @@ class Qobuz:
         return timestamp, signature
 
     async def search(
-        self, query_type: str, query: str, limit: int = 10
+        self, query_type: str, query: str, offset: int = 0, limit: int = 10
     ) -> dict:
         return await self._get(
             "catalog/search",
@@ -89,6 +89,7 @@ class Qobuz:
                 "query": query,
                 "type": query_type + "s",
                 "limit": limit,
+                "offset": offset,
                 "app_id": self._app_id,
             },
         )
@@ -151,11 +152,12 @@ def set_up_qobuz():
     return Qobuz(app_id, app_secret, auth_token)
 
 
-async def qobuz_search_keyboard(query: str):
+async def qobuz_search_keyboard(query: str, page: int = 0):
     keyboard = []
-    result = await qobuz.search("track", query)
+    result = await qobuz.search("track", query, offset=page * 10, limit=11)
+    tracks = result["tracks"]["items"]
 
-    for track in result["tracks"]["items"]:
+    for track in tracks[:10]:
         keyboard.append(
             [
                 InlineKeyboardButton(
@@ -164,7 +166,18 @@ async def qobuz_search_keyboard(query: str):
                 )
             ]
         )
-    return InlineKeyboardMarkup(keyboard)
+
+    page_keyboard = []
+    if page != 0:
+        page_keyboard.append(
+            InlineKeyboardButton("Previous Page", f"qose {query} {page-1}")
+        )
+    if len(tracks) == 11:
+        page_keyboard.append(
+            InlineKeyboardButton("Next Page", f"qose {query} {page+1}")
+        )
+
+    return InlineKeyboardMarkup(keyboard + [page_keyboard])
 
 
 def on_data_change():
@@ -335,5 +348,19 @@ async def qobuz_callback(_: Client, query: CallbackQuery):
         )
 
 
-__all__ = ["qobuz_message", "qobuz_callback"]
+@Client.on_callback_query(
+    Config.IS_ADMIN & filters.regex(r"^qose (?P<query>.+?) (?P<page>\d+)$")
+)
+async def qobuz_search(_: Client, query: CallbackQuery):
+    if isinstance(qobuz, str):
+        await query.answer(qobuz)
+        return
+
+    search_query, page = query.matches[0].groups()
+    await query.edit_message_reply_markup(
+        await qobuz_search_keyboard(search_query, int(page))
+    )
+
+
+__all__ = ["qobuz_message", "qobuz_callback", "qobuz_search"]
 __plugin__ = True

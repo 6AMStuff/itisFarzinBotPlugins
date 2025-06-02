@@ -365,8 +365,8 @@ class Deezer(DeezerAPI):
             + f"{resolution}x0-000000-{compression}-0-0.jpg"
         )
 
-    async def search_track(self, query: str, limit: int = 10):
-        results = (await super().search(query, "track", 0, limit))["data"]
+    async def search_track(self, query: str, offset: int = 0, limit: int = 10):
+        results = (await super().search(query, "track", offset, limit))["data"]
         return [self._track(result) for result in results]
 
     async def get_track(self, id: str | int):
@@ -462,6 +462,33 @@ async def set_up_deezer():
         return f"**ERROR**: {e}"
 
 
+async def deezer_search_keyboard(query: str, page: int = 0):
+    keyboard = []
+    tracks = await deezer.search_track(query, offset=page * 10, limit=11)
+
+    for track in tracks[:10]:
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    parse_data("{time} | {name} - {artist}", track),
+                    parse_data("deezer trackinfo {id}", track),
+                )
+            ]
+        )
+
+    page_keyboard = []
+    if page != 0:
+        page_keyboard.append(
+            InlineKeyboardButton("Previous Page", f"dese {query} {page-1}")
+        )
+    if len(tracks) == 11:
+        page_keyboard.append(
+            InlineKeyboardButton("Next Page", f"dese {query} {page+1}")
+        )
+
+    return InlineKeyboardMarkup(keyboard + [page_keyboard])
+
+
 async def on_data_change():
     global deezer
     deezer = await set_up_deezer()
@@ -491,22 +518,9 @@ async def deezer_message(_: Client, message: Message):
     query = message.matches[0].group("query")
 
     if query:
-        keyboard = []
-        tracks = await deezer.search_track(query)
-
-        for track in tracks:
-            keyboard.append(
-                [
-                    InlineKeyboardButton(
-                        parse_data("{time} | {name} - {artist}", track),
-                        parse_data("deezer trackinfo {id}", track),
-                    )
-                ]
-            )
-
         await message.reply(
             f"Results for **{query}**:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
+            reply_markup=await deezer_search_keyboard(query),
         )
         return
     elif not album_id:
@@ -640,5 +654,23 @@ async def deezer_callback(_: Client, query: CallbackQuery):
         )
 
 
-__all__ = ["deezer_message"]
+@Client.on_callback_query(
+    Config.IS_ADMIN & filters.regex(r"^dese (?P<query>.+?) (?P<page>\d+)$")
+)
+async def deezer_search(_: Client, query: CallbackQuery):
+    global deezer
+    if deezer is None:
+        deezer = await set_up_deezer()
+
+    if isinstance(deezer, str):
+        await query.answer(deezer)
+        return
+
+    search_query, page = query.matches[0].groups()
+    await query.edit_message_reply_markup(
+        await deezer_search_keyboard(search_query, int(page))
+    )
+
+
+__all__ = ["deezer_message", "deezer_callback", "deezer_search"]
 __plugin__ = True
