@@ -440,6 +440,7 @@ class Deezer(DeezerAPI):
         if index % 3 == 0 and len(chunk) == 2048:
             decryptor = cipher.decryptor()
             chunk = decryptor.update(chunk) + decryptor.finalize()
+
         return chunk
 
 
@@ -583,6 +584,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
         download_path = (
             Config.getdata("download_path", "downloads", use_env=True) + "/"
         )
+
         if info["type"] == "dlalbum":
             album = await deezer.get_album(info["id"])
             tracks = album["songs"]
@@ -590,6 +592,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             _track = await deezer.get_track(info["id"])
             album = await deezer.get_album(_track["album_id"])
             tracks = [_track]
+
         _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
         album_path = download_path + parse_data(_album_path, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
@@ -623,6 +626,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                     parse_data("Track **{name}** already exists.", track)
                 )
                 continue
+
             await download_file(
                 url,
                 full_path,

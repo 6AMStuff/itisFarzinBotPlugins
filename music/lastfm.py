@@ -56,6 +56,7 @@ def set_up_lastfm():
                 "`python -c 'import hashlib;"
                 ' print(hashlib.md5("your password".encode()).hexdigest())\'`'
             )
+
         return error_message
 
     try:
@@ -86,6 +87,7 @@ async def lastfm_status(
     text = "{} {} listening to".format(
         user.name, "was" if recent_tracks[0].timestamp else "is now"
     )
+
     for played_track in recent_tracks:
         track = played_track.track
         time = (
@@ -148,6 +150,7 @@ async def lastfm_status(
             cover = recent_tracks[0].track.get_cover_image()
         except IndexError:
             with_cover = False
+
         if with_cover:
             await app.edit_inline_media(
                 message_id,
@@ -189,6 +192,7 @@ async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
         "1y": "1 Year",
         "alltime": "All Time",
     }[time]
+
     if mode == "artists":
         tops = user.get_top_artists(_time, 5)
     elif mode == "albums":
@@ -355,6 +359,7 @@ async def lastfm_callback(app: Bot, query: CallbackQuery):
                 ),
             )
             return
+
         await query.answer("Wait.")
         await lastfm_top(app, query.inline_message_id, mode, time)
 

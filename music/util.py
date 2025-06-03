@@ -47,6 +47,7 @@ async def download_file(
                         chunk = await chunk_process(
                             i, chunk, *chunk_process_args
                         )
+
                     file.write(chunk)
                     downloaded += len(chunk)
 
@@ -55,8 +56,11 @@ async def download_file(
                             await progress(
                                 downloaded, total_size, *progress_args
                             )
+
                         last_update = time.monotonic()
+
                     i += 1
+
             if progress:
                 await progress(downloaded, total_size, *progress_args)
 
@@ -146,15 +150,16 @@ def parse_data(text: str, data: dict, missing_text: str = None):
 
 def tag_file(file_path: str, image_path: str, track_info: dict):
     track_type = file_path.split(".")[-1].lower()
-
     if track_type == "flac":
         tagger = FLAC(file_path)
 
         picture = Picture()
-        with open(image_path, "rb") as f:
-            picture.data = f.read()
         picture.type = PictureType.COVER_FRONT
         picture.mime = "image/jpeg"
+
+        with open(image_path, "rb") as f:
+            picture.data = f.read()
+
         if len(picture.data) < 4 * 1024 * 1024:
             tagger.add_picture(picture)
 
@@ -177,7 +182,6 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
         )
 
         tagger.save(file_path)
-
     elif track_type == "mp3":
         audio = MP3(file_path)
         audio.add_tags()

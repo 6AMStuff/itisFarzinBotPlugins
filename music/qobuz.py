@@ -260,7 +260,6 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
         return
 
     info = query.matches[0].groupdict()
-
     if info["type"] in ["dlalbum", "dltrack"]:
         try:
             await qobuz.check_token()
@@ -272,6 +271,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
         download_path = (
             Config.getdata("download_path", "downloads", use_env=True) + "/"
         )
+
         if info["type"] == "dlalbum":
             album = await qobuz.get_album(info["id"])
             tracks = album["tracks"]["items"]
@@ -279,6 +279,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             _track = await qobuz.get_track(info["id"])
             album = await qobuz.get_album(_track["album"]["id"])
             tracks = [_track]
+
         _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
         album_path = download_path + parse_data(_album_path, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
@@ -297,6 +298,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                     )
                     if file_size and int(file_size) > 4 * 1024 * 1024:
                         continue
+
                     await download_file(
                         url,
                         cover_path,
@@ -322,6 +324,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                     parse_data("Track **{name}** already exists.", track)
                 )
                 continue
+
             await download_file(
                 stream_data["url"],
                 full_path,

@@ -35,6 +35,7 @@ def upgrade_to_sql():
                 )
             )
         session.commit()
+
     Config.setdata("notes", {})
 
 
@@ -50,8 +51,7 @@ def serialize_entities(entities: Union[list[MessageEntity]] = None):
                 else value.id if key == "user" and value else value
             )
             for key, value in entity.__dict__.items()
-            if key not in ["_client"]
-            if value is not None
+            if key not in ["_client"] and value is not None
         }
         for entity in entities
     ]
@@ -80,9 +80,11 @@ async def deserialize_entities(
             client=client,
         )
         for entity in entities
-        if entity
-        if hasattr(enums.MessageEntityType, entity["type"].upper())
-        if entity["type"] != "bot_command"
+        if (
+            entity
+            and hasattr(enums.MessageEntityType, entity["type"].upper())
+            and entity["type"] != "bot_command"
+        )
     ]
 
 
@@ -142,6 +144,7 @@ async def note_message(app: Bot, message: Message):
                 else:
                     await message.reply("Not supported.")
                     return
+
                 await message.reply(f"Saved note `{note_name}`.")
             elif len(message.command) > 2:
                 start_index = len(action) + len(note_name) + 3
@@ -165,6 +168,7 @@ async def note_message(app: Bot, message: Message):
                         )
                     )
                     session.commit()
+
                 await message.reply(f"Saved note `{note_name}`.")
         case "getnote":
             if len(message.command) < 2:
@@ -240,13 +244,15 @@ async def note_message(app: Bot, message: Message):
                 if not data:
                     await message.reply(f"Note **{note_name}** doesn't exist.")
                     return
+
                 session.execute(
                     delete(NotesDatabase).where(
                         NotesDatabase.note_name == note_name
                     )
                 )
                 session.commit()
-                await message.reply(f"Note **{note_name}** has been deleted.")
+
+            await message.reply(f"Note **{note_name}** has been deleted.")
         case "notes":
             with Session(Config.engine) as session:
                 notes = session.execute(

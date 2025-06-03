@@ -100,14 +100,7 @@ async def restrict(app: Bot, message: Message):
     operation = "unrestrict" if action in ["unban", "unmute"] else "restrict"
     duration = (message.command[1:] or [None])[0]
 
-    if duration is not None and duration[-1] not in [
-        "y",
-        "w",
-        "d",
-        "h",
-        "m",
-        "s",
-    ]:
+    if duration and duration[-1] not in ["y", "w", "d", "h", "m", "s"]:
         duration = None
 
     start_index = len(action) + (len(duration) + 1 if duration else 0) + 2
@@ -171,6 +164,7 @@ async def restrict(app: Bot, message: Message):
         except OverflowError:
             await message.reply("Use a lower duration.")
             return
+
     formatted_date = date.astimezone(Config.TIMEZONE).strftime(
         "%d/%m/%Y, %H:%M:%S %Z"
     )
@@ -184,6 +178,7 @@ async def restrict(app: Bot, message: Message):
             except OverflowError:
                 await message.reply("Use a lower duration.")
                 return
+
             await message.reply(
                 "{} {} {}.{}".format(
                     "Banned" if bool(result) else "Failed to ban",
@@ -229,6 +224,7 @@ async def restrict(app: Bot, message: Message):
             except OverflowError:
                 await message.reply("Use a lower duration.")
                 return
+
             await message.reply(
                 "{} {} {}.{}".format(
                     "Muted" if bool(result) else "Failed to mute",
@@ -258,10 +254,7 @@ async def restrict_callback(app: Bot, query: CallbackQuery):
     action, user_id = query.matches[0].groups()
     message = query.message
 
-    if not message:
-        return
-
-    if not message.chat:
+    if not message or not message.chat:
         return
 
     chat_member = await app.get_chat_member(
