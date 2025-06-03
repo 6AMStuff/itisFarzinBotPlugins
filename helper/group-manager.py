@@ -95,6 +95,7 @@ async def unmute(message: Message, chat: Chat, user: User, by: User = None):
         ["ban", "unban", "kick", "mute", "unmute"], Config.CMD_PREFIXES
     )
 )
+@Bot.is_public_use
 async def restrict(app: Bot, message: Message):
     action = message.command[0]
     operation = "unrestrict" if action in ["unban", "unmute"] else "restrict"
@@ -254,6 +255,7 @@ async def restrict(app: Bot, message: Message):
 @Bot.on_callback_query(
     filters.regex(r"^restrict (?P<action>\w+) (?P<user>\d+)$")
 )
+@Bot.is_public_use
 async def restrict_callback(app: Bot, query: CallbackQuery):
     action, user_id = query.matches[0].groups()
     message = query.message
