@@ -153,26 +153,26 @@ async def note_message(app: Bot, message: Message):
                 start_index = len(action) + len(note_name) + 3
                 text = message.text[start_index:].removesuffix(flag)
 
-                if len(text) == 0:
-                    await message.reply(
-                        f"{Config.CMD_PREFIXES[0]}{action} [note name]"
-                        + " [the note or reply to the note message]"
-                    )
+                if len(text) != 0:
+                    with Session(Config.engine) as session:
+                        session.merge(
+                            NotesDatabase(
+                                note_name=note_name,
+                                type="text",
+                                text=text,
+                                entities=serialize_entities(message.entities),
+                                private=flag in ["-p", "--private"],
+                            )
+                        )
+                        session.commit()
+
+                    await message.reply(f"Saved note `{note_name}`.")
                     return
 
-                with Session(Config.engine) as session:
-                    session.merge(
-                        NotesDatabase(
-                            note_name=note_name,
-                            type="text",
-                            text=text,
-                            entities=serialize_entities(message.entities),
-                            private=flag in ["-p", "--private"],
-                        )
-                    )
-                    session.commit()
-
-                await message.reply(f"Saved note `{note_name}`.")
+            await message.reply(
+                f"{Config.CMD_PREFIXES[0]}{action} [note name]"
+                + " [the note or reply to the note message]"
+            )
         case "getnote":
             if len(message.command) < 2:
                 await message.reply(
