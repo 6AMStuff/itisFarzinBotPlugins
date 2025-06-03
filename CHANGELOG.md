@@ -1,3 +1,15 @@
+## v6.1.1 (2025-06-03)
+
+### Fix
+
+- **note**: send help text correctly
+- **note**: handle flag in `savenote` correctly
+
+### Refactor
+
+- reformat code manually
+- Client -> Bot
+
 ## v6.1.0 (2025-06-02)
 
 ### Feat
