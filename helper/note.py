@@ -108,6 +108,9 @@ async def note_message(app: Bot, message: Message):
 
             note_name = message.command[1]
             flag = message.command[-1]
+            if flag and flag[0] != "-":
+                flag = ""
+
             if message.reply_to_message:
                 msg = message.reply_to_message
                 if msg.text:
