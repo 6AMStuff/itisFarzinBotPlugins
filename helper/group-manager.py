@@ -91,7 +91,8 @@ async def unmute(message: Message, chat: Chat, user: User, by: User = None):
 
 
 @Bot.on_message(
-    filters.command(
+    filters.group
+    & filters.command(
         ["ban", "unban", "kick", "mute", "unmute"], Config.CMD_PREFIXES
     )
 )
