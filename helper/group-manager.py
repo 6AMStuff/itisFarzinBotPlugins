@@ -328,9 +328,9 @@ async def pin(app: Bot, message: Message):
 
     if action == "pin":
         if await message.reply_to_message.pin(disable_notification=True):
-            await message.reply("I've pinned the message.")
+            await message.reply("I've pinned the replied message.")
         else:
-            await message.reply("Failed to pin the message.")
+            await message.reply("Failed to pin the replied message.")
     elif action == "unpin":
         if message.reply_to_message:
             if message.reply_to_message.pinned:
@@ -343,14 +343,11 @@ async def pin(app: Bot, message: Message):
             except errors.exceptions.bad_request_400.MessageIdInvalid:
                 res = False
 
+        type = "replied" if message.reply_to_message else "latest pinned"
         if res:
-            await message.reply(
-                "I've unpinned the {} pinned message.".format(
-                    "replied" if message.reply_to_message else "latest"
-                )
-            )
+            await message.reply(f"I've unpinned the {type} message.")
         else:
-            await message.reply("Failed to unpin the message.")
+            await message.reply(f"Failed to unpin the {type} message.")
 
 
 __all__ = ["restrict", "restrict_callback", "pin"]
