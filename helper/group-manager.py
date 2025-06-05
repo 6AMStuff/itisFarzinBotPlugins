@@ -300,5 +300,36 @@ async def restrict_callback(app: Bot, query: CallbackQuery):
             await unmute(message, message.chat, user, by=query.from_user)
 
 
-__all__ = ["restrict", "restrict_callback"]
+@Bot.on_message(filters.group & filters.command("pin"))
+async def pin(app: Bot, message: Message):
+    if not message.reply_to_message:
+        await message.reply("Reply to a message.")
+        return
+
+    chat_member = await app.get_chat_member(
+        message.chat.id, message.from_user.id
+    )
+    if (
+        not chat_member.privileges
+        or not chat_member.privileges.can_pin_messages
+    ):
+        await message.reply(
+            "You don't have the permission to pin a message."
+        )
+        return
+
+    bot_chat_member = await app.get_chat_member(message.chat.id, app.me.id)
+    if (
+        not bot_chat_member.privileges
+        or not bot_chat_member.privileges.can_pin_messages
+    ):
+        await message.reply(
+            "I don't have the permission to pin a message."
+        )
+        return
+
+    await message.reply_to_message.pin()
+
+
+__all__ = ["restrict", "restrict_callback", "pin"]
 __plugin__ = True
