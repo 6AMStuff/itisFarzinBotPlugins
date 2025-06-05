@@ -315,9 +315,7 @@ async def pin(app: Bot, message: Message):
         not chat_member.privileges
         or not chat_member.privileges.can_pin_messages
     ):
-        await message.reply(
-            "You don't have the permission to pin a message."
-        )
+        await message.reply("You don't have the permission to pin a message.")
         return
 
     bot_chat_member = await app.get_chat_member(message.chat.id, app.me.id)
@@ -325,18 +323,28 @@ async def pin(app: Bot, message: Message):
         not bot_chat_member.privileges
         or not bot_chat_member.privileges.can_pin_messages
     ):
-        await message.reply(
-            "I don't have the permission to pin a message."
-        )
+        await message.reply("I don't have the permission to pin a message.")
         return
 
     if action == "pin":
-        await message.reply_to_message.pin()
+        if await message.reply_to_message.pin():
+            await message.reply("I've pinned the message.")
+        else:
+            await message.reply("Failed to pin the message.")
     elif action == "unpin":
         if message.reply_to_message:
-            await message.reply_to_message.unpin()
+            res = await message.reply_to_message.unpin()
         else:
-            await app.unpin_chat_message(message.chat.id)
+            res = await app.unpin_chat_message(message.chat.id)
+
+        if res:
+            await message.reply(
+                "I've unpinned the {} pinned message.".format(
+                    "replied" if message.reply_to_message else "latest"
+                )
+            )
+        else:
+            await message.reply("Failed to unpin the message.")
 
 
 __all__ = ["restrict", "restrict_callback", "pin"]
