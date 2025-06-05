@@ -315,7 +315,9 @@ async def pin(app: Bot, message: Message):
         not chat_member.privileges
         or not chat_member.privileges.can_pin_messages
     ):
-        await message.reply("You don't have the permission to pin a message.")
+        await message.reply(
+            f"You don't have the permission to {action} a message."
+        )
         return
 
     bot_chat_member = await app.get_chat_member(message.chat.id, app.me.id)
@@ -323,7 +325,9 @@ async def pin(app: Bot, message: Message):
         not bot_chat_member.privileges
         or not bot_chat_member.privileges.can_pin_messages
     ):
-        await message.reply("I don't have the permission to pin a message.")
+        await message.reply(
+            f"I don't have the permission to {action} a message."
+        )
         return
 
     if action == "pin":
