@@ -300,9 +300,11 @@ async def restrict_callback(app: Bot, query: CallbackQuery):
             await unmute(message, message.chat, user, by=query.from_user)
 
 
-@Bot.on_message(filters.group & filters.command("pin"))
+@Bot.on_message(filters.group & filters.command(["pin", "unpin"]))
 async def pin(app: Bot, message: Message):
-    if not message.reply_to_message:
+    action = message.command[0]
+
+    if action == "pin" and not message.reply_to_message:
         await message.reply("Reply to a message.")
         return
 
@@ -328,7 +330,13 @@ async def pin(app: Bot, message: Message):
         )
         return
 
-    await message.reply_to_message.pin()
+    if action == "pin":
+        await message.reply_to_message.pin()
+    elif action == "unpin":
+        if message.reply_to_message:
+            await message.reply_to_message.unpin()
+        else:
+            await app.unpin_chat_message(message.chat.id)
 
 
 __all__ = ["restrict", "restrict_callback", "pin"]
