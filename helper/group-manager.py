@@ -327,7 +327,7 @@ async def pin(app: Bot, message: Message):
         return
 
     if action == "pin":
-        if await message.reply_to_message.pin():
+        if await message.reply_to_message.pin(disable_notification=True):
             await message.reply("I've pinned the message.")
         else:
             await message.reply("Failed to pin the message.")
