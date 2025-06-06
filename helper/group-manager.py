@@ -337,13 +337,22 @@ async def pin(app: Bot, message: Message):
             await message.reply("Failed to pin the replied message.")
     elif action == "unpin":
         if message.reply_to_message:
-            if message.reply_to_message.pinned:
+            msg = await app.get_messages(
+                message.chat.id, message.reply_to_message.id
+            )
+            if msg.pinned:
                 res = await message.reply_to_message.unpin()
             else:
                 res = False
         else:
             try:
-                res = await app.unpin_chat_message(message.chat.id)
+                chat = await app.get_chat(message.chat.id)
+                if chat.pinned_message:
+                    res = await app.unpin_chat_message(
+                        message.chat.id, message_id=chat.pinned_message.id
+                    )
+                else:
+                    res = False
             except errors.exceptions.bad_request_400.MessageIdInvalid:
                 res = False
 
