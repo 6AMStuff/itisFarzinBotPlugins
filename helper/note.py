@@ -100,11 +100,14 @@ async def note_message(app: Bot, message: Message):
 
     match action:
         case "savenote" if await Config.IS_ADMIN(app, message):
-            if len(message.command) < 2:
+            if (
+                len(message.command) == 2 and not message.reply_to_message
+            ) or len(message.command) == 1:
                 await message.reply(
                     f"{Config.CMD_PREFIXES[0]}{action} [note name]"
                     + " [the note or reply to the note message]"
                 )
+                return
 
             note_name = message.command[1]
             flag = message.command[-1]
@@ -167,12 +170,6 @@ async def note_message(app: Bot, message: Message):
                         session.commit()
 
                     await message.reply(f"Saved note `{note_name}`.")
-                    return
-
-            await message.reply(
-                f"{Config.CMD_PREFIXES[0]}{action} [note name]"
-                + " [the note or reply to the note message]"
-            )
         case "getnote":
             if len(message.command) < 2:
                 await message.reply(
