@@ -49,7 +49,9 @@ whisper_chosen = filters.create(whisper_chosen_filter)
 async def whisper_inline(app: Bot, query: InlineQuery):
     full_name = username = query.matches[0].group("username")
     try:
-        full_name = (await app.get_users(username)).full_name
+        user = await app.get_users([username])
+        if user:
+            full_name = user[0].full_name
     except (
         errors.PeerIdInvalid,
         errors.UsernameInvalid,
