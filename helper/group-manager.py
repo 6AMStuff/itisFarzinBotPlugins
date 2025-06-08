@@ -100,6 +100,8 @@ async def restrict(app: Bot, message: Message):
     action = message.command[0]
     operation = "unrestrict" if action in ["unban", "unmute"] else "restrict"
     duration = (message.command[1:] or [None])[0]
+    chat = message.chat
+    reply_to = message.reply_to_message
 
     if duration and duration[-1] not in ["y", "w", "d", "h", "m", "s"]:
         duration = None
@@ -107,7 +109,7 @@ async def restrict(app: Bot, message: Message):
     start_index = len(action) + (len(duration) + 1 if duration else 0) + 2
     reason = message.text[start_index:].strip()
 
-    if not message.reply_to_message:
+    if not reply_to:
         arg_hint = " [duration]" if action in ["ban", "mute"] else ""
         arg_hint_2 = " [reason]" if action in ["ban", "mute", "kick"] else ""
         await message.reply(
@@ -116,14 +118,12 @@ async def restrict(app: Bot, message: Message):
         )
         return
 
-    user = message.reply_to_message.from_user
+    user = reply_to.from_user
     if not user:
         await message.reply("I can't find this user.")
         return
 
-    chat_member = await app.get_chat_member(
-        message.chat.id, message.from_user.id
-    )
+    chat_member = await app.get_chat_member(chat.id, message.from_user.id)
     if (
         not chat_member.privileges
         or not chat_member.privileges.can_restrict_members
@@ -133,7 +133,7 @@ async def restrict(app: Bot, message: Message):
         )
         return
 
-    bot_chat_member = await app.get_chat_member(message.chat.id, app.me.id)
+    bot_chat_member = await app.get_chat_member(chat.id, app.me.id)
     if (
         not bot_chat_member.privileges
         or not bot_chat_member.privileges.can_restrict_members
@@ -144,9 +144,7 @@ async def restrict(app: Bot, message: Message):
         return
 
     try:
-        replied_chat_member = await app.get_chat_member(
-            message.chat.id, user.id
-        )
+        replied_chat_member = await app.get_chat_member(chat.id, user.id)
     except errors.exceptions.bad_request_400.UserNotParticipant as e:
         await message.reply(f"An error occurred: {e.MESSAGE}.")
         return
@@ -173,9 +171,7 @@ async def restrict(app: Bot, message: Message):
     match action:
         case "ban":
             try:
-                result = await app.ban_chat_member(
-                    message.chat.id, user.id, date
-                )
+                result = await app.ban_chat_member(chat.id, user.id, date)
             except OverflowError:
                 await message.reply("Use a lower duration.")
                 return
@@ -199,14 +195,14 @@ async def restrict(app: Bot, message: Message):
                 ),
             )
         case "unban":
-            await unban(message, message.chat, user)
+            await unban(message, chat, user)
         case "kick":
-            result = await app.ban_chat_member(message.chat.id, user.id)
+            result = await app.ban_chat_member(chat.id, user.id)
             if not bool(result):
                 await message.reply("Failed to kick {}.".format(user.mention))
                 return
 
-            result = await app.unban_chat_member(message.chat.id, user.id)
+            result = await app.unban_chat_member(chat.id, user.id)
             await message.reply(
                 "{} {}.{}".format(
                     "Kicked" if result else "Failed to kick",
@@ -217,7 +213,7 @@ async def restrict(app: Bot, message: Message):
         case "mute":
             try:
                 result = await app.restrict_chat_member(
-                    message.chat.id,
+                    chat.id,
                     user.id,
                     ChatPermissions(),
                     date,
@@ -245,7 +241,7 @@ async def restrict(app: Bot, message: Message):
                 ),
             )
         case "unmute":
-            await unmute(message, message.chat, user)
+            await unmute(message, chat, user)
 
 
 @Bot.on_callback_query(
@@ -254,13 +250,12 @@ async def restrict(app: Bot, message: Message):
 async def restrict_callback(app: Bot, query: CallbackQuery):
     action, user_id = query.matches[0].groups()
     message = query.message
+    chat = message.chat
 
-    if not message or not message.chat:
+    if not message or not chat:
         return
 
-    chat_member = await app.get_chat_member(
-        message.chat.id, query.from_user.id
-    )
+    chat_member = await app.get_chat_member(chat.id, query.from_user.id)
     if (
         not chat_member.privileges
         or not chat_member.privileges.can_restrict_members
@@ -270,7 +265,7 @@ async def restrict_callback(app: Bot, query: CallbackQuery):
         )
         return
 
-    bot_chat_member = await app.get_chat_member(message.chat.id, app.me.id)
+    bot_chat_member = await app.get_chat_member(chat.id, app.me.id)
     if (
         not bot_chat_member.privileges
         or not bot_chat_member.privileges.can_restrict_members
@@ -281,9 +276,7 @@ async def restrict_callback(app: Bot, query: CallbackQuery):
         return
 
     try:
-        restricted_chat_member = await app.get_chat_member(
-            message.chat.id, user_id
-        )
+        restricted_chat_member = await app.get_chat_member(chat.id, user_id)
     except errors.exceptions.bad_request_400.UserNotParticipant as e:
         await message.edit(f"An error occurred: {e.MESSAGE}.")
         return
@@ -295,10 +288,71 @@ async def restrict_callback(app: Bot, query: CallbackQuery):
 
     match action:
         case "unban":
-            await unban(message, message.chat, user, by=query.from_user)
+            await unban(message, chat, user, by=query.from_user)
         case "unmute":
-            await unmute(message, message.chat, user, by=query.from_user)
+            await unmute(message, chat, user, by=query.from_user)
 
 
-__all__ = ["restrict", "restrict_callback"]
+@Bot.on_message(filters.group & filters.command(["pin", "unpin"]))
+async def pin(app: Bot, message: Message):
+    action = message.command[0]
+    chat = message.chat
+    reply_to = message.reply_to_message
+
+    if action == "pin" and not reply_to:
+        await message.reply("Reply to a message.")
+        return
+
+    chat_member = await app.get_chat_member(chat.id, message.from_user.id)
+    if (
+        not chat_member.privileges
+        or not chat_member.privileges.can_pin_messages
+    ):
+        await message.reply(
+            f"You don't have the permission to {action} a message."
+        )
+        return
+
+    bot_chat_member = await app.get_chat_member(chat.id, app.me.id)
+    if (
+        not bot_chat_member.privileges
+        or not bot_chat_member.privileges.can_pin_messages
+    ):
+        await message.reply(
+            f"I don't have the permission to {action} a message."
+        )
+        return
+
+    if action == "pin":
+        if await reply_to.pin(disable_notification=True):
+            await message.reply("I've pinned the replied message.")
+        else:
+            await message.reply("Failed to pin the replied message.")
+    elif action == "unpin":
+        if reply_to:
+            msg = await app.get_messages(chat.id, reply_to.id)
+            if msg.pinned:
+                res = await reply_to.unpin()
+            else:
+                res = False
+        else:
+            try:
+                chat = await app.get_chat(chat.id)
+                if chat.pinned_message:
+                    res = await app.unpin_chat_message(
+                        chat.id, message_id=chat.pinned_message.id
+                    )
+                else:
+                    res = False
+            except errors.exceptions.bad_request_400.MessageIdInvalid:
+                res = False
+
+        type = "replied" if reply_to else "latest pinned"
+        if res:
+            await message.reply(f"I've unpinned the {type} message.")
+        else:
+            await message.reply(f"Failed to unpin the {type} message.")
+
+
+__all__ = ["restrict", "restrict_callback", "pin"]
 __plugin__ = True
