@@ -1,3 +1,11 @@
+## v6.1.2 (2025-06-08)
+
+### Fix
+
+- **note**: rewrite return early logic
+- **whisper**: handle user resolve failure
+- **group-manager**: restrict/unrestrict commands should only work in groups
+
 ## v6.1.1 (2025-06-03)
 
 ### Fix
