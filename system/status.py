@@ -1,4 +1,6 @@
+import os
 import time
+import psutil
 from bot import Bot
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
@@ -7,6 +9,8 @@ from config import Config
 
 
 _uptime = time.time()
+pid = os.getpid()
+proc = psutil.Process(pid)
 
 
 @Bot.on_message(Config.IS_ADMIN & filters.command("status"))
@@ -36,7 +40,16 @@ async def status(_, message: Message):
                     InlineKeyboardButton(
                         " ".join(uptime), callback_data="None"
                     ),
-                ]
+                ],
+                [
+                    InlineKeyboardButton(
+                        "Memory Usage:", callback_data="None"
+                    ),
+                    InlineKeyboardButton(
+                        f"{proc.memory_info().rss / 1024 ** 2:.2f} MB",
+                        callback_data="None",
+                    ),
+                ],
             ]
         ),
     )
