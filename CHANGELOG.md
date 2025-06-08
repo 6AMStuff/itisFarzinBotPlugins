@@ -1,3 +1,23 @@
+## v6.2.0 (2025-06-08)
+
+### Feat
+
+- **group-manager**: improve the pin/unpin mechanism
+- **group-manager**: disable the pin notification
+- **group-manager**: announce after pining/unpining a message
+- **group-manager**: add `unpin` command
+- **group-manager**: add `pin` command
+
+### Fix
+
+- **group-manager**: improve unpinning pinned message
+
+### Refactor
+
+- **group-manager**: clean up code
+- **group-manager**: improve insufficient permission error message
+- **group-manager**: improve the pin/unpin text
+
 ## v6.1.2 (2025-06-08)
 
 ### Fix
