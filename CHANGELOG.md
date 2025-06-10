@@ -1,3 +1,15 @@
+## v7.0.0 (2025-06-10)
+
+### Feat
+
+- **status**: prioritize bot class uptime source
+- **status**: add os
+- **status**: add python version
+- **status**: add system uptime
+- **status**: add disk usage
+- **status**: add memory usage
+- **status**: add uptime
+
 ## v6.2.0 (2025-06-08)
 
 ### Feat
