@@ -34,10 +34,11 @@ def format_uptime(seconds: float) -> str:
 
 
 @Bot.on_message(Config.IS_ADMIN & filters.command("status"))
-async def status(_, message: Message):
+async def status(app: Bot, message: Message):
     now = time.time()
 
-    bot_uptime = format_uptime(now - _uptime)
+    uptime = getattr(app, "uptime", _uptime)
+    bot_uptime = format_uptime(now - uptime)
     system_uptime = format_uptime(now - psutil.boot_time())
 
     disk = shutil.disk_usage("/")
