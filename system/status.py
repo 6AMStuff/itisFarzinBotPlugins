@@ -79,6 +79,13 @@ async def status(_, message: Message):
                         platform.python_version(), callback_data="None"
                     ),
                 ],
+                [
+                    InlineKeyboardButton("OS", callback_data="None"),
+                    InlineKeyboardButton(
+                        f"{platform.system()} {platform.release()}",
+                        callback_data="None",
+                    ),
+                ],
             ]
         ),
     )
