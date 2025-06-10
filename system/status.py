@@ -14,23 +14,30 @@ pid = os.getpid()
 proc = psutil.Process(pid)
 
 
-@Bot.on_message(Config.IS_ADMIN & filters.command("status"))
-async def status(_, message: Message):
-    now = time.time()
-    seconds = now - _uptime
+def format_uptime(seconds: float) -> str:
     days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
 
-    uptime = []
+    parts = []
     if days:
-        uptime.append(f"{days:.0f}d")
+        parts.append(f"{days:.0f}d")
     if hours:
-        uptime.append(f"{hours:.0f}h")
+        parts.append(f"{hours:.0f}h")
     if minutes:
-        uptime.append(f"{minutes:.0f}m")
-    if seconds or not uptime:
-        uptime.append(f"{seconds:.0f}s")
+        parts.append(f"{minutes:.0f}m")
+    if seconds or not parts:
+        parts.append(f"{seconds:.0f}s")
+
+    return " ".join(parts)
+
+
+@Bot.on_message(Config.IS_ADMIN & filters.command("status"))
+async def status(_, message: Message):
+    now = time.time()
+
+    bot_uptime = format_uptime(now - _uptime)
+    system_uptime = format_uptime(now - psutil.boot_time())
 
     disk = shutil.disk_usage("/")
 
@@ -39,10 +46,14 @@ async def status(_, message: Message):
         reply_markup=InlineKeyboardMarkup(
             [
                 [
-                    InlineKeyboardButton("Uptime:", callback_data="None"),
+                    InlineKeyboardButton("Bot Uptime:", callback_data="None"),
+                    InlineKeyboardButton(bot_uptime, callback_data="None"),
+                ],
+                [
                     InlineKeyboardButton(
-                        " ".join(uptime), callback_data="None"
+                        "System Uptime:", callback_data="None"
                     ),
+                    InlineKeyboardButton(system_uptime, callback_data="None"),
                 ],
                 [
                     InlineKeyboardButton(
