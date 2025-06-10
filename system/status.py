@@ -2,6 +2,7 @@ import os
 import time
 import psutil
 import shutil
+import platform
 from bot import Bot
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
@@ -70,6 +71,12 @@ async def status(_, message: Message):
                         f"{disk.used / 1024**3:.2f}/"
                         f"{disk.total / 1024**3:.2f} GB",
                         callback_data="None",
+                    ),
+                ],
+                [
+                    InlineKeyboardButton("Python", callback_data="None"),
+                    InlineKeyboardButton(
+                        platform.python_version(), callback_data="None"
                     ),
                 ],
             ]
