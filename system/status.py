@@ -1,6 +1,7 @@
 import os
 import time
 import psutil
+import shutil
 from bot import Bot
 from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
@@ -31,6 +32,8 @@ async def status(_, message: Message):
     if seconds or not uptime:
         uptime.append(f"{seconds:.0f}s")
 
+    disk = shutil.disk_usage("/")
+
     await message.reply(
         "**Bot Status**:",
         reply_markup=InlineKeyboardMarkup(
@@ -47,6 +50,14 @@ async def status(_, message: Message):
                     ),
                     InlineKeyboardButton(
                         f"{proc.memory_info().rss / 1024 ** 2:.2f} MB",
+                        callback_data="None",
+                    ),
+                ],
+                [
+                    InlineKeyboardButton("Disk Usage", callback_data="None"),
+                    InlineKeyboardButton(
+                        f"{disk.used / 1024**3:.2f}/"
+                        f"{disk.total / 1024**3:.2f} GB",
                         callback_data="None",
                     ),
                 ],
