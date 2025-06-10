@@ -1,11 +1,11 @@
-# Plugins for my Telegram bot
+# Plugins for itisFarzinBot
 
-In this repo, I'll release my plugins which I wrote for my bot.
+A curated collection of plugins for [itisFarzinBot](https://github.com/6AMStuff/itisFarzinBot).
 
 # Installation
 
-For now, drag and drop the folders from here to the plugins folder inside of [itisFarzinBot](https://github.com/6AMStuff/itisFarzinBot), and after that install the dependencies from `requirements.txt` via the code below.
+Clone this repository into the plugins directory of your `itisFarzinBot` installation
 
-```bash
-pip install -r requirements.txt 
-```
+# Changelog
+
+All changes are documented in [CHANGELOG.md](CHANGELOG.md).
