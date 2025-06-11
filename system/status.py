@@ -4,7 +4,7 @@ import psutil
 import shutil
 import platform
 from bot import Bot
-from pyrogram import filters
+from pyrogram import filters, raw
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
 from config import Config
@@ -40,6 +40,10 @@ async def status(app: Bot, message: Message):
     uptime = getattr(app, "uptime", _uptime)
     bot_uptime = format_uptime(now - uptime)
     system_uptime = format_uptime(now - psutil.boot_time())
+    await app.invoke(
+        raw.functions.ping.Ping(ping_id=app.rnd_id()),
+    )
+    ping = round((time.time() - now) * 1000.0, 3)
 
     disk = shutil.disk_usage("/")
 
@@ -63,6 +67,13 @@ async def status(app: Bot, message: Message):
                     ),
                     InlineKeyboardButton(
                         f"{proc.memory_info().rss / 1024 ** 2:.2f} MB",
+                        callback_data="None",
+                    ),
+                ],
+                [
+                    InlineKeyboardButton("Ping:", callback_data="None"),
+                    InlineKeyboardButton(
+                        f"{ping} ms",
                         callback_data="None",
                     ),
                 ],
