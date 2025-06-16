@@ -47,11 +47,13 @@ async def status(app: Bot, message: Message):
 
     disk = shutil.disk_usage("/")
     uname = platform.uname()
+    battery = psutil.sensors_battery()
 
     data = {
         "Bot Uptime:": bot_uptime,
         "System Uptime:": system_uptime,
         "Memory Usage:": f"{proc.memory_info().rss / 1024 ** 2:.2f} MB",
+        "Battery Percentage:": f"{battery.percent}%" if battery else None,
         "Ping:": f"{ping} ms",
         "Disk Usage": (
             f"{disk.used / 1024**3:.2f}/{disk.total / 1024**3:.2f} GB"
