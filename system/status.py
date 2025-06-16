@@ -46,59 +46,29 @@ async def status(app: Bot, message: Message):
     ping = round((time.time() - now) * 1000.0, 3)
 
     disk = shutil.disk_usage("/")
+    uname = platform.uname()
+
+    data = {
+        "Bot Uptime:": bot_uptime,
+        "System Uptime:": system_uptime,
+        "Memory Usage:": f"{proc.memory_info().rss / 1024 ** 2:.2f} MB",
+        "Ping:": f"{ping} ms",
+        "Disk Usage": (
+            f"{disk.used / 1024**3:.2f}/{disk.total / 1024**3:.2f} GB"
+        ),
+        "Python:": platform.python_version(),
+        "OS:": f"{uname.system} {uname.release}",
+    }
 
     await message.reply(
         "**Bot Status**:",
         reply_markup=InlineKeyboardMarkup(
             [
-                [
-                    InlineKeyboardButton("Bot Uptime:", callback_data="None"),
-                    InlineKeyboardButton(bot_uptime, callback_data="None"),
-                ],
-                [
-                    InlineKeyboardButton(
-                        "System Uptime:", callback_data="None"
-                    ),
-                    InlineKeyboardButton(system_uptime, callback_data="None"),
-                ],
-                [
-                    InlineKeyboardButton(
-                        "Memory Usage:", callback_data="None"
-                    ),
-                    InlineKeyboardButton(
-                        f"{proc.memory_info().rss / 1024 ** 2:.2f} MB",
-                        callback_data="None",
-                    ),
-                ],
-                [
-                    InlineKeyboardButton("Ping:", callback_data="None"),
-                    InlineKeyboardButton(
-                        f"{ping} ms",
-                        callback_data="None",
-                    ),
-                ],
-                [
-                    InlineKeyboardButton("Disk Usage", callback_data="None"),
-                    InlineKeyboardButton(
-                        f"{disk.used / 1024**3:.2f}/"
-                        f"{disk.total / 1024**3:.2f} GB",
-                        callback_data="None",
-                    ),
-                ],
-                [
-                    InlineKeyboardButton("Python", callback_data="None"),
-                    InlineKeyboardButton(
-                        platform.python_version(), callback_data="None"
-                    ),
-                ],
-                [
-                    InlineKeyboardButton("OS", callback_data="None"),
-                    InlineKeyboardButton(
-                        f"{platform.system()} {platform.release()}",
-                        callback_data="None",
-                    ),
-                ],
+                InlineKeyboardButton(key, callback_data="None"),
+                InlineKeyboardButton(str(value), callback_data="None"),
             ]
+            for key, value in data.items()
+            if value is not None
         ),
     )
 
