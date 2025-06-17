@@ -366,3 +366,4 @@ async def lastfm_callback(app: Bot, query: CallbackQuery):
 
 __all__ = ["lastfm_inline", "lastfm_inline_result", "lastfm_callback"]
 __plugin__ = True
+__bot_only__ = True

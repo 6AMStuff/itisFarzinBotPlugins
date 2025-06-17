@@ -356,3 +356,4 @@ async def pin(app: Bot, message: Message):
 
 __all__ = ["restrict", "restrict_callback", "pin"]
 __plugin__ = True
+__bot_only__ = True

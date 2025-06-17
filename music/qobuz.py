@@ -368,3 +368,4 @@ async def qobuz_search(_: Bot, query: CallbackQuery):
 
 __all__ = ["qobuz_message", "qobuz_callback", "qobuz_search"]
 __plugin__ = True
+__bot_only__ = True

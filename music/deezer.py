@@ -679,3 +679,4 @@ async def deezer_search(_: Bot, query: CallbackQuery):
 
 __all__ = ["deezer_message", "deezer_callback", "deezer_search"]
 __plugin__ = True
+__bot_only__ = True

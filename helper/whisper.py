@@ -126,3 +126,4 @@ async def whisper_callback(_: Bot, query: CallbackQuery):
 
 __all__ = ["whisper_inline", "whisper_inline_result", "whisper_callback"]
 __plugin__ = True
+__bot_only__ = True
