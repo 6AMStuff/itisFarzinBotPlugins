@@ -55,8 +55,8 @@ async def status(app: Bot, message: Message):
         "Memory Usage:": f"{proc.memory_info().rss / 1024 ** 2:.2f} MB",
         "Battery Percentage:": f"{battery.percent}%" if battery else None,
         "Ping:": f"{ping} ms",
-        "Disk Usage": (
-            f"{disk.used / 1024**3:.2f}/{disk.total / 1024**3:.2f} GB"
+        "Disk Usage:": (
+            f"{disk.used / 1024**3:.2f} / {disk.total / 1024**3:.2f} GB"
         ),
         "Python:": platform.python_version(),
         "OS:": f"{uname.system} {uname.release}",
