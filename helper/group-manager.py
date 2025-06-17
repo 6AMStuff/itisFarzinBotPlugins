@@ -183,15 +183,19 @@ async def restrict(app: Bot, message: Message):
                     "until " + formatted_date if duration else "forever",
                     f"\nFor reason: **{reason}**" if reason else "",
                 ),
-                reply_markup=InlineKeyboardMarkup(
-                    [
+                reply_markup=(
+                    InlineKeyboardMarkup(
                         [
-                            InlineKeyboardButton(
-                                "Unban",
-                                f"restrict unban {user.id}",
-                            )
+                            [
+                                InlineKeyboardButton(
+                                    "Unban",
+                                    f"restrict unban {user.id}",
+                                )
+                            ]
                         ]
-                    ]
+                    )
+                    if app.is_bot
+                    else None
                 ),
             )
         case "unban":
@@ -229,15 +233,19 @@ async def restrict(app: Bot, message: Message):
                     "until " + formatted_date if duration else "forever",
                     f"\nFor reason: **{reason}**" if reason else "",
                 ),
-                reply_markup=InlineKeyboardMarkup(
-                    [
+                reply_markup=(
+                    InlineKeyboardMarkup(
                         [
-                            InlineKeyboardButton(
-                                "Unmute",
-                                f"restrict unmute {user.id}",
-                            )
+                            [
+                                InlineKeyboardButton(
+                                    "Unmute",
+                                    f"restrict unmute {user.id}",
+                                )
+                            ]
                         ]
-                    ]
+                    )
+                    if app.is_bot
+                    else None
                 ),
             )
         case "unmute":
@@ -356,4 +364,4 @@ async def pin(app: Bot, message: Message):
 
 __all__ = ["restrict", "restrict_callback", "pin"]
 __plugin__ = True
-__bot_only__ = True
+__bot_only__ = False
