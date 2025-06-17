@@ -1,3 +1,17 @@
+## v7.0.1 (2025-06-17)
+
+### Feat
+
+- **group-manager**: support cli
+- **status**: support cli
+- define `__bot_only__`
+- **status**: add battery percentage
+- **status**: add ping latency
+
+### Refactor
+
+- **status**: clean up inline keyboard
+
 ## v7.0.0 (2025-06-10)
 
 ### Feat
