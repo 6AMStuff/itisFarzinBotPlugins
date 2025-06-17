@@ -43,18 +43,19 @@ async def status(app: Bot, message: Message):
     await app.invoke(
         raw.functions.ping.Ping(ping_id=app.rnd_id()),
     )
-    ping = round((time.time() - now) * 1000.0, 3)
+    ping = (time.time() - now) * 1000
 
     disk = shutil.disk_usage("/")
     uname = platform.uname()
     battery = psutil.sensors_battery()
 
+    text = "**Bot Status**:\n\n"
     data = {
         "Bot Uptime:": bot_uptime,
         "System Uptime:": system_uptime,
         "Memory Usage:": f"{proc.memory_info().rss / 1024 ** 2:.2f} MB",
         "Battery Percentage:": f"{battery.percent}%" if battery else None,
-        "Ping:": f"{ping} ms",
+        "Ping:": f"{ping:.3f} ms",
         "Disk Usage:": (
             f"{disk.used / 1024**3:.2f} / {disk.total / 1024**3:.2f} GB"
         ),
@@ -62,19 +63,31 @@ async def status(app: Bot, message: Message):
         "OS:": f"{uname.system} {uname.release}",
     }
 
-    await message.reply(
-        "**Bot Status**:",
-        reply_markup=InlineKeyboardMarkup(
+    if getattr(app, "is_bot", bool(app.bot_token)):
+        keyboard = InlineKeyboardMarkup(
             [
                 InlineKeyboardButton(key, callback_data="None"),
                 InlineKeyboardButton(str(value), callback_data="None"),
             ]
             for key, value in data.items()
             if value is not None
-        ),
+        )
+    else:
+        text += "\n".join(
+            [
+                f"• {key} {value}"
+                for key, value in data.items()
+                if value is not None
+            ]
+        )
+        keyboard = None
+
+    await message.reply(
+        text,
+        reply_markup=keyboard,
     )
 
 
 __all__ = ["status"]
 __plugin__ = True
-__bot_only__ = True
+__bot_only__ = False
