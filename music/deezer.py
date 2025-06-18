@@ -651,6 +651,8 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             track["album"] = album
             track["date"] = album["release_date"]
             tag_file(full_path, cover_path, track)
+
+        await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
         track = await deezer.get_track(info["id"])
         cover = await deezer.get_track_cover(track=track)
