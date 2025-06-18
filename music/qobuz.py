@@ -290,22 +290,30 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             cover_url: str = album["image"]["large"]
             cover_msg = await query.message.reply("Downloading **cover.jpg**.")
             for i, size in enumerate(("org", "600")):
-                url = cover_url.replace("600", size)
-                async with httpx.AsyncClient() as client:
-                    response = await client.head(url)
-                    file_size = response.headers.get(
-                        "Content-Length", None if i == 0 else 1
-                    )
-                    if file_size and int(file_size) > 4 * 1024 * 1024:
-                        continue
+                try:
+                    url = cover_url.replace("600", size)
+                    async with httpx.AsyncClient() as client:
+                        response = await client.head(url)
+                        file_size = response.headers.get(
+                            "Content-Length", None if i == 0 else 1
+                        )
+                        if file_size and int(file_size) > 4 * 1024 * 1024:
+                            continue
 
-                    await download_file(
-                        url,
-                        cover_path,
-                        progress=download_progress,
-                        progress_args=("cover.jpg", time.time(), cover_msg),
-                    )
-                    break
+                        await download_file(
+                            url,
+                            cover_path,
+                            progress=download_progress,
+                            progress_args=(
+                                "cover.jpg",
+                                time.time(),
+                                cover_msg,
+                            ),
+                        )
+                        break
+                except httpx.ConnectTimeout:
+                    await cover_msg.edit("Failed to download the cover.")
+                    return
 
         for track in tracks:
             stream_data = await qobuz.get_file_url(str(track["id"]))
@@ -325,14 +333,22 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 )
                 continue
 
-            await download_file(
-                stream_data["url"],
-                full_path,
-                progress=download_progress,
-                progress_args=(track_name, time.time(), track_msg),
-            )
+            try:
+                await download_file(
+                    stream_data["url"],
+                    full_path,
+                    progress=download_progress,
+                    progress_args=(track_name, time.time(), track_msg),
+                )
+            except httpx.ConnectTimeout:
+                await track_msg.edit(
+                    parse_data("Failed to download the track {name}.")
+                )
+                continue
+
             track["source"] = "Qobuz"
             tag_file(full_path, cover_path, track)
+
         await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
         track = await qobuz.get_track(info["id"])

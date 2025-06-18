@@ -602,12 +602,16 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
         if not os.path.exists(cover_path):
             cover_url: str = album["cover"]
             cover_msg = await query.message.reply("Downloading **cover.jpg**.")
-            await download_file(
-                cover_url,
-                cover_path,
-                progress=download_progress,
-                progress_args=("cover.jpg", time(), cover_msg),
-            )
+            try:
+                await download_file(
+                    cover_url,
+                    cover_path,
+                    progress=download_progress,
+                    progress_args=("cover.jpg", time(), cover_msg),
+                )
+            except httpx.ConnectTimeout:
+                await cover_msg.edit("Failed to download the cover.")
+                return
 
         for track in tracks:
             url = await deezer.get_file_url(track)
@@ -627,15 +631,22 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 )
                 continue
 
-            await download_file(
-                url,
-                full_path,
-                chunk_size=2048,
-                chunk_process=deezer.decrypt_chunk,
-                chunk_process_args=(track["id"],),
-                progress=download_progress,
-                progress_args=(track_name, time(), track_msg),
-            )
+            try:
+                await download_file(
+                    url,
+                    full_path,
+                    chunk_size=2048,
+                    chunk_process=deezer.decrypt_chunk,
+                    chunk_process_args=(track["id"],),
+                    progress=download_progress,
+                    progress_args=(track_name, time(), track_msg),
+                )
+            except httpx.ConnectTimeout:
+                await track_msg.edit(
+                    parse_data("Failed to download the track {name}.")
+                )
+                continue
+
             track["source"] = "Deezer"
             track["album"] = album
             track["date"] = album["release_date"]
