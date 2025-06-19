@@ -228,12 +228,7 @@ def on_data_change():
     lastfm = set_up_lastfm()
 
 
-async def lastfm_chosen_filter(_, __, chosen: ChosenInlineResult):
-    return chosen.result_id in ("lastfm_status", "lastfm_expanded_status")
-
-
 lastfm = set_up_lastfm()
-lastfm_chosen = filters.create(lastfm_chosen_filter)
 
 
 @Bot.on_inline_query(group=1)
@@ -283,7 +278,12 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
     )
 
 
-@Bot.on_chosen_inline_result(lastfm_chosen)
+@Bot.on_chosen_inline_result(
+    filters.create(
+        lambda _, __, chosen: chosen.result_id
+        in ("lastfm_status", "lastfm_expanded_status")
+    )
+)
 async def lastfm_inline_result(app: Bot, chosen: ChosenInlineResult):
     if isinstance(lastfm, str):
         await app.edit_inline_text(chosen.inline_message_id, lastfm)
