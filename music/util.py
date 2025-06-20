@@ -176,7 +176,7 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
         tagger["composer"] = parse_data("{composer}", track_info)
         tagger["copyright"] = parse_data("{copyright}", track_info)
         tagger["comment"] = parse_data(
-            "Downloaded by itisFarzin's bot, SOURCE: {source}",
+            "Downloaded by itisFarzin's bot. Source: {source}.",
             track_info,
             "Unknown",
         )
@@ -243,7 +243,7 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
             desc="Comment",
             text=[
                 parse_data(
-                    "Downloaded by itisFarzin's bot, SOURCE: {source}",
+                    "Downloaded by itisFarzin's bot. Source: {source}.",
                     track_info,
                     "Unknown",
                 )
