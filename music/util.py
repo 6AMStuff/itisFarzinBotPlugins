@@ -125,6 +125,10 @@ def parse_data(text: str, data: dict, missing_text: str = None):
         _data["artist"] = data["artist"]["name"]
     if "title" in data:
         _data["name"] = data["title"]
+    if "version" in data and data["version"]:
+        if "(" not in data["version"]:
+            _data["version"] = f"({data['version']})"
+        _data["name"] += f" {_data["version"]}"
     if "format_id" in data:
         _data["format"] = "flac" if _data["format_id"] in {6, 7, 27} else "mp3"
     if "album" in data:

@@ -330,6 +330,7 @@ class Deezer(DeezerAPI):
         result = dict(
             id=data["SNG_ID"],
             title=data["SNG_TITLE"],
+            version=data["VERSION"],
             artist={"name": data["ART_NAME"]},
             time=data["SNG_ID"],
             duration=data["DURATION"],
