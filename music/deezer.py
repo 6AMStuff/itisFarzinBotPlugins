@@ -505,8 +505,8 @@ deezer = None
     Config.IS_ADMIN
     & filters.regex(
         rf"^{Config.REGEX_CMD_PREFIXES}deezer"
-        r"(?: https://www\.deezer\.com/(?:[a-z]{2}/)?album/(?P<id>\d+)"
-        r"| (?P<query>.+))$"
+        r"(?: https:\/\/www\.deezer\.com/(?:[a-z]{2}\/)?(?P<type>album|track)"
+        r"\/(?P<id>\d+)| (?P<query>.+))$"
     )
 )
 async def deezer_message(_: Bot, message: Message):
@@ -518,8 +518,10 @@ async def deezer_message(_: Bot, message: Message):
         await message.reply(deezer)
         return
 
-    album_id = message.matches[0].group("id")
-    query = message.matches[0].group("query")
+    match = message.matches[0]
+    type = match.group("type")
+    id = match.group("id")
+    query = match.group("query")
 
     if query:
         await message.reply(
@@ -527,44 +529,53 @@ async def deezer_message(_: Bot, message: Message):
             reply_markup=await deezer_search_keyboard(query),
         )
         return
-    elif not album_id:
+    elif not id:
         await message.reply(
-            f"{Config.CMD_PREFIXES[0]}deezer [album url] | [query to search]"
+            f"{Config.CMD_PREFIXES[0]}deezer [album/track url] |"
+            " [query to search]"
         )
         return
 
     try:
-        album = await deezer.get_album(album_id)
+        if type == "track":
+            data = await deezer.get_track(id)
+            cover = await deezer.get_track_cover(track=data)
+        else:
+            data = await deezer.get_album(id)
+            cover = data["cover"]
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    f"Download {type}", f"deezer dl{type} {id}"
+                )
+            ],
+        ]
+        if type == "album":
+            keyboard += [
+                [
+                    InlineKeyboardButton("—", "none"),
+                    InlineKeyboardButton("Tracks", "none"),
+                    InlineKeyboardButton("—", "none"),
+                ],
+            ]
+            keyboard += [
+                [
+                    InlineKeyboardButton(
+                        parse_data("{time} | {name} - {artist}", track),
+                        parse_data("deezer dltrack {id}", track),
+                    )
+                ]
+                for track in data["songs"]
+            ]
+
+        await message.reply_photo(
+            cover,
+            caption=parse_data("{name} - {artist}", data),
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
     except Exception as e:
         await message.reply("**ERROR**: " + str(e))
-        return
-
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                "Download the album", f"deezer dlalbum {album_id}"
-            )
-        ],
-        [
-            InlineKeyboardButton("—", "none"),
-            InlineKeyboardButton("Tracks", "none"),
-            InlineKeyboardButton("—", "none"),
-        ],
-    ]
-    tracks = [
-        [
-            InlineKeyboardButton(
-                parse_data("{time} | {name} - {artist}", track),
-                parse_data("deezer dltrack {id}", track),
-            )
-        ]
-        for track in album["songs"]
-    ]
-    await message.reply_photo(
-        album["cover"],
-        caption=parse_data("{name} - {artist}", album),
-        reply_markup=InlineKeyboardMarkup(keyboard + tracks),
-    )
 
 
 @Bot.on_callback_query(
