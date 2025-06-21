@@ -593,7 +593,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             album = await deezer.get_album(_track["album_id"])
             tracks = [_track]
 
-        _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
+        _album_path = Config.getdata("deezer_album_path", "{artist}/{name}")
         album_path = download_path + parse_data(_album_path, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
         os.makedirs(album_path, exist_ok=True)
