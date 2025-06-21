@@ -340,7 +340,9 @@ class Deezer(DeezerAPI):
             disc_number=data["DISK_NUMBER"],
             track_number=data["TRACK_NUMBER"],
             composer={
-                "name": ", ".join(data["SNG_CONTRIBUTORS"].get("composer", []))
+                "name": ", ".join(
+                    (data["SNG_CONTRIBUTORS"] or {}).get("composer", [])
+                )
             },
             copyright=data.get("COPYRIGHT"),
         )
