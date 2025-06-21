@@ -267,7 +267,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             await query.answer("ERROR: " + str(e))
             return
 
-        await query.answer("Download is in process")
+        await query.answer("Download is in process.")
         download_path = (
             Config.getdata("download_path", "downloads", use_env=True) + "/"
         )
@@ -341,6 +341,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 
         await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
+        await query.answer("Wait.")
         track = await qobuz.get_track(info["id"])
         album = await qobuz.get_album(track["album"]["id"])
         await query.message.reply_photo(

@@ -582,7 +582,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
     info = query.matches[0].groupdict()
 
     if info["type"] in ["dltrack", "dlalbum"]:
-        await query.answer("Download is in process")
+        await query.answer("Download is in process.")
         download_path = (
             Config.getdata("download_path", "downloads", use_env=True) + "/"
         )
@@ -656,6 +656,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
 
         await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
+        await query.answer("Wait.")
         track = await deezer.get_track(info["id"])
         cover = await deezer.get_track_cover(track=track)
         await query.message.reply_photo(
