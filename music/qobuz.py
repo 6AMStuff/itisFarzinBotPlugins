@@ -287,33 +287,23 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 
         cover_path = album_path + "cover.jpg"
         if not os.path.exists(cover_path):
-            cover_url: str = album["image"]["large"]
+            cover_url: str = album["image"]["large"].replace("600", "org")
             cover_msg = await query.message.reply("Downloading **cover.jpg**.")
-            for i, size in enumerate(("org", "600")):
-                try:
-                    url = cover_url.replace("600", size)
-                    async with httpx.AsyncClient() as client:
-                        response = await client.head(url)
-                        file_size = response.headers.get(
-                            "Content-Length", None if i == 0 else 1
-                        )
-                        if file_size and int(file_size) > 4 * 1024 * 1024:
-                            continue
 
-                        await download_file(
-                            url,
-                            cover_path,
-                            progress=download_progress,
-                            progress_args=(
-                                "cover.jpg",
-                                time.time(),
-                                cover_msg,
-                            ),
-                        )
-                        break
-                except httpx.ConnectTimeout:
-                    await cover_msg.edit("Failed to download the cover.")
-                    return
+            try:
+                await download_file(
+                    cover_url,
+                    cover_path,
+                    progress=download_progress,
+                    progress_args=(
+                        "cover.jpg",
+                        time.time(),
+                        cover_msg,
+                    ),
+                )
+            except httpx.ConnectTimeout:
+                await cover_msg.edit("Failed to download the cover.")
+                return
 
         for track in tracks:
             stream_data = await qobuz.get_file_url(str(track["id"]))
