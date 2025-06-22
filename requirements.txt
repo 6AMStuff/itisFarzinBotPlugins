@@ -5,3 +5,4 @@ sqlalchemy==2.0.40
 pylast==5.5.0
 humanize==4.12.3
 psutil==7.0.0
+qrcode[pil]==8.2
