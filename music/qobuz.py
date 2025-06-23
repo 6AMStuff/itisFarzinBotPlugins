@@ -10,7 +10,14 @@ from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
 )
-from .util import download_file, download_progress, parse_data, tag_file
+from .util import (
+    download_file,
+    download_progress,
+    parse_data,
+    tag_file,
+    error_handler,
+    error_handler_decorator,
+)
 
 from config import Config
 
@@ -203,6 +210,7 @@ qobuz = set_up_qobuz()
         r"| (?P<query>.+))$"
     )
 )
+@error_handler_decorator
 async def qobuz_message(_: Bot, message: Message):
     if isinstance(qobuz, str):
         await message.reply(qobuz)
@@ -260,6 +268,7 @@ async def qobuz_message(_: Bot, message: Message):
 @Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^qobuz (?P<type>\w+) (?P<id>\w+)$")
 )
+@error_handler_decorator
 async def qobuz_callback(_: Bot, query: CallbackQuery):
     if isinstance(qobuz, str):
         await query.answer(qobuz)
@@ -296,19 +305,19 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             cover_url: str = album["image"]["large"].replace("600", "org")
             cover_msg = await query.message.reply("Downloading **cover.jpg**.")
 
-            try:
-                await download_file(
-                    cover_url,
-                    cover_path,
+            if await error_handler(
+                download_file,
+                kwargs=dict(
+                    url=cover_url,
+                    filename=cover_path,
                     progress=download_progress,
-                    progress_args=(
-                        "cover.jpg",
-                        time.time(),
-                        cover_msg,
-                    ),
-                )
-            except httpx.ConnectTimeout:
-                await cover_msg.edit("Failed to download the cover.")
+                    progress_args=("cover.jpg", time(), cover_msg),
+                ),
+                update=cover_msg,
+                text="Failed to download the cover.",
+            ):
+                if os.path.exists(cover_path):
+                    os.remove(cover_path)
                 return
 
         for track in tracks:
@@ -329,17 +338,22 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 )
                 continue
 
-            try:
-                await download_file(
-                    stream_data["url"],
-                    full_path,
+            if await error_handler(
+                download_file,
+                kwargs=dict(
+                    url=stream_data["url"],
+                    filename=full_path,
                     progress=download_progress,
-                    progress_args=(track_name, time.time(), track_msg),
-                )
-            except httpx.ConnectTimeout:
-                await track_msg.edit(
-                    parse_data("Failed to download the track {name}.")
-                )
+                    progress_args=(track_name, time(), track_msg),
+                ),
+                update=track_msg,
+                text=parse_data(
+                    "Failed to download the track **{name}**.", track
+                ),
+            ):
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+
                 continue
 
             track["source"] = "Qobuz"
@@ -368,6 +382,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 @Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^qose (?P<query>.+?) (?P<page>\d+)$")
 )
+@error_handler_decorator
 async def qobuz_search(_: Bot, query: CallbackQuery):
     if isinstance(qobuz, str):
         await query.answer(qobuz)

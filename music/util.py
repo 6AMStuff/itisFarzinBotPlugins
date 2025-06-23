@@ -4,9 +4,9 @@ import httpx
 import datetime
 from mutagen.mp3 import MP3
 from typing import Callable
-from pyrogram.types import Message
 from mutagen.id3 import PictureType
 from mutagen.flac import FLAC, Picture
+from pyrogram.types import Message, CallbackQuery
 from mutagen.id3 import (
     TIT2,
     TPE1,
@@ -21,6 +21,50 @@ from mutagen.id3 import (
     TPOS,
     APIC,
 )
+
+
+async def error_handler(
+    func: Callable,
+    args: tuple = None,
+    kwargs: dict = None,
+    update: Message | CallbackQuery = None,
+    texts: dict = None,
+    text: dict = None,
+    from_decorator: bool = False,
+):
+    args = args or ()
+    kwargs = kwargs or {}
+
+    try:
+        await func(*args, **kwargs)
+        return False
+    except Exception as e:
+        text = (texts or {}).get(type(e), text or str(e))
+
+        if isinstance(update, Message):
+            if from_decorator:
+                await update.reply(text)
+            else:
+                await update.edit(text)
+        elif isinstance(update, CallbackQuery):
+            await update.answer(text)
+
+    return True
+
+
+def error_handler_decorator(func: Callable):
+    async def wrapper(app, update: Message | CallbackQuery):
+        await error_handler(
+            func,
+            args=(app, update),
+            update=update,
+            text="Try again.",
+            from_decorator=True,
+        )
+
+    wrapper.__name__ = func.__name__
+
+    return wrapper
 
 
 async def download_file(

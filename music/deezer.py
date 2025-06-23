@@ -14,7 +14,14 @@ from pyrogram.types import (
     InlineKeyboardButton,
 )
 from cryptography.hazmat.backends import default_backend
-from .util import download_file, download_progress, parse_data, tag_file
+from .util import (
+    download_file,
+    download_progress,
+    parse_data,
+    tag_file,
+    error_handler,
+    error_handler_decorator,
+)
 from cryptography.hazmat.decrepit.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import Cipher, modes
 
@@ -516,6 +523,7 @@ deezer = None
         r"\/(?P<id>\d+)| (?P<query>.+))$"
     )
 )
+@error_handler_decorator
 async def deezer_message(_: Bot, message: Message):
     global deezer
     if deezer is None:
@@ -588,6 +596,7 @@ async def deezer_message(_: Bot, message: Message):
 @Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^deezer (?P<type>\w+) (?P<id>\w+)$")
 )
+@error_handler_decorator
 async def deezer_callback(_: Bot, query: CallbackQuery):
     global deezer
     if deezer is None:
@@ -622,15 +631,23 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
         if not os.path.exists(cover_path):
             cover_url: str = album["cover"]
             cover_msg = await query.message.reply("Downloading **cover.jpg**.")
-            try:
-                await download_file(
-                    cover_url,
-                    cover_path,
+
+            if await error_handler(
+                download_file,
+                kwargs=dict(
+                    url=cover_url,
+                    filename=cover_path,
                     progress=download_progress,
                     progress_args=("cover.jpg", time(), cover_msg),
-                )
-            except httpx.ConnectTimeout:
-                await cover_msg.edit("Failed to download the cover.")
+                ),
+                update=cover_msg,
+                text=(
+                    "Failed to download the cover."
+                    "\nStopping the download process."
+                ),
+            ):
+                if os.path.exists(cover_path):
+                    os.remove(cover_path)
                 return
 
         for track in tracks:
@@ -651,20 +668,25 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 )
                 continue
 
-            try:
-                await download_file(
-                    url,
-                    full_path,
+            if await error_handler(
+                download_file,
+                kwargs=dict(
+                    url=url,
+                    filename=full_path,
                     chunk_size=2048,
                     chunk_process=deezer.decrypt_chunk,
                     chunk_process_args=(track["id"],),
                     progress=download_progress,
                     progress_args=(track_name, time(), track_msg),
-                )
-            except httpx.ConnectTimeout:
-                await track_msg.edit(
-                    parse_data("Failed to download the track {name}.")
-                )
+                ),
+                update=track_msg,
+                text=parse_data(
+                    "Failed to download the track **{name}**.", track
+                ),
+            ):
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+
                 continue
 
             track["source"] = "Deezer"
@@ -696,6 +718,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
 @Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^dese (?P<query>.+?) (?P<page>\d+)$")
 )
+@error_handler_decorator
 async def deezer_search(_: Bot, query: CallbackQuery):
     global deezer
     if deezer is None:
