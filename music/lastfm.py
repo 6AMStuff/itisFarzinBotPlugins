@@ -76,6 +76,10 @@ async def lastfm_status(
     with_cover: bool = False,
     expanded: bool = False,
 ):
+    global lastfm
+    if lastfm is None:
+        lastfm = await set_up_lastfm()
+
     if isinstance(lastfm, str):
         await app.edit_inline_text(message_id, lastfm)
         return
@@ -171,6 +175,10 @@ async def lastfm_status(
 
 
 async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
+    global lastfm
+    if lastfm is None:
+        lastfm = await set_up_lastfm()
+
     if isinstance(lastfm, str):
         await app.edit_inline_text(message_id, lastfm)
         return
@@ -228,7 +236,7 @@ def on_data_change():
     lastfm = set_up_lastfm()
 
 
-lastfm = set_up_lastfm()
+lastfm = None
 
 
 @Bot.on_inline_query(group=1)
@@ -285,6 +293,10 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
     )
 )
 async def lastfm_inline_result(app: Bot, chosen: ChosenInlineResult):
+    global lastfm
+    if lastfm is None:
+        lastfm = await set_up_lastfm()
+
     if isinstance(lastfm, str):
         await app.edit_inline_text(chosen.inline_message_id, lastfm)
         return
