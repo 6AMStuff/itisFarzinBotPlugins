@@ -123,6 +123,10 @@ def parse_data(text: str, data: dict, missing_text: str = None):
         _data["artist"] = data["performer"]["name"]
     elif "artist" in data:
         _data["artist"] = data["artist"]["name"]
+    if "artists" in data:
+        _data["artist"] = ", ".join(
+            artist["name"] for artist in data["artists"]
+        )
     if "title" in data:
         _data["name"] = data["title"]
     if "version" in data and data["version"]:

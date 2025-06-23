@@ -332,6 +332,9 @@ class Deezer(DeezerAPI):
             title=data["SNG_TITLE"],
             version=data.get("VERSION"),
             artist={"name": data["ART_NAME"]},
+            artists=[
+                {"name": artist["ART_NAME"]} for artist in data["ARTISTS"]
+            ],
             time=data["SNG_ID"],
             duration=data["DURATION"],
             track_token=data["TRACK_TOKEN"],
@@ -400,6 +403,9 @@ class Deezer(DeezerAPI):
             id=data["ALB_ID"],
             title=data["ALB_TITLE"],
             artist={"name": data["ART_NAME"]},
+            artists=[
+                {"name": artist["ART_NAME"]} for artist in data["ARTISTS"]
+            ],
             tracks_count=data["NUMBER_TRACK"],
             songs=(
                 [self._track(track) for track in album["SONGS"]["data"]]
