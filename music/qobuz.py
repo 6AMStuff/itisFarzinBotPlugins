@@ -18,12 +18,18 @@ from config import Config
 # Qobuz class from https://github.com/OrfiDev/orpheusdl-qobuz
 # with some modifications
 class Qobuz:
-    def __init__(self, app_id: str | int, app_secret: str, auth_token: str):
+    def __init__(
+        self,
+        app_id: str | int,
+        app_secret: str,
+        auth_token: str,
+        proxy: str = None,
+    ):
         self.api_base = "https://www.qobuz.com/api.json/0.2/"
         self._app_id = str(app_id)
         self._app_secret = app_secret
         self._auth_token = auth_token
-        self.session = httpx.AsyncClient()
+        self.session = httpx.AsyncClient(proxy=proxy)
 
     def headers(self) -> dict[str, str]:
         return {
@@ -150,7 +156,7 @@ def set_up_qobuz():
             )
         return error_message
 
-    return Qobuz(app_id, app_secret, auth_token)
+    return Qobuz(app_id, app_secret, auth_token, Config.PROXY)
 
 
 async def qobuz_search_keyboard(query: str, page: int = 0):
