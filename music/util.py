@@ -70,6 +70,7 @@ def error_handler_decorator(func: Callable):
 async def download_file(
     url: str,
     filename: str,
+    proxy: str = None,
     chunk_size: int = None,
     chunk_process: Callable = None,
     chunk_process_args: tuple = None,
@@ -77,7 +78,7 @@ async def download_file(
     progress_args: tuple = None,
 ):
     progress_args = progress_args or ()
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(proxy=proxy) as client:
         async with client.stream("GET", url) as response:
             response.raise_for_status()
             total_size = int(response.headers.get("content-length", 0))

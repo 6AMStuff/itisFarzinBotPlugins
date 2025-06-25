@@ -637,6 +637,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 kwargs=dict(
                     url=cover_url,
                     filename=cover_path,
+                    proxy=Config.PROXY,
                     progress=download_progress,
                     progress_args=("cover.jpg", time(), cover_msg),
                 ),
@@ -673,6 +674,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 kwargs=dict(
                     url=url,
                     filename=full_path,
+                    proxy=Config.PROXY,
                     chunk_size=2048,
                     chunk_process=deezer.decrypt_chunk,
                     chunk_process_args=(track["id"],),

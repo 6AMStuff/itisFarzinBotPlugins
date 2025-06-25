@@ -310,6 +310,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 kwargs=dict(
                     url=cover_url,
                     filename=cover_path,
+                    proxy=Config.PROXY,
                     progress=download_progress,
                     progress_args=("cover.jpg", time(), cover_msg),
                 ),
@@ -343,6 +344,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 kwargs=dict(
                     url=stream_data["url"],
                     filename=full_path,
+                    proxy=Config.PROXY,
                     progress=download_progress,
                     progress_args=(track_name, time(), track_msg),
                 ),
