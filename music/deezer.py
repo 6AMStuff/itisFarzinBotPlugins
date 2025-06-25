@@ -403,6 +403,19 @@ class Deezer(DeezerAPI):
 
         return self._cover(cover_hash, resolution=resolution)
 
+    async def get_track_lyrics(self, id):
+        try:
+            data = await super().get_track_lyrics(id)
+        except Exception:
+            return None
+
+        lyrics = {}
+        for lyric in data.get("LYRICS_SYNC_JSON", []):
+            if "lrc_timestamp" in lyric:
+                lyrics[lyric["lrc_timestamp"]] = lyric["line"]
+
+        return lyrics
+
     async def get_album(self, id: str | int):
         album = await super().get_album(id)
         data = album["DATA"]
@@ -694,6 +707,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             track["source"] = "Deezer"
             track["album"] = album
             track["date"] = album["release_date"]
+            track["lyrics"] = await deezer.get_track_lyrics(track["id"])
             tag_file(full_path, cover_path, track)
 
         await query.message.reply("Download is done.")
