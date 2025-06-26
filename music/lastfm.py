@@ -315,7 +315,7 @@ async def lastfm_callback(app: Bot, query: CallbackQuery):
     action, mode, time = query.matches[0].groups()
 
     if action == "status":
-        await query.answer("Wait.")
+        await query.answer()
         match mode:
             case "with_cover":
                 await lastfm_status(
@@ -372,7 +372,7 @@ async def lastfm_callback(app: Bot, query: CallbackQuery):
             )
             return
 
-        await query.answer("Wait.")
+        await query.answer()
         await lastfm_top(app, query.inline_message_id, mode, time)
 
 

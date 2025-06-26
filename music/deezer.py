@@ -712,7 +712,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
 
         await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
-        await query.answer("Wait.")
+        await query.answer()
         track = await deezer.get_track(info["id"])
         cover = await deezer.get_track_cover(track=track)
         await query.message.reply_photo(

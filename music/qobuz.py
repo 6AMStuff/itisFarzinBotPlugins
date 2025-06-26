@@ -363,7 +363,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 
         await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
-        await query.answer("Wait.")
+        await query.answer()
         track = await qobuz.get_track(info["id"])
         album = await qobuz.get_album(track["album"]["id"])
         await query.message.reply_photo(
