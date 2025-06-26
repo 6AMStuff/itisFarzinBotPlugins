@@ -1,6 +1,7 @@
 import copy
 import time
 import httpx
+import asyncio
 import datetime
 from mutagen.mp3 import MP3
 from typing import Callable
@@ -76,9 +77,14 @@ async def download_file(
     chunk_process_args: tuple = None,
     progress: Callable = None,
     progress_args: tuple = None,
+    retry: int = 3,
 ):
     progress_args = progress_args or ()
-    async with httpx.AsyncClient(proxy=proxy) as client:
+
+    if not str(retry).isdigit() or retry < 0:
+        retry = 1
+
+    async def download(client: httpx.AsyncClient):
         async with client.stream("GET", url) as response:
             response.raise_for_status()
             total_size = int(response.headers.get("content-length", 0))
@@ -108,6 +114,17 @@ async def download_file(
 
             if progress:
                 await progress(downloaded, total_size, *progress_args)
+
+    async with httpx.AsyncClient(proxy=proxy) as client:
+        for n in range(retry + 1):
+            try:
+                await download(client)
+                break
+            except Exception as e:
+                if n == retry:
+                    raise e
+
+                await asyncio.sleep(3)
 
 
 async def download_progress(
