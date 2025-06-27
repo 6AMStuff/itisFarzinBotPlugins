@@ -65,6 +65,7 @@ async def set_up_lastfm():
             api_secret=api_secret,
             username=login_username,
             password_hash=password,
+            proxy=Config.PROXY,
         )
     except Exception as e:
         return f"**ERROR**: {e}"
