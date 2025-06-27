@@ -1,3 +1,34 @@
+## v7.1.0 (2025-06-27)
+
+### Feat
+
+- **lastfm**: add proxy support
+- **music**: add retry to downloads
+- **music**: fetch track lyrics from deezer
+- **music**: add proxy support for downloads
+- **music**: improve error handling
+- **qobuz**: add proxy support
+- **music**: add version to the track title
+- **deezer**: add support for track URLs
+- **qobuz**: only download the original cover art
+- **deezer**: announce when the downloads are done
+- **qobuz,deezer**: add try-except to the downloads
+
+### Fix
+
+- **lastfm**: make `set_up_lastfm` and `on_data_change` async
+- **lastfm**: initialize lastfm when it is in use
+- **music**: use artists instead of artist
+- **qobuz,deezer**: answer to the trackinfo callback
+- **deezer**: handle empty song contributors
+- **deezer**: use `deezer_album_path` for album path
+
+### Refactor
+
+- **music**: answer with an empty message instead of wait
+- **status**: use the bot uptime instead of local uptime
+- **lastfm**: replace `lastfm_chosen` variable with a lambda function
+
 ## v7.0.1 (2025-06-17)
 
 ### Feat
