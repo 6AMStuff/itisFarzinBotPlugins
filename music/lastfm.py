@@ -22,7 +22,7 @@ from config import Config
 USERNAME = "itisFarzin"
 
 
-def set_up_lastfm():
+async def set_up_lastfm():
     global USERNAME
     api_key = Config.getdata("lastfm_api_key")
     api_secret = Config.getdata("lastfm_api_secret")
@@ -231,7 +231,7 @@ async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
     )
 
 
-def on_data_change():
+async def on_data_change():
     global lastfm
     lastfm = set_up_lastfm()
 
