@@ -6,3 +6,4 @@ pylast==5.5.0
 humanize==4.12.3
 psutil==7.0.0
 qrcode[pil]==8.2
+googletrans==4.0.2
