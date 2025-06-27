@@ -14,7 +14,14 @@ from pyrogram.types import (
     InlineKeyboardButton,
 )
 from cryptography.hazmat.backends import default_backend
-from .util import download_file, download_progress, parse_data, tag_file
+from .util import (
+    download_file,
+    download_progress,
+    parse_data,
+    tag_file,
+    error_handler,
+    error_handler_decorator,
+)
 from cryptography.hazmat.decrepit.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import Cipher, modes
 
@@ -330,7 +337,11 @@ class Deezer(DeezerAPI):
         result = dict(
             id=data["SNG_ID"],
             title=data["SNG_TITLE"],
+            version=data.get("VERSION"),
             artist={"name": data["ART_NAME"]},
+            artists=[
+                {"name": artist["ART_NAME"]} for artist in data["ARTISTS"]
+            ],
             time=data["SNG_ID"],
             duration=data["DURATION"],
             track_token=data["TRACK_TOKEN"],
@@ -340,7 +351,9 @@ class Deezer(DeezerAPI):
             disc_number=data["DISK_NUMBER"],
             track_number=data["TRACK_NUMBER"],
             composer={
-                "name": ", ".join(data["SNG_CONTRIBUTORS"].get("composer", []))
+                "name": ", ".join(
+                    (data["SNG_CONTRIBUTORS"] or {}).get("composer", [])
+                )
             },
             copyright=data.get("COPYRIGHT"),
         )
@@ -390,6 +403,19 @@ class Deezer(DeezerAPI):
 
         return self._cover(cover_hash, resolution=resolution)
 
+    async def get_track_lyrics(self, id):
+        try:
+            data = await super().get_track_lyrics(id)
+        except Exception:
+            return None
+
+        lyrics = {}
+        for lyric in data.get("LYRICS_SYNC_JSON", []):
+            if "lrc_timestamp" in lyric:
+                lyrics[lyric["lrc_timestamp"]] = lyric["line"]
+
+        return lyrics
+
     async def get_album(self, id: str | int):
         album = await super().get_album(id)
         data = album["DATA"]
@@ -397,6 +423,9 @@ class Deezer(DeezerAPI):
             id=data["ALB_ID"],
             title=data["ALB_TITLE"],
             artist={"name": data["ART_NAME"]},
+            artists=[
+                {"name": artist["ART_NAME"]} for artist in data["ARTISTS"]
+            ],
             tracks_count=data["NUMBER_TRACK"],
             songs=(
                 [self._track(track) for track in album["SONGS"]["data"]]
@@ -503,10 +532,11 @@ deezer = None
     Config.IS_ADMIN
     & filters.regex(
         rf"^{Config.REGEX_CMD_PREFIXES}deezer"
-        r"(?: https://www\.deezer\.com/(?:[a-z]{2}/)?album/(?P<id>\d+)"
-        r"| (?P<query>.+))$"
+        r"(?: https:\/\/www\.deezer\.com/(?:[a-z]{2}\/)?(?P<type>album|track)"
+        r"\/(?P<id>\d+)| (?P<query>.+))$"
     )
 )
+@error_handler_decorator
 async def deezer_message(_: Bot, message: Message):
     global deezer
     if deezer is None:
@@ -516,8 +546,10 @@ async def deezer_message(_: Bot, message: Message):
         await message.reply(deezer)
         return
 
-    album_id = message.matches[0].group("id")
-    query = message.matches[0].group("query")
+    match = message.matches[0]
+    type = match.group("type")
+    id = match.group("id")
+    query = match.group("query")
 
     if query:
         await message.reply(
@@ -525,49 +557,59 @@ async def deezer_message(_: Bot, message: Message):
             reply_markup=await deezer_search_keyboard(query),
         )
         return
-    elif not album_id:
+    elif not id:
         await message.reply(
-            f"{Config.CMD_PREFIXES[0]}deezer [album url] | [query to search]"
+            f"{Config.CMD_PREFIXES[0]}deezer [album/track url] |"
+            " [query to search]"
         )
         return
 
     try:
-        album = await deezer.get_album(album_id)
+        if type == "track":
+            data = await deezer.get_track(id)
+            cover = await deezer.get_track_cover(track=data)
+        else:
+            data = await deezer.get_album(id)
+            cover = data["cover"]
+
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    f"Download {type}", f"deezer dl{type} {id}"
+                )
+            ],
+        ]
+        if type == "album":
+            keyboard += [
+                [
+                    InlineKeyboardButton("—", "none"),
+                    InlineKeyboardButton("Tracks", "none"),
+                    InlineKeyboardButton("—", "none"),
+                ],
+            ]
+            keyboard += [
+                [
+                    InlineKeyboardButton(
+                        parse_data("{time} | {name} - {artist}", track),
+                        parse_data("deezer dltrack {id}", track),
+                    )
+                ]
+                for track in data["songs"]
+            ]
+
+        await message.reply_photo(
+            cover,
+            caption=parse_data("{name} - {artist}", data),
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
     except Exception as e:
         await message.reply("**ERROR**: " + str(e))
-        return
-
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                "Download the album", f"deezer dlalbum {album_id}"
-            )
-        ],
-        [
-            InlineKeyboardButton("—", "none"),
-            InlineKeyboardButton("Tracks", "none"),
-            InlineKeyboardButton("—", "none"),
-        ],
-    ]
-    tracks = [
-        [
-            InlineKeyboardButton(
-                parse_data("{time} | {name} - {artist}", track),
-                parse_data("deezer dltrack {id}", track),
-            )
-        ]
-        for track in album["songs"]
-    ]
-    await message.reply_photo(
-        album["cover"],
-        caption=parse_data("{name} - {artist}", album),
-        reply_markup=InlineKeyboardMarkup(keyboard + tracks),
-    )
 
 
 @Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^deezer (?P<type>\w+) (?P<id>\w+)$")
 )
+@error_handler_decorator
 async def deezer_callback(_: Bot, query: CallbackQuery):
     global deezer
     if deezer is None:
@@ -580,7 +622,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
     info = query.matches[0].groupdict()
 
     if info["type"] in ["dltrack", "dlalbum"]:
-        await query.answer("Download is in process")
+        await query.answer("Download is in process.")
         download_path = (
             Config.getdata("download_path", "downloads", use_env=True) + "/"
         )
@@ -593,7 +635,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             album = await deezer.get_album(_track["album_id"])
             tracks = [_track]
 
-        _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
+        _album_path = Config.getdata("deezer_album_path", "{artist}/{name}")
         album_path = download_path + parse_data(_album_path, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
         os.makedirs(album_path, exist_ok=True)
@@ -602,12 +644,25 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
         if not os.path.exists(cover_path):
             cover_url: str = album["cover"]
             cover_msg = await query.message.reply("Downloading **cover.jpg**.")
-            await download_file(
-                cover_url,
-                cover_path,
-                progress=download_progress,
-                progress_args=("cover.jpg", time(), cover_msg),
-            )
+
+            if await error_handler(
+                download_file,
+                kwargs=dict(
+                    url=cover_url,
+                    filename=cover_path,
+                    proxy=Config.PROXY,
+                    progress=download_progress,
+                    progress_args=("cover.jpg", time(), cover_msg),
+                ),
+                update=cover_msg,
+                text=(
+                    "Failed to download the cover."
+                    "\nStopping the download process."
+                ),
+            ):
+                if os.path.exists(cover_path):
+                    os.remove(cover_path)
+                return
 
         for track in tracks:
             url = await deezer.get_file_url(track)
@@ -627,20 +682,37 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 )
                 continue
 
-            await download_file(
-                url,
-                full_path,
-                chunk_size=2048,
-                chunk_process=deezer.decrypt_chunk,
-                chunk_process_args=(track["id"],),
-                progress=download_progress,
-                progress_args=(track_name, time(), track_msg),
-            )
+            if await error_handler(
+                download_file,
+                kwargs=dict(
+                    url=url,
+                    filename=full_path,
+                    proxy=Config.PROXY,
+                    chunk_size=2048,
+                    chunk_process=deezer.decrypt_chunk,
+                    chunk_process_args=(track["id"],),
+                    progress=download_progress,
+                    progress_args=(track_name, time(), track_msg),
+                ),
+                update=track_msg,
+                text=parse_data(
+                    "Failed to download the track **{name}**.", track
+                ),
+            ):
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+
+                continue
+
             track["source"] = "Deezer"
             track["album"] = album
             track["date"] = album["release_date"]
+            track["lyrics"] = await deezer.get_track_lyrics(track["id"])
             tag_file(full_path, cover_path, track)
+
+        await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
+        await query.answer()
         track = await deezer.get_track(info["id"])
         cover = await deezer.get_track_cover(track=track)
         await query.message.reply_photo(
@@ -662,6 +734,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
 @Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^dese (?P<query>.+?) (?P<page>\d+)$")
 )
+@error_handler_decorator
 async def deezer_search(_: Bot, query: CallbackQuery):
     global deezer
     if deezer is None:

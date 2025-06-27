@@ -22,7 +22,7 @@ from config import Config
 USERNAME = "itisFarzin"
 
 
-def set_up_lastfm():
+async def set_up_lastfm():
     global USERNAME
     api_key = Config.getdata("lastfm_api_key")
     api_secret = Config.getdata("lastfm_api_secret")
@@ -65,6 +65,7 @@ def set_up_lastfm():
             api_secret=api_secret,
             username=login_username,
             password_hash=password,
+            proxy=Config.PROXY,
         )
     except Exception as e:
         return f"**ERROR**: {e}"
@@ -76,6 +77,10 @@ async def lastfm_status(
     with_cover: bool = False,
     expanded: bool = False,
 ):
+    global lastfm
+    if lastfm is None:
+        lastfm = await set_up_lastfm()
+
     if isinstance(lastfm, str):
         await app.edit_inline_text(message_id, lastfm)
         return
@@ -171,6 +176,10 @@ async def lastfm_status(
 
 
 async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
+    global lastfm
+    if lastfm is None:
+        lastfm = await set_up_lastfm()
+
     if isinstance(lastfm, str):
         await app.edit_inline_text(message_id, lastfm)
         return
@@ -223,17 +232,12 @@ async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
     )
 
 
-def on_data_change():
+async def on_data_change():
     global lastfm
     lastfm = set_up_lastfm()
 
 
-async def lastfm_chosen_filter(_, __, chosen: ChosenInlineResult):
-    return chosen.result_id in ("lastfm_status", "lastfm_expanded_status")
-
-
-lastfm = set_up_lastfm()
-lastfm_chosen = filters.create(lastfm_chosen_filter)
+lastfm = None
 
 
 @Bot.on_inline_query(group=1)
@@ -283,8 +287,17 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
     )
 
 
-@Bot.on_chosen_inline_result(lastfm_chosen)
+@Bot.on_chosen_inline_result(
+    filters.create(
+        lambda _, __, chosen: chosen.result_id
+        in ("lastfm_status", "lastfm_expanded_status")
+    )
+)
 async def lastfm_inline_result(app: Bot, chosen: ChosenInlineResult):
+    global lastfm
+    if lastfm is None:
+        lastfm = await set_up_lastfm()
+
     if isinstance(lastfm, str):
         await app.edit_inline_text(chosen.inline_message_id, lastfm)
         return
@@ -303,7 +316,7 @@ async def lastfm_callback(app: Bot, query: CallbackQuery):
     action, mode, time = query.matches[0].groups()
 
     if action == "status":
-        await query.answer("Wait.")
+        await query.answer()
         match mode:
             case "with_cover":
                 await lastfm_status(
@@ -360,7 +373,7 @@ async def lastfm_callback(app: Bot, query: CallbackQuery):
             )
             return
 
-        await query.answer("Wait.")
+        await query.answer()
         await lastfm_top(app, query.inline_message_id, mode, time)
 
 

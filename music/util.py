@@ -1,12 +1,13 @@
 import copy
 import time
 import httpx
+import asyncio
 import datetime
 from mutagen.mp3 import MP3
 from typing import Callable
-from pyrogram.types import Message
 from mutagen.id3 import PictureType
 from mutagen.flac import FLAC, Picture
+from pyrogram.types import Message, CallbackQuery
 from mutagen.id3 import (
     TIT2,
     TPE1,
@@ -23,17 +24,67 @@ from mutagen.id3 import (
 )
 
 
+async def error_handler(
+    func: Callable,
+    args: tuple = None,
+    kwargs: dict = None,
+    update: Message | CallbackQuery = None,
+    texts: dict = None,
+    text: dict = None,
+    from_decorator: bool = False,
+):
+    args = args or ()
+    kwargs = kwargs or {}
+
+    try:
+        await func(*args, **kwargs)
+        return False
+    except Exception as e:
+        text = (texts or {}).get(type(e), text or str(e))
+
+        if isinstance(update, Message):
+            if from_decorator:
+                await update.reply(text)
+            else:
+                await update.edit(text)
+        elif isinstance(update, CallbackQuery):
+            await update.answer(text)
+
+    return True
+
+
+def error_handler_decorator(func: Callable):
+    async def wrapper(app, update: Message | CallbackQuery):
+        await error_handler(
+            func,
+            args=(app, update),
+            update=update,
+            text="Try again.",
+            from_decorator=True,
+        )
+
+    wrapper.__name__ = func.__name__
+
+    return wrapper
+
+
 async def download_file(
     url: str,
     filename: str,
+    proxy: str = None,
     chunk_size: int = None,
     chunk_process: Callable = None,
     chunk_process_args: tuple = None,
     progress: Callable = None,
     progress_args: tuple = None,
+    retry: int = 3,
 ):
     progress_args = progress_args or ()
-    async with httpx.AsyncClient() as client:
+
+    if not str(retry).isdigit() or retry < 0:
+        retry = 1
+
+    async def download(client: httpx.AsyncClient):
         async with client.stream("GET", url) as response:
             response.raise_for_status()
             total_size = int(response.headers.get("content-length", 0))
@@ -63,6 +114,17 @@ async def download_file(
 
             if progress:
                 await progress(downloaded, total_size, *progress_args)
+
+    async with httpx.AsyncClient(proxy=proxy) as client:
+        for n in range(retry + 1):
+            try:
+                await download(client)
+                break
+            except Exception as e:
+                if n == retry:
+                    raise e
+
+                await asyncio.sleep(3)
 
 
 async def download_progress(
@@ -123,8 +185,16 @@ def parse_data(text: str, data: dict, missing_text: str = None):
         _data["artist"] = data["performer"]["name"]
     elif "artist" in data:
         _data["artist"] = data["artist"]["name"]
+    if "artists" in data:
+        _data["artist"] = ", ".join(
+            artist["name"] for artist in data["artists"]
+        )
     if "title" in data:
         _data["name"] = data["title"]
+    if "version" in data and data["version"]:
+        if "(" not in data["version"]:
+            _data["version"] = f"({data['version']})"
+        _data["name"] += f" {_data["version"]}"
     if "format_id" in data:
         _data["format"] = "flac" if _data["format_id"] in {6, 7, 27} else "mp3"
     if "album" in data:
@@ -176,18 +246,26 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
         tagger["composer"] = parse_data("{composer}", track_info)
         tagger["copyright"] = parse_data("{copyright}", track_info)
         tagger["comment"] = parse_data(
-            "Downloaded by itisFarzin's bot, SOURCE: {source}",
+            "Downloaded by itisFarzin's bot. Source: {source}.",
             track_info,
             "Unknown",
         )
 
+        if lyrics := track_info.get("lyrics"):
+            tagger["LYRICS"] = "\n".join(
+                map(
+                    lambda lyrics: f"{lyrics[0]}{lyrics[1]}",
+                    lyrics.items(),
+                )
+            )
+
         tagger.save(file_path)
     elif track_type == "mp3":
-        audio = MP3(file_path)
-        audio.add_tags()
+        tagger = MP3(file_path)
+        tagger.add_tags()
 
         with open(image_path, "rb") as f:
-            audio.tags.add(
+            tagger.tags.add(
                 APIC(
                     encoding=3,
                     mime="image/jpeg",
@@ -197,19 +275,19 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
                 )
             )
 
-        audio.tags["TIT2"] = TIT2(
+        tagger.tags["TIT2"] = TIT2(
             encoding=3, text=[parse_data("{name}", track_info)]
         )
-        audio.tags["TPE1"] = TPE1(
+        tagger.tags["TPE1"] = TPE1(
             encoding=3, text=[parse_data("{artist}", track_info)]
         )
-        audio.tags["TALB"] = TALB(
+        tagger.tags["TALB"] = TALB(
             encoding=3, text=[parse_data("{album_name}", track_info)]
         )
-        audio.tags["TPE2"] = TPE2(
+        tagger.tags["TPE2"] = TPE2(
             encoding=3, text=[parse_data("{album_artist}", track_info)]
         )
-        audio.tags["TRCK"] = TRCK(
+        tagger.tags["TRCK"] = TRCK(
             encoding=3,
             text=[
                 parse_data("{track_number}", track_info)
@@ -217,7 +295,7 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
                 + parse_data("{total_tracks}", track_info)
             ],
         )
-        audio.tags["TPOS"] = TPOS(
+        tagger.tags["TPOS"] = TPOS(
             encoding=3,
             text=[
                 parse_data("{disc_number}", track_info)
@@ -225,32 +303,32 @@ def tag_file(file_path: str, image_path: str, track_info: dict):
                 + parse_data("{total_discs}", track_info)
             ],
         )
-        audio.tags["TDRC"] = TDRC(
+        tagger.tags["TDRC"] = TDRC(
             encoding=3, text=[parse_data("{date}", track_info, "")]
         )
-        audio.tags["TCON"] = TCON(
+        tagger.tags["TCON"] = TCON(
             encoding=3, text=[parse_data("{genre}", track_info, "")]
         )
-        audio.tags["TCOM"] = TCOM(
+        tagger.tags["TCOM"] = TCOM(
             encoding=3, text=[parse_data("{composer}", track_info)]
         )
-        audio.tags["TCOP"] = TCOP(
+        tagger.tags["TCOP"] = TCOP(
             encoding=3, text=[parse_data("{copyright}", track_info)]
         )
-        audio.tags["COMM"] = COMM(
+        tagger.tags["COMM"] = COMM(
             encoding=3,
             lang="eng",
             desc="Comment",
             text=[
                 parse_data(
-                    "Downloaded by itisFarzin's bot, SOURCE: {source}",
+                    "Downloaded by itisFarzin's bot. Source: {source}.",
                     track_info,
                     "Unknown",
                 )
             ],
         )
 
-        audio.save()
+        tagger.save()
 
 
 __util__ = True

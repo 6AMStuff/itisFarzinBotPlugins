@@ -10,7 +10,6 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from config import Config
 
 
-_uptime = time.time()
 pid = os.getpid()
 proc = psutil.Process(pid)
 
@@ -37,8 +36,7 @@ def format_uptime(seconds: float) -> str:
 async def status(app: Bot, message: Message):
     now = time.time()
 
-    uptime = getattr(app, "uptime", _uptime)
-    bot_uptime = format_uptime(now - uptime)
+    bot_uptime = format_uptime(now - app.uptime)
     system_uptime = format_uptime(now - psutil.boot_time())
     await app.invoke(
         raw.functions.ping.Ping(ping_id=app.rnd_id()),

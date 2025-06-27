@@ -10,7 +10,14 @@ from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
 )
-from .util import download_file, download_progress, parse_data, tag_file
+from .util import (
+    download_file,
+    download_progress,
+    parse_data,
+    tag_file,
+    error_handler,
+    error_handler_decorator,
+)
 
 from config import Config
 
@@ -18,12 +25,18 @@ from config import Config
 # Qobuz class from https://github.com/OrfiDev/orpheusdl-qobuz
 # with some modifications
 class Qobuz:
-    def __init__(self, app_id: str | int, app_secret: str, auth_token: str):
+    def __init__(
+        self,
+        app_id: str | int,
+        app_secret: str,
+        auth_token: str,
+        proxy: str = None,
+    ):
         self.api_base = "https://www.qobuz.com/api.json/0.2/"
         self._app_id = str(app_id)
         self._app_secret = app_secret
         self._auth_token = auth_token
-        self.session = httpx.AsyncClient()
+        self.session = httpx.AsyncClient(proxy=proxy)
 
     def headers(self) -> dict[str, str]:
         return {
@@ -150,7 +163,7 @@ def set_up_qobuz():
             )
         return error_message
 
-    return Qobuz(app_id, app_secret, auth_token)
+    return Qobuz(app_id, app_secret, auth_token, Config.PROXY)
 
 
 async def qobuz_search_keyboard(query: str, page: int = 0):
@@ -197,6 +210,7 @@ qobuz = set_up_qobuz()
         r"| (?P<query>.+))$"
     )
 )
+@error_handler_decorator
 async def qobuz_message(_: Bot, message: Message):
     if isinstance(qobuz, str):
         await message.reply(qobuz)
@@ -254,6 +268,7 @@ async def qobuz_message(_: Bot, message: Message):
 @Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^qobuz (?P<type>\w+) (?P<id>\w+)$")
 )
+@error_handler_decorator
 async def qobuz_callback(_: Bot, query: CallbackQuery):
     if isinstance(qobuz, str):
         await query.answer(qobuz)
@@ -267,7 +282,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             await query.answer("ERROR: " + str(e))
             return
 
-        await query.answer("Download is in process")
+        await query.answer("Download is in process.")
         download_path = (
             Config.getdata("download_path", "downloads", use_env=True) + "/"
         )
@@ -287,25 +302,24 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 
         cover_path = album_path + "cover.jpg"
         if not os.path.exists(cover_path):
-            cover_url: str = album["image"]["large"]
+            cover_url: str = album["image"]["large"].replace("600", "org")
             cover_msg = await query.message.reply("Downloading **cover.jpg**.")
-            for i, size in enumerate(("org", "600")):
-                url = cover_url.replace("600", size)
-                async with httpx.AsyncClient() as client:
-                    response = await client.head(url)
-                    file_size = response.headers.get(
-                        "Content-Length", None if i == 0 else 1
-                    )
-                    if file_size and int(file_size) > 4 * 1024 * 1024:
-                        continue
 
-                    await download_file(
-                        url,
-                        cover_path,
-                        progress=download_progress,
-                        progress_args=("cover.jpg", time.time(), cover_msg),
-                    )
-                    break
+            if await error_handler(
+                download_file,
+                kwargs=dict(
+                    url=cover_url,
+                    filename=cover_path,
+                    proxy=Config.PROXY,
+                    progress=download_progress,
+                    progress_args=("cover.jpg", time(), cover_msg),
+                ),
+                update=cover_msg,
+                text="Failed to download the cover.",
+            ):
+                if os.path.exists(cover_path):
+                    os.remove(cover_path)
+                return
 
         for track in tracks:
             stream_data = await qobuz.get_file_url(str(track["id"]))
@@ -325,16 +339,31 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 )
                 continue
 
-            await download_file(
-                stream_data["url"],
-                full_path,
-                progress=download_progress,
-                progress_args=(track_name, time.time(), track_msg),
-            )
+            if await error_handler(
+                download_file,
+                kwargs=dict(
+                    url=stream_data["url"],
+                    filename=full_path,
+                    proxy=Config.PROXY,
+                    progress=download_progress,
+                    progress_args=(track_name, time(), track_msg),
+                ),
+                update=track_msg,
+                text=parse_data(
+                    "Failed to download the track **{name}**.", track
+                ),
+            ):
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+
+                continue
+
             track["source"] = "Qobuz"
             tag_file(full_path, cover_path, track)
+
         await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
+        await query.answer()
         track = await qobuz.get_track(info["id"])
         album = await qobuz.get_album(track["album"]["id"])
         await query.message.reply_photo(
@@ -355,6 +384,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 @Bot.on_callback_query(
     Config.IS_ADMIN & filters.regex(r"^qose (?P<query>.+?) (?P<page>\d+)$")
 )
+@error_handler_decorator
 async def qobuz_search(_: Bot, query: CallbackQuery):
     if isinstance(qobuz, str):
         await query.answer(qobuz)
