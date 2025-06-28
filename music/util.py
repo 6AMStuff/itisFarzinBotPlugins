@@ -5,6 +5,7 @@ import asyncio
 import datetime
 from mutagen.mp3 import MP3
 from typing import Callable
+from pyrogram import errors
 from mutagen.id3 import PictureType
 from mutagen.flac import FLAC, Picture
 from pyrogram.types import Message, CallbackQuery
@@ -48,7 +49,13 @@ async def error_handler(
             else:
                 await update.edit(text)
         elif isinstance(update, CallbackQuery):
-            await update.answer(text)
+            if update.message:
+                await update.message.reply(text)
+            else:
+                try:
+                    await update.answer(text)
+                except errors.QueryIdInvalid:
+                    pass
 
     return True
 
