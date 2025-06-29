@@ -1,8 +1,10 @@
 import copy
 import time
 import httpx
+import logging
 import asyncio
 import datetime
+import traceback
 from mutagen.mp3 import MP3
 from typing import Callable
 from pyrogram import errors
@@ -41,6 +43,7 @@ async def error_handler(
         await func(*args, **kwargs)
         return False
     except Exception as e:
+        logging.debug(traceback.format_exc())
         text = (texts or {}).get(type(e), text or str(e))
 
         if isinstance(update, Message):
@@ -172,7 +175,7 @@ async def download_progress(
     try:
         await message.edit(progress_text)
     except Exception:
-        pass
+        logging.debug(traceback.format_exc())
 
 
 class DefaultDictMissing(dict):
