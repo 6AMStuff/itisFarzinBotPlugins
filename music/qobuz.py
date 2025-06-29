@@ -317,7 +317,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                     filename=cover_path,
                     proxy=Config.PROXY,
                     progress=download_progress,
-                    progress_args=("cover.jpg", time(), cover_msg),
+                    progress_args=("cover.jpg", time.time(), cover_msg),
                 ),
                 update=cover_msg,
                 text="Failed to download the cover.",
@@ -351,7 +351,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                     filename=full_path,
                     proxy=Config.PROXY,
                     progress=download_progress,
-                    progress_args=(track_name, time(), track_msg),
+                    progress_args=(track_name, time.time(), track_msg),
                 ),
                 update=track_msg,
                 text=parse_data(
