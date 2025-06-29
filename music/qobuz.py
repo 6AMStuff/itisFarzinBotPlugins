@@ -171,6 +171,11 @@ async def qobuz_search_keyboard(query: str, page: int = 0):
     result = await qobuz.search("track", query, offset=page * 10, limit=11)
     tracks = result["tracks"]["items"]
 
+    if not tracks:
+        return InlineKeyboardMarkup(
+            [[InlineKeyboardButton("No track was found.", "None")]]
+        )
+
     for track in tracks[:10]:
         keyboard.append(
             [

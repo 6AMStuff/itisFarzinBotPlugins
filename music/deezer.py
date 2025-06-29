@@ -497,6 +497,11 @@ async def deezer_search_keyboard(query: str, page: int = 0):
     keyboard = []
     tracks = await deezer.search_track(query, offset=page * 10, limit=11)
 
+    if not tracks:
+        return InlineKeyboardMarkup(
+            [[InlineKeyboardButton("No track was found.", "None")]]
+        )
+
     for track in tracks[:10]:
         keyboard.append(
             [
