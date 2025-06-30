@@ -33,6 +33,41 @@ async def throw(app: Bot, message: Message):
     )
 
 
+@Bot.on_message(
+    Config.IS_ADMIN & filters.command("dice", Config.CMD_PREFIXES)
+)
+async def dice(app: Bot, message: Message):
+    await app.send_dice(message.chat.id, emoji_list[message.command[0]])
+
+
+@Bot.on_message(
+    Config.IS_ADMIN & filters.command("dart", Config.CMD_PREFIXES)
+)
+async def dart(app: Bot, message: Message):
+    await app.send_dice(message.chat.id, emoji_list[message.command[0]])
+
+
+@Bot.on_message(
+    Config.IS_ADMIN & filters.command("basketball", Config.CMD_PREFIXES)
+)
+async def basketball(app: Bot, message: Message):
+    await app.send_dice(message.chat.id, emoji_list[message.command[0]])
+
+
+@Bot.on_message(
+    Config.IS_ADMIN & filters.command("bowling", Config.CMD_PREFIXES)
+)
+async def bowling(app: Bot, message: Message):
+    await app.send_dice(message.chat.id, emoji_list[message.command[0]])
+
+
+@Bot.on_message(
+    Config.IS_ADMIN & filters.command("slot", Config.CMD_PREFIXES)
+)
+async def slot(app: Bot, message: Message):
+    await app.send_dice(message.chat.id, emoji_list[message.command[0]])
+
+
 __all__ = ["throw"]
 __plugin__ = True
 __bot_only__ = False
