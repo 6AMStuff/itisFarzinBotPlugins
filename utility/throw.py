@@ -19,7 +19,7 @@ emoji_list = {
     Config.IS_ADMIN
     & filters.command(
         ["throw", "dice", "dart", "basketball", "bowling", "slot"],
-        Config.CMD_PREFIXES
+        Config.CMD_PREFIXES,
     )
 )
 async def throw(app: Bot, message: Message):
@@ -29,7 +29,9 @@ async def throw(app: Bot, message: Message):
         if emoji not in emoji_list.values() and emoji not in emoji_list.keys():
             await message.reply(
                 "The emoji should be one of the following: "
-                + ", ".join(map(lambda emoji: f"`{emoji}`", emoji_list.values()))
+                + ", ".join(
+                    map(lambda emoji: f"`{emoji}`", emoji_list.values())
+                )
                 + "."
             )
             return
