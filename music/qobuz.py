@@ -73,12 +73,8 @@ class Qobuz:
 
         response = await self._get("user/get", params)
 
-        if response["credential"]["parameters"]:
-            pass
-        elif not response["credential"]["parameters"]:
+        if not response["credential"]["parameters"]:
             raise Exception("Free accounts are not eligible for downloading")
-        else:
-            raise Exception("Invalid UserID/Token")
 
     def create_signature(
         self, method: str, parameters: dict
