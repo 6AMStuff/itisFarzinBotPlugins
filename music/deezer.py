@@ -472,6 +472,11 @@ class Deezer(DeezerAPI):
 
         return chunk
 
+    async def check_token(self):
+        user = await deezer._api_call("deezer.getUserData")
+        if user["USER"]["OPTIONS"]["streaming_group"] == "ads":
+            raise Exception("Free accounts are not eligible for downloading")
+
 
 async def set_up_deezer():
     arl = Config.getdata("deezer_arl")
@@ -627,6 +632,12 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
     info = query.matches[0].groupdict()
 
     if info["type"] in ["dltrack", "dlalbum"]:
+        try:
+            await deezer.check_token()
+        except Exception as e:
+            await query.answer("ERROR: " + str(e))
+            return
+
         await query.answer("Download is in process.")
         download_path = (
             Config.getdata("download_path", "downloads", use_env=True) + "/"
