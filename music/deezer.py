@@ -1,6 +1,7 @@
 import os
 import httpx
 import hashlib
+import asyncio
 from bot import Bot
 from time import time
 from math import ceil
@@ -629,6 +630,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
         await query.answer(deezer)
         return
 
+    loop = asyncio.get_running_loop()
     info = query.matches[0].groupdict()
 
     if info["type"] in ["dltrack", "dlalbum"]:
@@ -671,14 +673,14 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                     progress_args=("cover.jpg", time(), cover_msg),
                 ),
                 update=cover_msg,
-                text=(
-                    "Failed to download the cover."
-                    "\nStopping the download process."
-                ),
+                text="Failed to download the cover.",
             ):
                 if os.path.exists(cover_path):
                     os.remove(cover_path)
+
                 return
+
+        loop.call_later(5, lambda: asyncio.create_task(cover_msg.delete()))
 
         for track in tracks:
             url = await deezer.get_file_url(track)
@@ -695,6 +697,9 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             if os.path.exists(full_path):
                 await track_msg.edit(
                     parse_data("Track **{name}** already exists.", track)
+                )
+                loop.call_later(
+                    5, lambda: asyncio.create_task(track_msg.delete())
                 )
                 continue
 
@@ -725,6 +730,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             track["date"] = album["release_date"]
             track["lyrics"] = await deezer.get_track_lyrics(track["id"])
             tag_file(full_path, cover_path, track)
+            loop.call_later(5, lambda: asyncio.create_task(track_msg.delete()))
 
         await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":

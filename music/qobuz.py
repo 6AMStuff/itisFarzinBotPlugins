@@ -2,6 +2,7 @@ import os
 import time
 import httpx
 import hashlib
+import asyncio
 from bot import Bot
 from pyrogram import filters
 from pyrogram.types import (
@@ -275,7 +276,9 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
         await query.answer(qobuz)
         return
 
+    loop = asyncio.get_running_loop()
     info = query.matches[0].groupdict()
+
     if info["type"] in ["dlalbum", "dltrack"]:
         try:
             await qobuz.check_token()
@@ -320,7 +323,10 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             ):
                 if os.path.exists(cover_path):
                     os.remove(cover_path)
+
                 return
+
+        loop.call_later(5, lambda: asyncio.create_task(cover_msg.delete()))
 
         for track in tracks:
             stream_data = await qobuz.get_file_url(str(track["id"]))
@@ -337,6 +343,9 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             if os.path.exists(full_path):
                 await track_msg.edit(
                     parse_data("Track **{name}** already exists.", track)
+                )
+                loop.call_later(
+                    5, lambda: asyncio.create_task(track_msg.delete())
                 )
                 continue
 
@@ -361,6 +370,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 
             track["source"] = "Qobuz"
             tag_file(full_path, cover_path, track)
+            loop.call_later(5, lambda: asyncio.create_task(track_msg.delete()))
 
         await query.message.reply("Download is done.")
     elif info["type"] == "trackinfo":
