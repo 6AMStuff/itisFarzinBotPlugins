@@ -209,7 +209,7 @@ qobuz = set_up_qobuz()
     & filters.regex(
         rf"^{Config.REGEX_CMD_PREFIXES}qobuz"
         r"(?: https://www\.qobuz\.com/.*/album/.*/(?P<id>\w+)"
-        r"| (?P<query>.+))$"
+        r"| (?P<query>.+))?$"
     )
 )
 @error_handler_decorator

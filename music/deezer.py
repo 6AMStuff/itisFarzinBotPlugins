@@ -544,7 +544,7 @@ deezer = None
     & filters.regex(
         rf"^{Config.REGEX_CMD_PREFIXES}deezer"
         r"(?: https:\/\/www\.deezer\.com/(?:[a-z]{2}\/)?(?P<type>album|track)"
-        r"\/(?P<id>\d+)| (?P<query>.+))$"
+        r"\/(?P<id>\d+)| (?P<query>.+))?$"
     )
 )
 @error_handler_decorator
