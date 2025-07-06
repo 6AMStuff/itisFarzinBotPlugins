@@ -732,7 +732,12 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             tag_file(full_path, cover_path, track)
             loop.call_later(5, lambda: asyncio.create_task(track_msg.delete()))
 
-        await query.message.reply("Download is done.")
+        await query.message.reply(
+            parse_data(
+                "Download of **{name}** by **{artist}** is complete.",
+                album if info["type"] == "dlalbum" else tracks[0],
+            )
+        )
     elif info["type"] == "trackinfo":
         await query.answer()
         track = await deezer.get_track(info["id"])
