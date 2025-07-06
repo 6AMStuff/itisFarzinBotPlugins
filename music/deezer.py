@@ -680,7 +680,11 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
 
                 return
 
-            loop.call_later(5, lambda: asyncio.create_task(cover_msg.delete()))
+            loop.call_later(
+                5,
+                lambda msg: asyncio.create_task(msg.delete()),
+                cover_msg,
+            )
 
         for track in tracks:
             url = await deezer.get_file_url(track)
@@ -699,7 +703,9 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                     parse_data("Track **{name}** already exists.", track)
                 )
                 loop.call_later(
-                    5, lambda: asyncio.create_task(track_msg.delete())
+                    5,
+                    lambda msg: asyncio.create_task(msg.delete()),
+                    track_msg,
                 )
                 continue
 
