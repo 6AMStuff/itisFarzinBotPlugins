@@ -343,6 +343,14 @@ class Deezer(DeezerAPI):
             artists=[
                 {"name": artist["ART_NAME"]} for artist in data["ARTISTS"]
             ],
+            preview=next(
+                (
+                    item["HREF"]
+                    for item in data["MEDIA"]
+                    if item.get("TYPE") == "preview"
+                ),
+                None,
+            ),
             time=data["SNG_ID"],
             duration=data["DURATION"],
             track_token=data["TRACK_TOKEN"],
@@ -583,13 +591,17 @@ async def deezer_message(_: Bot, message: Message):
             data = await deezer.get_album(id)
             cover = data["cover"]
 
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    f"Download {type}", f"deezer dl{type} {id}"
-                )
-            ],
+        keyboard = []
+        _keyboard = [
+            InlineKeyboardButton(f"Download {type}", f"deezer dl{type} {id}")
         ]
+        if type == "track":
+            _keyboard.append(
+                InlineKeyboardButton("Preview", f"deezer pvtrack {id}")
+            )
+
+        keyboard.append(_keyboard)
+
         if type == "album":
             keyboard += [
                 [
@@ -603,7 +615,11 @@ async def deezer_message(_: Bot, message: Message):
                     InlineKeyboardButton(
                         parse_data("{time} | {name} - {artist}", track),
                         parse_data("deezer dltrack {id}", track),
-                    )
+                    ),
+                    InlineKeyboardButton(
+                        parse_data("Preview", track),
+                        parse_data("deezer pvtrack {id}", track),
+                    ),
                 ]
                 for track in data["songs"]
             ]
@@ -757,9 +773,25 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                         InlineKeyboardButton(
                             "Download",
                             parse_data("deezer dltrack {id}", track),
-                        )
+                        ),
+                        InlineKeyboardButton(
+                            parse_data("Preview", track),
+                            parse_data("deezer pvtrack {id}", track),
+                        ),
                     ]
                 ]
+            ),
+        )
+    elif info["type"] == "pvtrack":
+        track = await deezer.get_track(info["id"])
+        if not track["preview"]:
+            await query.message.reply("There is no preview available.")
+            return
+
+        await query.message.reply_audio(
+            track["preview"],
+            caption=parse_data(
+                "Preview for **{name}** by **{artist}**.", track
             ),
         )
 
