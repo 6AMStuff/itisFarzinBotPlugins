@@ -5,3 +5,5 @@ sqlalchemy==2.0.40
 pylast @ git+https://github.com/itisFarzin/pylast@5254c063f0c82753e1904bd781cabb70fb6a307e#egg=pylast
 humanize==4.12.3
 psutil==7.0.0
+qrcode[pil]==8.2
+googletrans==4.0.2
