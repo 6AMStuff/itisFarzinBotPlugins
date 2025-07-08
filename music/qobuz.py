@@ -332,6 +332,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 cover_msg,
             )
 
+        downloads = 0
         for track in tracks:
             stream_data = await qobuz.get_file_url(str(track["id"]))
             track.update(stream_data)
@@ -344,9 +345,23 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             )
             track_name = parse_data(_track_name + ".{format}", track)
             full_path = album_path + track_name
+            tmp_full_path = full_path + ".tmp"
             if os.path.exists(full_path):
                 await track_msg.edit(
                     parse_data("Track **{name}** already exists.", track)
+                )
+                loop.call_later(
+                    5,
+                    lambda msg: asyncio.create_task(msg.delete()),
+                    track_msg,
+                )
+                continue
+
+            if os.path.exists(tmp_full_path):
+                await track_msg.edit(
+                    parse_data(
+                        "Track **{name}** is already downloading.", track
+                    )
                 )
                 loop.call_later(
                     5,
@@ -359,7 +374,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 download_file,
                 kwargs=dict(
                     url=stream_data["url"],
-                    filename=full_path,
+                    filename=tmp_full_path,
                     proxy=Config.PROXY,
                     progress=download_progress,
                     progress_args=(track_name, time.time(), track_msg),
@@ -369,14 +384,20 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                     "Failed to download the track **{name}**.", track
                 ),
             ):
-                if os.path.exists(full_path):
-                    os.remove(full_path)
+                if os.path.exists(tmp_full_path):
+                    os.remove(tmp_full_path)
 
                 continue
+            else:
+                os.rename(tmp_full_path, full_path)
+                downloads += 1
 
             track["source"] = "Qobuz"
             tag_file(full_path, cover_path, track)
             loop.call_later(5, lambda: asyncio.create_task(track_msg.delete()))
+
+        if downloads == 0:
+            return
 
         await query.message.reply(
             parse_data(

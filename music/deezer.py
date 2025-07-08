@@ -702,6 +702,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 cover_msg,
             )
 
+        downloads = 0
         for track in tracks:
             url = await deezer.get_file_url(track)
             track["track_number"] = str(track["track_number"]).zfill(zfill)
@@ -714,9 +715,23 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             track["format"] = track["format"].split("_")[0]
             track_name = parse_data(_track_name + ".{format}", track)
             full_path = album_path + track_name
+            tmp_full_path = full_path + ".tmp"
             if os.path.exists(full_path):
                 await track_msg.edit(
                     parse_data("Track **{name}** already exists.", track)
+                )
+                loop.call_later(
+                    5,
+                    lambda msg: asyncio.create_task(msg.delete()),
+                    track_msg,
+                )
+                continue
+
+            if os.path.exists(tmp_full_path):
+                await track_msg.edit(
+                    parse_data(
+                        "Track **{name}** is already downloading.", track
+                    )
                 )
                 loop.call_later(
                     5,
@@ -729,7 +744,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 download_file,
                 kwargs=dict(
                     url=url,
-                    filename=full_path,
+                    filename=tmp_full_path,
                     proxy=Config.PROXY,
                     chunk_size=2048,
                     chunk_process=deezer.decrypt_chunk,
@@ -742,10 +757,13 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                     "Failed to download the track **{name}**.", track
                 ),
             ):
-                if os.path.exists(full_path):
-                    os.remove(full_path)
+                if os.path.exists(tmp_full_path):
+                    os.remove(tmp_full_path)
 
                 continue
+            else:
+                os.rename(tmp_full_path, full_path)
+                downloads += 1
 
             track["source"] = "Deezer"
             track["album"] = album
@@ -753,6 +771,9 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             track["lyrics"] = await deezer.get_track_lyrics(track["id"])
             tag_file(full_path, cover_path, track)
             loop.call_later(5, lambda: asyncio.create_task(track_msg.delete()))
+
+        if downloads == 0:
+            return
 
         await query.message.reply(
             parse_data(
