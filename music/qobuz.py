@@ -240,11 +240,7 @@ async def qobuz_message(_: Bot, message: Message):
         return
 
     keyboard = [
-        [
-            InlineKeyboardButton(
-                "Download the album", f"qobuz dlalbum {album_id}"
-            )
-        ],
+        [InlineKeyboardButton("Download Album", f"qobuz dlalbum {album_id}")],
         [
             InlineKeyboardButton("—", "none"),
             InlineKeyboardButton("Tracks", "none"),

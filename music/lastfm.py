@@ -52,7 +52,7 @@ async def set_up_lastfm():
 
         if "lastfm_login_password" in missing_data:
             error_message += (
-                "\nFor converting your password to md5 hash:\n"
+                "\nTo convert your password to md5 hash:\n"
                 "`python -c 'import hashlib;"
                 ' print(hashlib.md5("your password".encode()).hexdigest())\'`'
             )
@@ -290,7 +290,7 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
 @Bot.on_chosen_inline_result(
     filters.create(
         lambda _, __, chosen: chosen.result_id
-        in ("lastfm_status", "lastfm_expanded_status")
+        in {"lastfm_status", "lastfm_expanded_status"}
     )
 )
 async def lastfm_inline_result(app: Bot, chosen: ChosenInlineResult):

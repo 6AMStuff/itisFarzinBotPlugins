@@ -491,9 +491,9 @@ async def set_up_deezer():
     arl = Config.getdata("deezer_arl")
     if len(arl) == 0:
         return (
-            "**ERROR**: No deezer arl were provided.\n"
+            "**ERROR**: No Deezer ARL was provided.\n"
             "Set your arl via: `{}setdata {} deezer_arl"
-            " [your arl]`"
+            " [Your ARL]`"
         ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
 
     try:
@@ -593,7 +593,9 @@ async def deezer_message(_: Bot, message: Message):
 
         keyboard = []
         _keyboard = [
-            InlineKeyboardButton(f"Download {type}", f"deezer dl{type} {id}")
+            InlineKeyboardButton(
+                f"Download {type.title()}", f"deezer dl{type} {id}"
+            )
         ]
         if type == "track":
             _keyboard.append(
