@@ -394,7 +394,11 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 
             track["source"] = "Qobuz"
             tag_file(full_path, cover_path, track)
-            loop.call_later(5, lambda: asyncio.create_task(track_msg.delete()))
+            loop.call_later(
+                5,
+                lambda msg: asyncio.create_task(msg.delete()),
+                track_msg,
+            )
 
         if downloads == 0:
             return
