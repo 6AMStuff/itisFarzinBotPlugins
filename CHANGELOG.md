@@ -1,3 +1,17 @@
+## v8.0.0 (2025-07-08)
+
+### Feat
+
+- **weather**: add weather plugin
+- **throw**: add `dice`, `dart`, `basketball`, `bowling`, and `slot` commands
+- **throw**: add throw plugin
+- **translate**: add translate plugin
+- **qrcode**: add qrcode plugin
+
+### Refactor
+
+- **throw**: put all commands in one function
+
 ## v7.1.2 (2025-07-08)
 
 ### Feat
