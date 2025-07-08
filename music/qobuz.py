@@ -2,6 +2,7 @@ import os
 import time
 import httpx
 import hashlib
+import asyncio
 from bot import Bot
 from pyrogram import filters
 from pyrogram.types import (
@@ -73,12 +74,8 @@ class Qobuz:
 
         response = await self._get("user/get", params)
 
-        if response["credential"]["parameters"]:
-            pass
-        elif not response["credential"]["parameters"]:
+        if not response["credential"]["parameters"]:
             raise Exception("Free accounts are not eligible for downloading")
-        else:
-            raise Exception("Invalid UserID/Token")
 
     def create_signature(
         self, method: str, parameters: dict
@@ -171,6 +168,11 @@ async def qobuz_search_keyboard(query: str, page: int = 0):
     result = await qobuz.search("track", query, offset=page * 10, limit=11)
     tracks = result["tracks"]["items"]
 
+    if not tracks:
+        return InlineKeyboardMarkup(
+            [[InlineKeyboardButton("No track was found.", "None")]]
+        )
+
     for track in tracks[:10]:
         keyboard.append(
             [
@@ -207,7 +209,7 @@ qobuz = set_up_qobuz()
     & filters.regex(
         rf"^{Config.REGEX_CMD_PREFIXES}qobuz"
         r"(?: https://www\.qobuz\.com/.*/album/.*/(?P<id>\w+)"
-        r"| (?P<query>.+))$"
+        r"| (?P<query>.+))?$"
     )
 )
 @error_handler_decorator
@@ -274,7 +276,9 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
         await query.answer(qobuz)
         return
 
+    loop = asyncio.get_running_loop()
     info = query.matches[0].groupdict()
+
     if info["type"] in ["dlalbum", "dltrack"]:
         try:
             await qobuz.check_token()
@@ -312,15 +316,23 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                     filename=cover_path,
                     proxy=Config.PROXY,
                     progress=download_progress,
-                    progress_args=("cover.jpg", time(), cover_msg),
+                    progress_args=("cover.jpg", time.time(), cover_msg),
                 ),
                 update=cover_msg,
                 text="Failed to download the cover.",
             ):
                 if os.path.exists(cover_path):
                     os.remove(cover_path)
+
                 return
 
+            loop.call_later(
+                5,
+                lambda msg: asyncio.create_task(msg.delete()),
+                cover_msg,
+            )
+
+        downloads = 0
         for track in tracks:
             stream_data = await qobuz.get_file_url(str(track["id"]))
             track.update(stream_data)
@@ -333,9 +345,28 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             )
             track_name = parse_data(_track_name + ".{format}", track)
             full_path = album_path + track_name
+            tmp_full_path = full_path + ".tmp"
             if os.path.exists(full_path):
                 await track_msg.edit(
                     parse_data("Track **{name}** already exists.", track)
+                )
+                loop.call_later(
+                    5,
+                    lambda msg: asyncio.create_task(msg.delete()),
+                    track_msg,
+                )
+                continue
+
+            if os.path.exists(tmp_full_path):
+                await track_msg.edit(
+                    parse_data(
+                        "Track **{name}** is already downloading.", track
+                    )
+                )
+                loop.call_later(
+                    5,
+                    lambda msg: asyncio.create_task(msg.delete()),
+                    track_msg,
                 )
                 continue
 
@@ -343,25 +374,41 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 download_file,
                 kwargs=dict(
                     url=stream_data["url"],
-                    filename=full_path,
+                    filename=tmp_full_path,
                     proxy=Config.PROXY,
                     progress=download_progress,
-                    progress_args=(track_name, time(), track_msg),
+                    progress_args=(track_name, time.time(), track_msg),
                 ),
                 update=track_msg,
                 text=parse_data(
                     "Failed to download the track **{name}**.", track
                 ),
             ):
-                if os.path.exists(full_path):
-                    os.remove(full_path)
+                if os.path.exists(tmp_full_path):
+                    os.remove(tmp_full_path)
 
                 continue
+            else:
+                os.rename(tmp_full_path, full_path)
+                downloads += 1
 
             track["source"] = "Qobuz"
             tag_file(full_path, cover_path, track)
+            loop.call_later(
+                5,
+                lambda msg: asyncio.create_task(msg.delete()),
+                track_msg,
+            )
 
-        await query.message.reply("Download is done.")
+        if downloads == 0:
+            return
+
+        await query.message.reply(
+            parse_data(
+                "Download of **{name}** by **{artist}** is complete.",
+                album if info["type"] == "dlalbum" else tracks[0],
+            )
+        )
     elif info["type"] == "trackinfo":
         await query.answer()
         track = await qobuz.get_track(info["id"])

@@ -1,10 +1,13 @@
 import copy
 import time
 import httpx
+import logging
 import asyncio
 import datetime
+import traceback
 from mutagen.mp3 import MP3
 from typing import Callable
+from pyrogram import errors
 from mutagen.id3 import PictureType
 from mutagen.flac import FLAC, Picture
 from pyrogram.types import Message, CallbackQuery
@@ -40,6 +43,7 @@ async def error_handler(
         await func(*args, **kwargs)
         return False
     except Exception as e:
+        logging.debug(traceback.format_exc())
         text = (texts or {}).get(type(e), text or str(e))
 
         if isinstance(update, Message):
@@ -48,7 +52,13 @@ async def error_handler(
             else:
                 await update.edit(text)
         elif isinstance(update, CallbackQuery):
-            await update.answer(text)
+            if update.message:
+                await update.message.reply(text)
+            else:
+                try:
+                    await update.answer(text)
+                except errors.QueryIdInvalid:
+                    pass
 
     return True
 
@@ -165,7 +175,7 @@ async def download_progress(
     try:
         await message.edit(progress_text)
     except Exception:
-        pass
+        logging.debug(traceback.format_exc())
 
 
 class DefaultDictMissing(dict):

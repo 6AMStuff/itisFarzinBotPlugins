@@ -1,6 +1,7 @@
 import os
 import httpx
 import hashlib
+import asyncio
 from bot import Bot
 from time import time
 from math import ceil
@@ -342,6 +343,14 @@ class Deezer(DeezerAPI):
             artists=[
                 {"name": artist["ART_NAME"]} for artist in data["ARTISTS"]
             ],
+            preview=next(
+                (
+                    item["HREF"]
+                    for item in data["MEDIA"]
+                    if item.get("TYPE") == "preview"
+                ),
+                None,
+            ),
             time=data["SNG_ID"],
             duration=data["DURATION"],
             track_token=data["TRACK_TOKEN"],
@@ -472,6 +481,11 @@ class Deezer(DeezerAPI):
 
         return chunk
 
+    async def check_token(self):
+        user = await deezer._api_call("deezer.getUserData")
+        if user["USER"]["OPTIONS"]["streaming_group"] == "ads":
+            raise Exception("Free accounts are not eligible for downloading")
+
 
 async def set_up_deezer():
     arl = Config.getdata("deezer_arl")
@@ -496,6 +510,11 @@ async def set_up_deezer():
 async def deezer_search_keyboard(query: str, page: int = 0):
     keyboard = []
     tracks = await deezer.search_track(query, offset=page * 10, limit=11)
+
+    if not tracks:
+        return InlineKeyboardMarkup(
+            [[InlineKeyboardButton("No track was found.", "None")]]
+        )
 
     for track in tracks[:10]:
         keyboard.append(
@@ -533,7 +552,7 @@ deezer = None
     & filters.regex(
         rf"^{Config.REGEX_CMD_PREFIXES}deezer"
         r"(?: https:\/\/www\.deezer\.com/(?:[a-z]{2}\/)?(?P<type>album|track)"
-        r"\/(?P<id>\d+)| (?P<query>.+))$"
+        r"\/(?P<id>\d+)| (?P<query>.+))?$"
     )
 )
 @error_handler_decorator
@@ -572,13 +591,17 @@ async def deezer_message(_: Bot, message: Message):
             data = await deezer.get_album(id)
             cover = data["cover"]
 
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    f"Download {type}", f"deezer dl{type} {id}"
-                )
-            ],
+        keyboard = []
+        _keyboard = [
+            InlineKeyboardButton(f"Download {type}", f"deezer dl{type} {id}")
         ]
+        if type == "track":
+            _keyboard.append(
+                InlineKeyboardButton("Preview", f"deezer pvtrack {id}")
+            )
+
+        keyboard.append(_keyboard)
+
         if type == "album":
             keyboard += [
                 [
@@ -592,7 +615,11 @@ async def deezer_message(_: Bot, message: Message):
                     InlineKeyboardButton(
                         parse_data("{time} | {name} - {artist}", track),
                         parse_data("deezer dltrack {id}", track),
-                    )
+                    ),
+                    InlineKeyboardButton(
+                        parse_data("Preview", track),
+                        parse_data("deezer pvtrack {id}", track),
+                    ),
                 ]
                 for track in data["songs"]
             ]
@@ -619,9 +646,16 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
         await query.answer(deezer)
         return
 
+    loop = asyncio.get_running_loop()
     info = query.matches[0].groupdict()
 
     if info["type"] in ["dltrack", "dlalbum"]:
+        try:
+            await deezer.check_token()
+        except Exception as e:
+            await query.answer("ERROR: " + str(e))
+            return
+
         await query.answer("Download is in process.")
         download_path = (
             Config.getdata("download_path", "downloads", use_env=True) + "/"
@@ -655,15 +689,20 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                     progress_args=("cover.jpg", time(), cover_msg),
                 ),
                 update=cover_msg,
-                text=(
-                    "Failed to download the cover."
-                    "\nStopping the download process."
-                ),
+                text="Failed to download the cover.",
             ):
                 if os.path.exists(cover_path):
                     os.remove(cover_path)
+
                 return
 
+            loop.call_later(
+                5,
+                lambda msg: asyncio.create_task(msg.delete()),
+                cover_msg,
+            )
+
+        downloads = 0
         for track in tracks:
             url = await deezer.get_file_url(track)
             track["track_number"] = str(track["track_number"]).zfill(zfill)
@@ -676,9 +715,28 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             track["format"] = track["format"].split("_")[0]
             track_name = parse_data(_track_name + ".{format}", track)
             full_path = album_path + track_name
+            tmp_full_path = full_path + ".tmp"
             if os.path.exists(full_path):
                 await track_msg.edit(
                     parse_data("Track **{name}** already exists.", track)
+                )
+                loop.call_later(
+                    5,
+                    lambda msg: asyncio.create_task(msg.delete()),
+                    track_msg,
+                )
+                continue
+
+            if os.path.exists(tmp_full_path):
+                await track_msg.edit(
+                    parse_data(
+                        "Track **{name}** is already downloading.", track
+                    )
+                )
+                loop.call_later(
+                    5,
+                    lambda msg: asyncio.create_task(msg.delete()),
+                    track_msg,
                 )
                 continue
 
@@ -686,7 +744,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 download_file,
                 kwargs=dict(
                     url=url,
-                    filename=full_path,
+                    filename=tmp_full_path,
                     proxy=Config.PROXY,
                     chunk_size=2048,
                     chunk_process=deezer.decrypt_chunk,
@@ -699,18 +757,34 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                     "Failed to download the track **{name}**.", track
                 ),
             ):
-                if os.path.exists(full_path):
-                    os.remove(full_path)
+                if os.path.exists(tmp_full_path):
+                    os.remove(tmp_full_path)
 
                 continue
+            else:
+                os.rename(tmp_full_path, full_path)
+                downloads += 1
 
             track["source"] = "Deezer"
             track["album"] = album
             track["date"] = album["release_date"]
             track["lyrics"] = await deezer.get_track_lyrics(track["id"])
             tag_file(full_path, cover_path, track)
+            loop.call_later(
+                5,
+                lambda msg: asyncio.create_task(msg.delete()),
+                track_msg,
+            )
 
-        await query.message.reply("Download is done.")
+        if downloads == 0:
+            return
+
+        await query.message.reply(
+            parse_data(
+                "Download of **{name}** by **{artist}** is complete.",
+                album if info["type"] == "dlalbum" else tracks[0],
+            )
+        )
     elif info["type"] == "trackinfo":
         await query.answer()
         track = await deezer.get_track(info["id"])
@@ -724,9 +798,25 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                         InlineKeyboardButton(
                             "Download",
                             parse_data("deezer dltrack {id}", track),
-                        )
+                        ),
+                        InlineKeyboardButton(
+                            parse_data("Preview", track),
+                            parse_data("deezer pvtrack {id}", track),
+                        ),
                     ]
                 ]
+            ),
+        )
+    elif info["type"] == "pvtrack":
+        track = await deezer.get_track(info["id"])
+        if not track["preview"]:
+            await query.message.reply("There is no preview available.")
+            return
+
+        await query.message.reply_audio(
+            track["preview"],
+            caption=parse_data(
+                "Preview for **{name}** by **{artist}**.", track
             ),
         )
 

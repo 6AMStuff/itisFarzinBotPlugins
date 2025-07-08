@@ -1,3 +1,21 @@
+## v7.1.1 (2025-07-04)
+
+### Feat
+
+- **qobuz,deezer**: delete download messages after 5 seconds
+- **deezer**: add `check_token`
+- **music**: add logging.debug for exceptions
+
+### Fix
+
+- **qobuz**: resolve download issues
+- **qobuz,deezer**: handle case where no track was found in search
+- **music**: prevent double callback answers
+
+### Refactor
+
+- **qobuz**: remove the useless check in `check_token`
+
 ## v7.1.0 (2025-06-27)
 
 ### Feat
