@@ -62,10 +62,10 @@ async def whisper_inline(app: Bot, query: InlineQuery):
     await query.answer(
         [
             InlineQueryResultArticle(
-                title=f"A whisper for {full_name}",
+                title=f"A whisper for {full_name}.",
                 description="Only they can open it.",
                 input_message_content=InputTextMessageContent(
-                    f"A whisper for {full_name}, only they can open it.",
+                    f"A whisper for {full_name}. Only they can open it.",
                     parse_mode=enums.ParseMode.DISABLED,
                 ),
                 id="whisper",
@@ -73,7 +73,7 @@ async def whisper_inline(app: Bot, query: InlineQuery):
                     [
                         [
                             InlineKeyboardButton(
-                                "Show the message",
+                                "Show the whisper",
                                 callback_data="whisper {} {}".format(
                                     username, query.from_user.id
                                 ),

@@ -148,7 +148,7 @@ async def note_message(app: Bot, message: Message):
                         )
                         session.commit()
                 else:
-                    await message.reply("Not supported.")
+                    await message.reply("This message type is not supported.")
                     return
 
                 await message.reply(f"Saved note `{note_name}`.")
@@ -260,17 +260,14 @@ async def note_message(app: Bot, message: Message):
                 ).all()
                 notes: dict[str, bool] = {note[0]: note[1] for note in notes}
                 if len(notes) == 0:
-                    msg = "There are no notes saved."
+                    msg = "You haven't saved any notes yet."
                 else:
                     msg = "List of notes:\n"
                     for note in notes:
                         msg += " - `{}`{}\n".format(
                             note, " *private" if notes[note] else ""
                         )
-                    msg += (
-                        "You can retrieve these notes by using `/getnote"
-                        + " [notename]`"
-                    )
+                    msg += "Retrieve notes using `/getnote [notename]`"
                 await message.reply(msg)
 
 
