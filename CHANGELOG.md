@@ -1,3 +1,17 @@
+## v7.1.2 (2025-07-08)
+
+### Feat
+
+- **qobuz,deezer**: download tracks as a tmp file at first
+- **deezer**: add track preview
+- **qobuz,deezer**: improve download is complete text
+
+### Fix
+
+- **qobuz,deezer**: handle edge case during message deletion
+- **qobuz,deezer**: ensure correct message deletion
+- **qobuz,deezer**: respond to empty command call
+
 ## v7.1.1 (2025-07-04)
 
 ### Feat
