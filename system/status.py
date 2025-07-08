@@ -61,7 +61,7 @@ async def status(app: Bot, message: Message):
         "OS:": f"{uname.system} {uname.release}",
     }
 
-    if getattr(app, "is_bot", bool(app.bot_token)):
+    if app.is_bot:
         keyboard = InlineKeyboardMarkup(
             [
                 InlineKeyboardButton(key, callback_data="None"),
