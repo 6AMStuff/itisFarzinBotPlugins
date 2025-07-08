@@ -16,7 +16,10 @@ async def get_weather(location: str):
         ).json()
 
         if not data.get("results"):
-            return {"status": False, "result": "Couldn't find the country."}
+            return {
+                "status": False,
+                "result": "Couldn't find the country/region/state.",
+            }
 
         data = data["results"][0]
         params = {
