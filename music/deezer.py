@@ -810,6 +810,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             ),
         )
     elif info["type"] == "pvtrack":
+        await query.answer()
         track = await deezer.get_track(info["id"])
         if not track["preview"]:
             await query.message.reply("There is no preview available.")
