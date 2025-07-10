@@ -26,7 +26,7 @@ from .util import (
 from cryptography.hazmat.decrepit.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import Cipher, modes
 
-from config import Config
+from settings import Settings
 
 
 # Deezer classes from https://github.com/uhwot/orpheusdl-deezer
@@ -137,7 +137,8 @@ class DeezerAPI:
         # server sends set-cookie header with account sid
         json = (
             await self.session.get(
-                "https://connect.deezer.com/oauth/user_auth.php", params=params
+                "https://connect.deezer.com/oauth/user_auth.php",
+                params=params,
             )
         ).json()
 
@@ -235,7 +236,8 @@ class DeezerAPI:
     async def get_artist_name(self, id: str | int):
         return (
             await self._api_call(
-                "artist.getData", {"art_id": id, "array_default": ["ART_NAME"]}
+                "artist.getData",
+                {"art_id": id, "array_default": ["ART_NAME"]},
             )
         )["ART_NAME"]
 
@@ -330,7 +332,7 @@ class Deezer(DeezerAPI):
     async def create(
         cls, client_id: str, client_secret: str, bf_secret: str, arl: str
     ):
-        instance = cls(client_id, client_secret, bf_secret, Config.PROXY)
+        instance = cls(client_id, client_secret, bf_secret, Settings.PROXY)
         await instance.login_via_arl(arl)
         return instance
 
@@ -488,20 +490,20 @@ class Deezer(DeezerAPI):
 
 
 async def set_up_deezer():
-    arl = Config.getdata("deezer_arl")
+    arl = Settings.getdata("deezer_arl")
     if len(arl) == 0:
         return (
             "**ERROR**: No Deezer ARL was provided.\n"
             "Set your arl via: `{}setdata {} deezer_arl"
             " [Your ARL]`"
-        ).format(Config.CMD_PREFIXES[0], __name__.split(".")[-1])
+        ).format(Settings.CMD_PREFIXES[0], __name__.split(".")[-1])
 
     try:
-        client_id = Config.getdata("deezer_client_id", "579939560")
-        client_secret = Config.getdata(
+        client_id = Settings.getdata("deezer_client_id", "579939560")
+        client_secret = Settings.getdata(
             "deezer_client_secret", "fa31fc13e7a28e7d70bb61e91aa9e178"
         )
-        bf_secret = Config.getdata("deezer_bf_secret", "g4el58wc0zvf9na1")
+        bf_secret = Settings.getdata("deezer_bf_secret", "g4el58wc0zvf9na1")
         return await Deezer.create(client_id, client_secret, bf_secret, arl)
     except Exception as e:
         return f"**ERROR**: {e}"
@@ -548,9 +550,9 @@ deezer = None
 
 
 @Bot.on_message(
-    Config.IS_ADMIN
+    Settings.IS_ADMIN
     & filters.regex(
-        rf"^{Config.REGEX_CMD_PREFIXES}deezer"
+        rf"^{Settings.REGEX_CMD_PREFIXES}deezer"
         r"(?: https:\/\/www\.deezer\.com/(?:[a-z]{2}\/)?(?P<type>album|track)"
         r"\/(?P<id>\d+)| (?P<query>.+))?$"
     )
@@ -578,7 +580,7 @@ async def deezer_message(_: Bot, message: Message):
         return
     elif not id:
         await message.reply(
-            f"{Config.CMD_PREFIXES[0]}deezer [album/track url] |"
+            f"{Settings.CMD_PREFIXES[0]}deezer [album/track url] |"
             " [query to search]"
         )
         return
@@ -636,7 +638,7 @@ async def deezer_message(_: Bot, message: Message):
 
 
 @Bot.on_callback_query(
-    Config.IS_ADMIN & filters.regex(r"^deezer (?P<type>\w+) (?P<id>\w+)$")
+    Settings.IS_ADMIN & filters.regex(r"^deezer (?P<type>\w+) (?P<id>\w+)$")
 )
 @error_handler_decorator
 async def deezer_callback(_: Bot, query: CallbackQuery):
@@ -660,7 +662,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
 
         await query.answer("Download is in process.")
         download_path = (
-            Config.getdata("download_path", "downloads", use_env=True) + "/"
+            Settings.getdata("download_path", "downloads", use_env=True) + "/"
         )
 
         if info["type"] == "dlalbum":
@@ -671,7 +673,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             album = await deezer.get_album(_track["album_id"])
             tracks = [_track]
 
-        _album_path = Config.getdata("deezer_album_path", "{artist}/{name}")
+        _album_path = Settings.getdata("deezer_album_path", "{artist}/{name}")
         album_path = download_path + parse_data(_album_path, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
         os.makedirs(album_path, exist_ok=True)
@@ -686,7 +688,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 kwargs=dict(
                     url=cover_url,
                     filename=cover_path,
-                    proxy=Config.PROXY,
+                    proxy=Settings.PROXY,
                     progress=download_progress,
                     progress_args=("cover.jpg", time(), cover_msg),
                 ),
@@ -711,7 +713,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             track_msg = await query.message.reply(
                 parse_data("Downloading **{name}**.", track)
             )
-            _track_name = Config.getdata(
+            _track_name = Settings.getdata(
                 "deezer_track_name", "{track_number} {name}"
             )
             track["format"] = track["format"].split("_")[0]
@@ -747,7 +749,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 kwargs=dict(
                     url=url,
                     filename=tmp_full_path,
-                    proxy=Config.PROXY,
+                    proxy=Settings.PROXY,
                     chunk_size=2048,
                     chunk_process=deezer.decrypt_chunk,
                     chunk_process_args=(track["id"],),
@@ -825,7 +827,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
 
 
 @Bot.on_callback_query(
-    Config.IS_ADMIN & filters.regex(r"^dese (?P<query>.+?) (?P<page>\d+)$")
+    Settings.IS_ADMIN & filters.regex(r"^dese (?P<query>.+?) (?P<page>\d+)$")
 )
 @error_handler_decorator
 async def deezer_search(_: Bot, query: CallbackQuery):

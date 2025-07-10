@@ -16,7 +16,7 @@ from pyrogram.types import (
     InlineKeyboardButton,
 )
 
-from config import Config, DataBase
+from settings import Settings, DataBase
 
 
 class WhisperDatabase(DataBase):
@@ -91,7 +91,7 @@ async def whisper_inline(app: Bot, query: InlineQuery):
 async def whisper_inline_result(_: Bot, chosen: ChosenInlineResult):
     cipher = Fernet(generate_fernet(chosen.from_user.id))
     sentence = chosen.query.rsplit(" ", 1)[0].encode()
-    with Session(Config.engine) as session:
+    with Session(Settings.engine) as session:
         session.merge(
             WhisperDatabase(
                 message_id=chosen.inline_message_id,
@@ -105,7 +105,7 @@ async def whisper_inline_result(_: Bot, chosen: ChosenInlineResult):
     filters.regex(r"^whisper (?P<receiver>.+) (?P<sender>.+)$")
 )
 async def whisper_callback(_: Bot, query: CallbackQuery):
-    with Session(Config.engine) as session:
+    with Session(Settings.engine) as session:
         text = session.execute(
             select(WhisperDatabase.text).where(
                 WhisperDatabase.message_id == query.inline_message_id

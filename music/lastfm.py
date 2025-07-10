@@ -16,7 +16,7 @@ from pyrogram.types import (
     InputMediaPhoto,
 )
 
-from config import Config
+from settings import Settings
 
 
 USERNAME = "itisFarzin"
@@ -24,11 +24,11 @@ USERNAME = "itisFarzin"
 
 async def set_up_lastfm():
     global USERNAME
-    api_key = Config.getdata("lastfm_api_key")
-    api_secret = Config.getdata("lastfm_api_secret")
-    login_username = Config.getdata("lastfm_login_username")
-    USERNAME = str(Config.getdata("lastfm_username", login_username))
-    password = Config.getdata("lastfm_login_password")
+    api_key = Settings.getdata("lastfm_api_key")
+    api_secret = Settings.getdata("lastfm_api_secret")
+    login_username = Settings.getdata("lastfm_login_username")
+    USERNAME = str(Settings.getdata("lastfm_username", login_username))
+    password = Settings.getdata("lastfm_login_password")
     missing_data: list[str] = []
 
     if not api_key:
@@ -44,7 +44,7 @@ async def set_up_lastfm():
         error_message = "**ERROR**: Missing data detected:\n"
         for item in missing_data:
             error_message += "`{}setdata {} {} [your_{}]`\n".format(
-                Config.CMD_PREFIXES[0],
+                Settings.CMD_PREFIXES[0],
                 __name__.split(".")[-1],
                 item,
                 item.replace("lastfm_", ""),
@@ -65,7 +65,7 @@ async def set_up_lastfm():
             api_secret=api_secret,
             username=login_username,
             password_hash=password,
-            proxy=Config.PROXY,
+            proxy=Settings.PROXY,
         )
     except Exception as e:
         return f"**ERROR**: {e}"

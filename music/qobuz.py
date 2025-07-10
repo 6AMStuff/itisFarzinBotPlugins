@@ -20,7 +20,7 @@ from .util import (
     error_handler_decorator,
 )
 
-from config import Config
+from settings import Settings
 
 
 # Qobuz class from https://github.com/OrfiDev/orpheusdl-qobuz
@@ -137,9 +137,9 @@ class Qobuz:
 
 
 def set_up_qobuz():
-    app_id = Config.getdata("qobuz_app_id")
-    app_secret = Config.getdata("qobuz_app_secret")
-    auth_token = Config.getdata("qobuz_auth_token")
+    app_id = Settings.getdata("qobuz_app_id")
+    app_secret = Settings.getdata("qobuz_app_secret")
+    auth_token = Settings.getdata("qobuz_auth_token")
 
     missing_data: list[str] = []
     if not app_id:
@@ -153,14 +153,14 @@ def set_up_qobuz():
         error_message = "**ERROR**: Missing data detected:\n"
         for item in missing_data:
             error_message += "`{}setdata {} {} [your_{}]`\n".format(
-                Config.CMD_PREFIXES[0],
+                Settings.CMD_PREFIXES[0],
                 __name__.split(".")[-1],
                 item,
                 item.replace("qobuz_", ""),
             )
         return error_message
 
-    return Qobuz(app_id, app_secret, auth_token, Config.PROXY)
+    return Qobuz(app_id, app_secret, auth_token, Settings.PROXY)
 
 
 async def qobuz_search_keyboard(query: str, page: int = 0):
@@ -205,9 +205,9 @@ qobuz = set_up_qobuz()
 
 
 @Bot.on_message(
-    Config.IS_ADMIN
+    Settings.IS_ADMIN
     & filters.regex(
-        rf"^{Config.REGEX_CMD_PREFIXES}qobuz"
+        rf"^{Settings.REGEX_CMD_PREFIXES}qobuz"
         r"(?: https://www\.qobuz\.com/.*/album/.*/(?P<id>\w+)"
         r"| (?P<query>.+))?$"
     )
@@ -229,7 +229,7 @@ async def qobuz_message(_: Bot, message: Message):
         return
     elif not album_id:
         await message.reply(
-            f"{Config.CMD_PREFIXES[0]}qobuz [album url] | [query to search]"
+            f"{Settings.CMD_PREFIXES[0]}qobuz [album url] | [query to search]"
         )
         return
 
@@ -264,7 +264,7 @@ async def qobuz_message(_: Bot, message: Message):
 
 
 @Bot.on_callback_query(
-    Config.IS_ADMIN & filters.regex(r"^qobuz (?P<type>\w+) (?P<id>\w+)$")
+    Settings.IS_ADMIN & filters.regex(r"^qobuz (?P<type>\w+) (?P<id>\w+)$")
 )
 @error_handler_decorator
 async def qobuz_callback(_: Bot, query: CallbackQuery):
@@ -284,7 +284,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 
         await query.answer("Download is in process.")
         download_path = (
-            Config.getdata("download_path", "downloads", use_env=True) + "/"
+            Settings.getdata("download_path", "downloads", use_env=True) + "/"
         )
 
         if info["type"] == "dlalbum":
@@ -295,7 +295,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             album = await qobuz.get_album(_track["album"]["id"])
             tracks = [_track]
 
-        _album_path = Config.getdata("qobuz_album_path", "{artist}/{name}")
+        _album_path = Settings.getdata("qobuz_album_path", "{artist}/{name}")
         album_path = download_path + parse_data(_album_path, album) + "/"
         zfill = max(2, len(str(album["tracks_count"])))
         os.makedirs(album_path, exist_ok=True)
@@ -310,7 +310,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 kwargs=dict(
                     url=cover_url,
                     filename=cover_path,
-                    proxy=Config.PROXY,
+                    proxy=Settings.PROXY,
                     progress=download_progress,
                     progress_args=("cover.jpg", time.time(), cover_msg),
                 ),
@@ -336,7 +336,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             track_msg = await query.message.reply(
                 parse_data("Downloading **{name}**.", track)
             )
-            _track_name = Config.getdata(
+            _track_name = Settings.getdata(
                 "qobuz_track_name", "{track_number} {name}"
             )
             track_name = parse_data(_track_name + ".{format}", track)
@@ -371,7 +371,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 kwargs=dict(
                     url=stream_data["url"],
                     filename=tmp_full_path,
-                    proxy=Config.PROXY,
+                    proxy=Settings.PROXY,
                     progress=download_progress,
                     progress_args=(track_name, time.time(), track_msg),
                 ),
@@ -416,7 +416,8 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 [
                     [
                         InlineKeyboardButton(
-                            "Download", parse_data("qobuz dltrack {id}", track)
+                            "Download",
+                            parse_data("qobuz dltrack {id}", track),
                         )
                     ]
                 ]
@@ -425,7 +426,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 
 
 @Bot.on_callback_query(
-    Config.IS_ADMIN & filters.regex(r"^qose (?P<query>.+?) (?P<page>\d+)$")
+    Settings.IS_ADMIN & filters.regex(r"^qose (?P<query>.+?) (?P<page>\d+)$")
 )
 @error_handler_decorator
 async def qobuz_search(_: Bot, query: CallbackQuery):

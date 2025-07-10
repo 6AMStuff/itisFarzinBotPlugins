@@ -12,7 +12,7 @@ from pyrogram.types import (
     CallbackQuery,
 )
 
-from config import Config
+from settings import Settings
 
 
 def human_to_timedelta(duration: str):
@@ -81,7 +81,7 @@ async def unmute(message: Message, chat: Chat, user: User, by: User = None):
 @Bot.on_message(
     filters.group
     & filters.command(
-        ["ban", "unban", "kick", "mute", "unmute"], Config.CMD_PREFIXES
+        ["ban", "unban", "kick", "mute", "unmute"], Settings.CMD_PREFIXES
     )
 )
 async def restrict(app: Bot, message: Message):
@@ -101,7 +101,7 @@ async def restrict(app: Bot, message: Message):
         arg_hint = " [duration]" if action in ["ban", "mute"] else ""
         arg_hint_2 = " [reason]" if action in ["ban", "mute", "kick"] else ""
         await message.reply(
-            f"{Config.CMD_PREFIXES[0]}{action}{arg_hint} *reply to a user"
+            f"{Settings.CMD_PREFIXES[0]}{action}{arg_hint} *reply to a user"
             + arg_hint_2
         )
         return
@@ -154,7 +154,7 @@ async def restrict(app: Bot, message: Message):
             )
             return
 
-    formatted_date = date.astimezone(Config.TIMEZONE).strftime(
+    formatted_date = date.astimezone(Settings.TIMEZONE).strftime(
         "%d/%m/%Y, %H:%M:%S %Z"
     )
 

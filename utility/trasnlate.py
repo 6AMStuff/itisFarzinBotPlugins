@@ -3,20 +3,21 @@ from pyrogram import filters
 from pyrogram.types import Message
 from googletrans import Translator
 
-from config import Config
+from settings import Settings
 
 
 translator = Translator()
 
 
 @Bot.on_message(
-    Config.IS_ADMIN & filters.command("translate", Config.CMD_PREFIXES)
+    Settings.IS_ADMIN & filters.command("translate", Settings.CMD_PREFIXES)
 )
 async def translate(_: Bot, message: Message):
     action = message.command[0]
     if len(message.command) < 2:
         await message.reply(
-            f"{Config.CMD_PREFIXES[0]}{action} [language] *reply to a message"
+            f"{Settings.CMD_PREFIXES[0]}{action} [language]"
+            " *reply to a message"
         )
         return
 
