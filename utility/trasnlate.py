@@ -34,7 +34,7 @@ async def translate(_: Bot, message: Message):
             text=f"From {result.src} to {result.dest}:\n{result.text}"
         )
     except Exception as e:
-        await message.reply(str(e))
+        await message.reply("*ERROR**: " + str(e))
 
 
 __all__ = ["translate"]
