@@ -1,3 +1,25 @@
+## v8.1.0 (2025-07-13)
+
+### Feat
+
+- **translate**: support inline text translation
+- **date**: add date plugin
+
+### Fix
+
+- **music**: resolve unmatched f-string issues for python 3.10
+- **deezer**: answer with an empty message for preview
+
+### Refactor
+
+- **trasnlate**: improve response text
+- **translate**: improve error message
+- `Config` to `Settings`
+- **helper**: Improve code and grammar
+- **status**: simplify bot detection
+- **music**: improve grammar
+- **weather**: improve error message
+
 ## v8.0.0 (2025-07-08)
 
 ### Feat
