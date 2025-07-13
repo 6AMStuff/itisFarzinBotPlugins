@@ -14,20 +14,26 @@ translator = Translator()
 )
 async def translate(_: Bot, message: Message):
     action = message.command[0]
+    text = None
+    help = (
+        f"{Settings.CMD_PREFIXES[0]}{action} [language]"
+        " [text] / *reply to a message"
+    )
     if len(message.command) < 2:
-        await message.reply(
-            f"{Settings.CMD_PREFIXES[0]}{action} [language]"
-            " *reply to a message"
-        )
+        await message.reply(help)
         return
 
     msg = message.reply_to_message
-    if not msg:
-        await message.reply("Reply to a message.")
+    if msg:
+        text = msg.text or msg.caption
+    elif len(message.command) > 2:
+        text = " ".join(message.command[2:])
+
+    if not text:
+        await message.reply(help)
         return
 
     language = message.command[1]
-    text = msg.text or msg.caption
     try:
         result = await translator.translate(text, dest=language)
         await message.reply(
