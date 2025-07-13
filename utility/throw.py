@@ -2,7 +2,7 @@ from bot import Bot
 from pyrogram import filters
 from pyrogram.types import Message
 
-from config import Config
+from settings import Settings
 
 
 emoji_list = {
@@ -16,10 +16,10 @@ emoji_list = {
 
 
 @Bot.on_message(
-    Config.IS_ADMIN
+    Settings.IS_ADMIN
     & filters.command(
         ["throw", "dice", "dart", "basketball", "bowling", "slot"],
-        Config.CMD_PREFIXES,
+        Settings.CMD_PREFIXES,
     )
 )
 async def throw(app: Bot, message: Message):

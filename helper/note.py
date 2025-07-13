@@ -5,7 +5,7 @@ from pyrogram.types import Message, MessageEntity
 from sqlalchemy.orm import Session, Mapped, mapped_column
 from sqlalchemy import Text, JSON, Boolean, select, delete
 
-from config import Config, DataBase
+from settings import Settings, DataBase
 
 
 class NotesDatabase(DataBase):
@@ -19,11 +19,11 @@ class NotesDatabase(DataBase):
     private: Mapped[bool] = mapped_column(Boolean(), default=False)
 
 
-_notes: dict = Config.getdata("notes") or {}
+_notes: dict = Settings.getdata("notes") or {}
 
 
 def upgrade_to_sql():
-    with Session(Config.engine) as session:
+    with Session(Settings.engine) as session:
         for note_name in _notes:
             note: dict = _notes[note_name]
             session.merge(
@@ -36,7 +36,7 @@ def upgrade_to_sql():
             )
         session.commit()
 
-    Config.setdata("notes", {})
+    Settings.setdata("notes", {})
 
 
 def serialize_entities(entities: Union[list[MessageEntity]] = None):
@@ -90,7 +90,7 @@ async def deserialize_entities(
 
 @Bot.on_message(
     filters.command(
-        ["savenote", "getnote", "delnote", "notes"], Config.CMD_PREFIXES
+        ["savenote", "getnote", "delnote", "notes"], Settings.CMD_PREFIXES
     )
 )
 async def note_message(app: Bot, message: Message):
@@ -99,12 +99,12 @@ async def note_message(app: Bot, message: Message):
         upgrade_to_sql()
 
     match action:
-        case "savenote" if await Config.IS_ADMIN(app, message):
+        case "savenote" if await Settings.IS_ADMIN(app, message):
             if (
                 len(message.command) == 2 and not message.reply_to_message
             ) or len(message.command) == 1:
                 await message.reply(
-                    f"{Config.CMD_PREFIXES[0]}{action} [note name]"
+                    f"{Settings.CMD_PREFIXES[0]}{action} [note name]"
                     + " [the note or reply to the note message]"
                 )
                 return
@@ -117,7 +117,7 @@ async def note_message(app: Bot, message: Message):
             if message.reply_to_message:
                 msg = message.reply_to_message
                 if msg.text:
-                    with Session(Config.engine) as session:
+                    with Session(Settings.engine) as session:
                         session.merge(
                             NotesDatabase(
                                 note_name=note_name,
@@ -129,7 +129,7 @@ async def note_message(app: Bot, message: Message):
                         )
                         session.commit()
                 elif msg.media:
-                    with Session(Config.engine) as session:
+                    with Session(Settings.engine) as session:
                         session.merge(
                             NotesDatabase(
                                 note_name=note_name,
@@ -148,7 +148,7 @@ async def note_message(app: Bot, message: Message):
                         )
                         session.commit()
                 else:
-                    await message.reply("Not supported.")
+                    await message.reply("This message type is not supported.")
                     return
 
                 await message.reply(f"Saved note `{note_name}`.")
@@ -157,7 +157,7 @@ async def note_message(app: Bot, message: Message):
                 text = message.text[start_index:].removesuffix(flag)
 
                 if len(text) != 0:
-                    with Session(Config.engine) as session:
+                    with Session(Settings.engine) as session:
                         session.merge(
                             NotesDatabase(
                                 note_name=note_name,
@@ -173,14 +173,14 @@ async def note_message(app: Bot, message: Message):
         case "getnote":
             if len(message.command) < 2:
                 await message.reply(
-                    f"{Config.CMD_PREFIXES[0]}{action} [note name]"
+                    f"{Settings.CMD_PREFIXES[0]}{action} [note name]"
                 )
                 return
 
             note_name = message.command[1]
             flag = message.command[-1]
             quote = True
-            with Session(Config.engine) as session:
+            with Session(Settings.engine) as session:
                 data = session.execute(
                     select(NotesDatabase).where(
                         NotesDatabase.note_name == note_name
@@ -197,11 +197,11 @@ async def note_message(app: Bot, message: Message):
                     else message
                 )
 
-                if note.private and not await Config.IS_ADMIN(app, message):
+                if note.private and not await Settings.IS_ADMIN(app, message):
                     await message.reply("You don't have access to this note.")
                     return
 
-                if flag in ["-d", "--delete"] and await Config.IS_ADMIN(
+                if flag in ["-d", "--delete"] and await Settings.IS_ADMIN(
                     app, message
                 ):
                     try:
@@ -227,15 +227,15 @@ async def note_message(app: Bot, message: Message):
                             app, note.entities
                         ),
                     )
-        case "delnote" if await Config.IS_ADMIN(app, message):
+        case "delnote" if await Settings.IS_ADMIN(app, message):
             if len(message.command) != 2:
                 await message.reply(
-                    f"{Config.CMD_PREFIXES[0]}{action} [note name]"
+                    f"{Settings.CMD_PREFIXES[0]}{action} [note name]"
                 )
                 return
 
             note_name = message.command[1]
-            with Session(Config.engine) as session:
+            with Session(Settings.engine) as session:
                 data = session.execute(
                     select(NotesDatabase).where(
                         NotesDatabase.note_name == note_name
@@ -254,23 +254,20 @@ async def note_message(app: Bot, message: Message):
 
             await message.reply(f"Note **{note_name}** has been deleted.")
         case "notes":
-            with Session(Config.engine) as session:
+            with Session(Settings.engine) as session:
                 notes = session.execute(
                     select(NotesDatabase.note_name, NotesDatabase.private)
                 ).all()
                 notes: dict[str, bool] = {note[0]: note[1] for note in notes}
                 if len(notes) == 0:
-                    msg = "There are no notes saved."
+                    msg = "You haven't saved any notes yet."
                 else:
                     msg = "List of notes:\n"
                     for note in notes:
                         msg += " - `{}`{}\n".format(
                             note, " *private" if notes[note] else ""
                         )
-                    msg += (
-                        "You can retrieve these notes by using `/getnote"
-                        + " [notename]`"
-                    )
+                    msg += "Retrieve notes using `/getnote [notename]`"
                 await message.reply(msg)
 
 

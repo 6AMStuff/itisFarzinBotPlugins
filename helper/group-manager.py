@@ -12,7 +12,7 @@ from pyrogram.types import (
     CallbackQuery,
 )
 
-from config import Config
+from settings import Settings
 
 
 def human_to_timedelta(duration: str):
@@ -52,18 +52,12 @@ def human_to_timedelta(duration: str):
 
 async def unban(message: Message, chat: Chat, user: User, by: User = None):
     result = await message._client.unban_chat_member(chat.id, user.id)
+    action_text = "unbanned" if result else "failed to unban"
 
     if by:
-        text = "{} {} {}.".format(
-            by.mention,
-            "unbanned" if result else "failed to unban",
-            user.mention,
-        )
+        text = f"{by.mention} {action_text} {user.mention}."
     else:
-        text = "{} {}.".format(
-            "Unbanned" if result else "Failed to unban",
-            user.mention,
-        )
+        text = f"{action_text.capitalize()} {user.mention}."
 
     await (message.edit if by else message.reply)(text)
 
@@ -74,18 +68,12 @@ async def unmute(message: Message, chat: Chat, user: User, by: User = None):
         user.id,
         chat.permissions,
     )
+    action_text = "unmuted" if result else "failed to unmute"
 
     if by:
-        text = "{} {} {}.".format(
-            by.mention,
-            "unmuted" if result else "failed to unmute",
-            user.mention,
-        )
+        text = f"{by.mention} {action_text} {user.mention}."
     else:
-        text = "{} {}.".format(
-            "Unmuted" if result else "Failed to unmute",
-            user.mention,
-        )
+        text = f"{action_text.capitalize()} {user.mention}."
 
     await (message.edit if by else message.reply)(text)
 
@@ -93,7 +81,7 @@ async def unmute(message: Message, chat: Chat, user: User, by: User = None):
 @Bot.on_message(
     filters.group
     & filters.command(
-        ["ban", "unban", "kick", "mute", "unmute"], Config.CMD_PREFIXES
+        ["ban", "unban", "kick", "mute", "unmute"], Settings.CMD_PREFIXES
     )
 )
 async def restrict(app: Bot, message: Message):
@@ -113,7 +101,7 @@ async def restrict(app: Bot, message: Message):
         arg_hint = " [duration]" if action in ["ban", "mute"] else ""
         arg_hint_2 = " [reason]" if action in ["ban", "mute", "kick"] else ""
         await message.reply(
-            f"{Config.CMD_PREFIXES[0]}{action}{arg_hint} *reply to a user"
+            f"{Settings.CMD_PREFIXES[0]}{action}{arg_hint} *reply to a user"
             + arg_hint_2
         )
         return
@@ -161,10 +149,12 @@ async def restrict(app: Bot, message: Message):
             await message.reply("Incorrect time format.")
             return
         except OverflowError:
-            await message.reply("Use a lower duration.")
+            await message.reply(
+                "Duration out of range. Please enter a smaller value."
+            )
             return
 
-    formatted_date = date.astimezone(Config.TIMEZONE).strftime(
+    formatted_date = date.astimezone(Settings.TIMEZONE).strftime(
         "%d/%m/%Y, %H:%M:%S %Z"
     )
 
@@ -173,7 +163,9 @@ async def restrict(app: Bot, message: Message):
             try:
                 result = await app.ban_chat_member(chat.id, user.id, date)
             except OverflowError:
-                await message.reply("Use a lower duration.")
+                await message.reply(
+                    "Duration out of range. Please enter a smaller value."
+                )
                 return
 
             await message.reply(

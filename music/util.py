@@ -169,7 +169,7 @@ async def download_progress(
             f" of {total / megabytes:.2f} MB\n"
             f"**Speed**: {speed / megabytes:.2f} MB/s\n"
             "**ETA**: "
-            f"{time.strftime("%H:%M:%S", time.gmtime(estimated_time))}"
+            f"{time.strftime('%H:%M:%S', time.gmtime(estimated_time))}"
         )
 
     try:
@@ -204,7 +204,7 @@ def parse_data(text: str, data: dict, missing_text: str = None):
     if "version" in data and data["version"]:
         if "(" not in data["version"]:
             _data["version"] = f"({data['version']})"
-        _data["name"] += f" {_data["version"]}"
+        _data["name"] += f" {_data['version']}"
     if "format_id" in data:
         _data["format"] = "flac" if _data["format_id"] in {6, 7, 27} else "mp3"
     if "album" in data:

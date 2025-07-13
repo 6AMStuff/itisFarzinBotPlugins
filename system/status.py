@@ -7,7 +7,7 @@ from bot import Bot
 from pyrogram import filters, raw
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
-from config import Config
+from settings import Settings
 
 
 pid = os.getpid()
@@ -32,7 +32,7 @@ def format_uptime(seconds: float) -> str:
     return " ".join(parts)
 
 
-@Bot.on_message(Config.IS_ADMIN & filters.command("status"))
+@Bot.on_message(Settings.IS_ADMIN & filters.command("status"))
 async def status(app: Bot, message: Message):
     now = time.time()
 
@@ -61,7 +61,7 @@ async def status(app: Bot, message: Message):
         "OS:": f"{uname.system} {uname.release}",
     }
 
-    if getattr(app, "is_bot", bool(app.bot_token)):
+    if app.is_bot:
         keyboard = InlineKeyboardMarkup(
             [
                 InlineKeyboardButton(key, callback_data="None"),

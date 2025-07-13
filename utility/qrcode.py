@@ -4,7 +4,7 @@ from io import BytesIO
 from pyrogram import filters
 from pyrogram.types import Message
 
-from config import Config
+from settings import Settings
 
 
 def generate_qr(text: str) -> BytesIO:
@@ -17,7 +17,7 @@ def generate_qr(text: str) -> BytesIO:
 
 
 @Bot.on_message(
-    Config.IS_ADMIN & filters.command("qrcode", Config.CMD_PREFIXES)
+    Settings.IS_ADMIN & filters.command("qrcode", Settings.CMD_PREFIXES)
 )
 async def qrcode_message(_: Bot, message: Message):
     action = message.command[0]

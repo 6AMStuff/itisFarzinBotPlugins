@@ -3,11 +3,11 @@ from bot import Bot
 from pyrogram import filters
 from pyrogram.types import Message
 
-from config import Config
+from settings import Settings
 
 
 async def get_weather(location: str):
-    async with httpx.AsyncClient(proxy=Config.PROXY) as client:
+    async with httpx.AsyncClient(proxy=Settings.PROXY) as client:
         data = (
             await client.get(
                 "https://geocoding-api.open-meteo.com/v1/search",
@@ -16,7 +16,10 @@ async def get_weather(location: str):
         ).json()
 
         if not data.get("results"):
-            return {"status": False, "result": "Couldn't find the country."}
+            return {
+                "status": False,
+                "result": "Couldn't find the country/region/state.",
+            }
 
         data = data["results"][0]
         params = {
@@ -50,12 +53,12 @@ async def get_weather(location: str):
 
 
 @Bot.on_message(
-    Config.IS_ADMIN & filters.command(["weather"], Config.CMD_PREFIXES)
+    Settings.IS_ADMIN & filters.command(["weather"], Settings.CMD_PREFIXES)
 )
 async def weather(_: Bot, message: Message):
     action = message.command[0]
     if len(message.command) < 2:
-        await message.reply(f"{Config.CMD_PREFIXES[0]}{action} [location]")
+        await message.reply(f"{Settings.CMD_PREFIXES[0]}{action} [location]")
         return
 
     location = " ".join(message.command[1:])
