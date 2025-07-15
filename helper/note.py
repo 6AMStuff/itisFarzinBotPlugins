@@ -271,6 +271,6 @@ async def note_message(app: Bot, message: Message):
                 await message.reply(msg)
 
 
-__all__ = ["note_message"]
+__all__ = ("note_message",)
 __plugin__ = True
 __bot_only__ = False

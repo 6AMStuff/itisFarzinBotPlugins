@@ -86,6 +86,6 @@ async def status(app: Bot, message: Message):
     )
 
 
-__all__ = ["status"]
+__all__ = ("status",)
 __plugin__ = True
 __bot_only__ = False

@@ -14,6 +14,6 @@ async def date(_: Bot, message: Message):
     )
 
 
-__all__ = ["date"]
+__all__ = ("date",)
 __plugin__ = True
 __bot_only__ = False

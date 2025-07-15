@@ -354,6 +354,6 @@ async def pin(app: Bot, message: Message):
             await message.reply(f"Failed to unpin the {type} message.")
 
 
-__all__ = ["restrict", "restrict_callback", "pin"]
+__all__ = ("restrict", "restrict_callback", "pin")
 __plugin__ = True
 __bot_only__ = False

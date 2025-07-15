@@ -377,6 +377,6 @@ async def lastfm_callback(app: Bot, query: CallbackQuery):
         await lastfm_top(app, query.inline_message_id, mode, time)
 
 
-__all__ = ["lastfm_inline", "lastfm_inline_result", "lastfm_callback"]
+__all__ = ("lastfm_inline", "lastfm_inline_result", "lastfm_callback")
 __plugin__ = True
 __bot_only__ = True

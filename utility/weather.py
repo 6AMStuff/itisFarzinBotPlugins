@@ -89,6 +89,6 @@ async def weather(_: Bot, message: Message):
     await message.reply(text)
 
 
-__all__ = ["weather"]
+__all__ = ("weather",)
 __plugin__ = True
 __bot_only__ = False
