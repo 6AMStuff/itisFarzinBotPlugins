@@ -187,31 +187,23 @@ async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
         return
 
     user = lastfm.get_user(USERNAME)
-    _time = {
-        "1w": "7day",
-        "1m": "1month",
-        "3m": "3month",
-        "6m": "6month",
-        "1y": "12month",
-        "alltime": "overall",
-    }[time]
-    time_text = {
-        "1w": "1 Week",
-        "1m": "1 Month",
-        "3m": "3 Months",
-        "6m": "6 Months",
-        "1y": "1 Year",
-        "alltime": "All Time",
-    }[time]
+    timeframes = {
+        "1w": {"7day", "1 Week"},
+        "1m": {"1month", "1 Month"},
+        "3m": {"3month", "3 Months"},
+        "6m": {"6month", "6 Months"},
+        "1y": ("12month", "1 Year"),
+        "alltime": {"overall", "All Time"},
+    }.get(time, "alltime")
 
     if mode == "artists":
-        tops = user.get_top_artists(_time, 5)
+        tops = user.get_top_artists(timeframes[0], 5)
     elif mode == "albums":
-        tops = user.get_top_albums(_time, 5)
+        tops = user.get_top_albums(timeframes[0], 5)
     else:
-        tops = user.get_top_tracks(_time, 5)
+        tops = user.get_top_tracks(timeframes[0], 5)
 
-    text = f"{user.name}'s Top {mode.title()} of the Last {time_text}:\n"
+    text = f"{user.name}'s Top {mode.title()} of the Last {timeframes[1]}:\n"
     if tops:
         for i, top in enumerate(tops, start=1):
             top.item.username = USERNAME  # Fixes user play count for artists
