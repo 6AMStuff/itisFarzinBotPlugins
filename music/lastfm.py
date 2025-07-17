@@ -103,10 +103,9 @@ async def lastfm_status(
             else None
         )
         text += (
-            "\n**{}** - [{}]({}), [{}]{}, {:,} plays"
+            "\n**[{}]({})**, [{}]{}, {:,} plays"
         ).format(
-            track.artist,
-            track.get_name(),
+            track,
             track.get_url(),
             track.get_album().get_name(),
             f", {time}" if time else "",
