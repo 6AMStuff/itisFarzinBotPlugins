@@ -81,7 +81,17 @@ async def unmute(message: Message, chat: Chat, user: User, by: User = None):
 @Bot.on_message(
     filters.group
     & filters.command(
-        ["ban", "unban", "kick", "mute", "unmute"], Settings.CMD_PREFIXES
+        [
+            "ban",
+            "delban",
+            "unban",
+            "kick",
+            "delkick",
+            "mute",
+            "delmute",
+            "unmute",
+        ],
+        Settings.CMD_PREFIXES,
     )
 )
 async def restrict(app: Bot, message: Message):
@@ -159,7 +169,7 @@ async def restrict(app: Bot, message: Message):
     )
 
     match action:
-        case "ban":
+        case "ban" | "delban":
             try:
                 result = await app.ban_chat_member(chat.id, user.id, date)
             except OverflowError:
@@ -167,6 +177,12 @@ async def restrict(app: Bot, message: Message):
                     "Duration out of range. Please enter a smaller value."
                 )
                 return
+
+            if action[0:3] == "del":
+                try:
+                    await reply_to.delete()
+                except Exception:
+                    pass
 
             await message.reply(
                 "{} {} {}.{}".format(
@@ -192,11 +208,17 @@ async def restrict(app: Bot, message: Message):
             )
         case "unban":
             await unban(message, chat, user)
-        case "kick":
+        case "kick" | "delkick":
             result = await app.ban_chat_member(chat.id, user.id)
             if not bool(result):
                 await message.reply("Failed to kick {}.".format(user.mention))
                 return
+
+            if action[0:3] == "del":
+                try:
+                    await reply_to.delete()
+                except Exception:
+                    pass
 
             result = await app.unban_chat_member(chat.id, user.id)
             await message.reply(
@@ -206,7 +228,7 @@ async def restrict(app: Bot, message: Message):
                     f"\nFor reason: **{reason}**" if reason else "",
                 ),
             )
-        case "mute":
+        case "mute" | "delmute":
             try:
                 result = await app.restrict_chat_member(
                     chat.id,
@@ -217,6 +239,12 @@ async def restrict(app: Bot, message: Message):
             except OverflowError:
                 await message.reply("Use a lower duration.")
                 return
+
+            if action[0:3] == "del":
+                try:
+                    await reply_to.delete()
+                except Exception:
+                    pass
 
             await message.reply(
                 "{} {} {}.{}".format(
