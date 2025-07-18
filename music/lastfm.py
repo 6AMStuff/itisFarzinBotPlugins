@@ -102,9 +102,7 @@ async def lastfm_status(
             if str(played_track.timestamp).isdigit()
             else None
         )
-        text += (
-            "\n**[{}]({})**, [{}]{}, {:,} plays"
-        ).format(
+        text += ("\n**[{}]({})**, [{}]{}, {:,} plays").format(
             track,
             track.get_url(),
             track.get_album().get_name(),
