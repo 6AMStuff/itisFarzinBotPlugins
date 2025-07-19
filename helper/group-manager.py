@@ -321,6 +321,42 @@ async def restrict_callback(app: Bot, query: CallbackQuery):
             await unmute(message, chat, user, by=query.from_user)
 
 
+@Bot.on_message(
+    filters.group & filters.command(["kickme"], Settings.CMD_PREFIXES)
+)
+async def kickme(app: Bot, message: Message):
+    user = message.from_user
+    chat = message.chat
+
+    bot_chat_member = await app.get_chat_member(chat.id, app.me.id)
+    if (
+        not bot_chat_member.privileges
+        or not bot_chat_member.privileges.can_restrict_members
+    ):
+        await message.edit("I don't have the permission to kick you.")
+        return
+
+    try:
+        replied_chat_member = await app.get_chat_member(chat.id, user.id)
+    except errors.exceptions.bad_request_400.UserNotParticipant as e:
+        await message.reply(f"An error occurred: {e.MESSAGE}.")
+        return
+
+    if replied_chat_member.status.name.lower() in ("owner", "administrator"):
+        await message.reply("I can't kick an owner or admin.")
+        return
+
+    result = await app.ban_chat_member(chat.id, user.id)
+    if not bool(result):
+        await message.reply("Failed to kick you.")
+        return
+
+    result = await app.unban_chat_member(chat.id, user.id)
+    await message.reply(
+        ("Kicked {}." if result else "Failed to kick {}.").format(user.mention)
+    )
+
+
 @Bot.on_message(filters.group & filters.command(["pin", "unpin"]))
 async def pin(app: Bot, message: Message):
     action = message.command[0]
