@@ -1,4 +1,5 @@
 import re
+import logging
 from bot import Bot
 from datetime import datetime, timedelta
 from pyrogram import filters, errors, utils
@@ -181,8 +182,8 @@ async def restrict(app: Bot, message: Message):
             if action[0:3] == "del":
                 try:
                     await reply_to.delete()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logging.exception(e)
 
             await message.reply(
                 "{} {} {}.{}".format(
@@ -217,8 +218,8 @@ async def restrict(app: Bot, message: Message):
             if action[0:3] == "del":
                 try:
                     await reply_to.delete()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logging.exception(e)
 
             result = await app.unban_chat_member(chat.id, user.id)
             await message.reply(
@@ -243,8 +244,8 @@ async def restrict(app: Bot, message: Message):
             if action[0:3] == "del":
                 try:
                     await reply_to.delete()
-                except Exception:
-                    pass
+                except Exception as e:
+                    logging.exception(e)
 
             await message.reply(
                 "{} {} {}.{}".format(
