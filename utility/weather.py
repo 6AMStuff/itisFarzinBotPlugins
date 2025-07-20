@@ -86,7 +86,9 @@ async def weather(_: Bot, message: Message):
             data["timezone"], data["temperature"]
         )
 
-    await message.reply(text)
+    await message.reply(
+        text + "\n\nSource: [Open Meteo](https://open-meteo.com)"
+    )
 
 
 __all__ = ("weather",)
