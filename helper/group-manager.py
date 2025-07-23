@@ -1,4 +1,5 @@
 import re
+import logging
 from bot import Bot
 from datetime import datetime, timedelta
 from pyrogram import filters, errors, utils
@@ -81,7 +82,17 @@ async def unmute(message: Message, chat: Chat, user: User, by: User = None):
 @Bot.on_message(
     filters.group
     & filters.command(
-        ["ban", "unban", "kick", "mute", "unmute"], Settings.CMD_PREFIXES
+        [
+            "ban",
+            "delban",
+            "unban",
+            "kick",
+            "delkick",
+            "mute",
+            "delmute",
+            "unmute",
+        ],
+        Settings.CMD_PREFIXES,
     )
 )
 async def restrict(app: Bot, message: Message):
@@ -159,7 +170,7 @@ async def restrict(app: Bot, message: Message):
     )
 
     match action:
-        case "ban":
+        case "ban" | "delban":
             try:
                 result = await app.ban_chat_member(chat.id, user.id, date)
             except OverflowError:
@@ -167,6 +178,12 @@ async def restrict(app: Bot, message: Message):
                     "Duration out of range. Please enter a smaller value."
                 )
                 return
+
+            if action[0:3] == "del":
+                try:
+                    await reply_to.delete()
+                except Exception as e:
+                    logging.exception(e)
 
             await message.reply(
                 "{} {} {}.{}".format(
@@ -192,11 +209,17 @@ async def restrict(app: Bot, message: Message):
             )
         case "unban":
             await unban(message, chat, user)
-        case "kick":
+        case "kick" | "delkick":
             result = await app.ban_chat_member(chat.id, user.id)
             if not bool(result):
                 await message.reply("Failed to kick {}.".format(user.mention))
                 return
+
+            if action[0:3] == "del":
+                try:
+                    await reply_to.delete()
+                except Exception as e:
+                    logging.exception(e)
 
             result = await app.unban_chat_member(chat.id, user.id)
             await message.reply(
@@ -206,7 +229,7 @@ async def restrict(app: Bot, message: Message):
                     f"\nFor reason: **{reason}**" if reason else "",
                 ),
             )
-        case "mute":
+        case "mute" | "delmute":
             try:
                 result = await app.restrict_chat_member(
                     chat.id,
@@ -217,6 +240,12 @@ async def restrict(app: Bot, message: Message):
             except OverflowError:
                 await message.reply("Use a lower duration.")
                 return
+
+            if action[0:3] == "del":
+                try:
+                    await reply_to.delete()
+                except Exception as e:
+                    logging.exception(e)
 
             await message.reply(
                 "{} {} {}.{}".format(
@@ -293,6 +322,42 @@ async def restrict_callback(app: Bot, query: CallbackQuery):
             await unmute(message, chat, user, by=query.from_user)
 
 
+@Bot.on_message(
+    filters.group & filters.command(["kickme"], Settings.CMD_PREFIXES)
+)
+async def kickme(app: Bot, message: Message):
+    user = message.from_user
+    chat = message.chat
+
+    bot_chat_member = await app.get_chat_member(chat.id, app.me.id)
+    if (
+        not bot_chat_member.privileges
+        or not bot_chat_member.privileges.can_restrict_members
+    ):
+        await message.edit("I don't have the permission to kick you.")
+        return
+
+    try:
+        replied_chat_member = await app.get_chat_member(chat.id, user.id)
+    except errors.exceptions.bad_request_400.UserNotParticipant as e:
+        await message.reply(f"An error occurred: {e.MESSAGE}.")
+        return
+
+    if replied_chat_member.status.name.lower() in ("owner", "administrator"):
+        await message.reply("I can't kick an owner or admin.")
+        return
+
+    result = await app.ban_chat_member(chat.id, user.id)
+    if not bool(result):
+        await message.reply("Failed to kick you.")
+        return
+
+    result = await app.unban_chat_member(chat.id, user.id)
+    await message.reply(
+        ("Kicked {}." if result else "Failed to kick {}.").format(user.mention)
+    )
+
+
 @Bot.on_message(filters.group & filters.command(["pin", "unpin"]))
 async def pin(app: Bot, message: Message):
     action = message.command[0]
@@ -354,6 +419,6 @@ async def pin(app: Bot, message: Message):
             await message.reply(f"Failed to unpin the {type} message.")
 
 
-__all__ = ["restrict", "restrict_callback", "pin"]
+__all__ = ("restrict", "restrict_callback", "pin")
 __plugin__ = True
 __bot_only__ = False

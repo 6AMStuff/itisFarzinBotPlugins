@@ -27,6 +27,6 @@ async def qrcode_message(_: Bot, message: Message):
     await message.reply_photo(photo=qr_image, caption="Here's your QR code!")
 
 
-__all__ = ["qrcode_message"]
+__all__ = ("qrcode_message",)
 __plugin__ = True
 __bot_only__ = False

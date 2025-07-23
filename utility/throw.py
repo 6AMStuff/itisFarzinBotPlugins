@@ -41,6 +41,6 @@ async def throw(app: Bot, message: Message):
     )
 
 
-__all__ = ["throw"]
+__all__ = ("throw",)
 __plugin__ = True
 __bot_only__ = False

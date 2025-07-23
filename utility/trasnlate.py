@@ -45,6 +45,6 @@ async def translate(_: Bot, message: Message):
         await message.reply("*ERROR**: " + str(e))
 
 
-__all__ = ["translate"]
+__all__ = ("translate",)
 __plugin__ = True
 __bot_only__ = False

@@ -124,6 +124,6 @@ async def whisper_callback(_: Bot, query: CallbackQuery):
             await query.answer(cipher.decrypt(text).decode(), show_alert=True)
 
 
-__all__ = ["whisper_inline", "whisper_inline_result", "whisper_callback"]
+__all__ = ("whisper_inline", "whisper_inline_result", "whisper_callback")
 __plugin__ = True
 __bot_only__ = True
