@@ -1,3 +1,19 @@
+## v8.2.0 (2025-07-23)
+
+### Feat
+
+- **group-manager**: log unhandled exceptions
+- **group-manager**: add `kickme`
+- **group-manager**: add `delban`, `delkick` and `delmute`
+- **lastfm**: include album name in the status text
+
+### Refactor
+
+- **weather**: mention weather data source
+- **lastfm**: cleanup time frames
+- **lastfm**: simplify track and artist names for recent tracks
+- change `__all__` from list to tuple
+
 ## v8.1.0 (2025-07-13)
 
 ### Feat
