@@ -29,7 +29,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, modes
 from settings import Settings
 
 
-# Deezer classes from https://github.com/uhwot/orpheusdl-deezer
+# APIError and DeezerAPI classes from https://github.com/uhwot/orpheusdl-deezer
 # with some modifications
 class APIError(Exception):
     def __init__(self, type, msg, payload):
