@@ -179,7 +179,11 @@ async def qobuz_search_keyboard(query: str, page: int = 0):
                 InlineKeyboardButton(
                     parse_data("{time} | {name} - {artist}", track),
                     parse_data("qobuz trackinfo {id}", track),
-                )
+                ),
+                InlineKeyboardButton(
+                    "Download",
+                    parse_data("qobuz dltrack {id}", track),
+                ),
             ]
         )
 

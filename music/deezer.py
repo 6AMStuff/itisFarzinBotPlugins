@@ -524,7 +524,11 @@ async def deezer_search_keyboard(query: str, page: int = 0):
                 InlineKeyboardButton(
                     parse_data("{time} | {name} - {artist}", track),
                     parse_data("deezer trackinfo {id}", track),
-                )
+                ),
+                InlineKeyboardButton(
+                    "Download",
+                    parse_data("deezer dltrack {id}", track),
+                ),
             ]
         )
 
