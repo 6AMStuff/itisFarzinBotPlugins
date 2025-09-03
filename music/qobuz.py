@@ -120,6 +120,19 @@ class Qobuz:
 
         return await self._get("track/getFileUrl", params=params)
 
+    async def get_preview_url(self, track_id: str) -> dict:
+        params = {
+            "track_id": track_id,
+            "sample": "true",
+            "app_id": self._app_id,
+            "user_auth_token": self._auth_token,
+        }
+
+        signature = self.create_signature("track/getFileUrl", params)
+        params["request_ts"], params["request_sig"] = signature
+
+        return await self._get("track/getFileUrl", params=params)
+
     async def get_track(self, track_id: str) -> dict:
         return await self._get(
             "track/get", params={"track_id": track_id, "app_id": self._app_id}
@@ -256,7 +269,11 @@ async def qobuz_message(_: Bot, message: Message):
             InlineKeyboardButton(
                 parse_data("{time} | {name} - {artist}", track),
                 parse_data("qobuz dltrack {id}", track),
-            )
+            ),
+            InlineKeyboardButton(
+                "Preview",
+                parse_data("qobuz pvtrack {id}", track),
+            ),
         ]
         for track in album["tracks"]["items"]
     ]
@@ -422,9 +439,27 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                         InlineKeyboardButton(
                             "Download",
                             parse_data("qobuz dltrack {id}", track),
-                        )
+                        ),
+                        InlineKeyboardButton(
+                            "Preview",
+                            parse_data("qobuz pvtrack {id}", track),
+                        ),
                     ]
                 ]
+            ),
+        )
+    elif info["type"] == "pvtrack":
+        await query.answer()
+        track = await qobuz.get_track(info["id"])
+        if not track["previewable"]:
+            await query.message.reply("There is no preview available.")
+            return
+
+        preview = await qobuz.get_preview_url(info["id"])
+        await query.message.reply_audio(
+            preview["url"],
+            caption=parse_data(
+                "Preview for **{name}** by **{artist}**.", track
             ),
         )
 
