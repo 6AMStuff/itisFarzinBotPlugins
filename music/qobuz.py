@@ -363,7 +363,10 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             track_name = parse_data(_track_name + ".{format}", track)
             full_path = album_path + track_name
             tmp_full_path = full_path + ".tmp"
-            if os.path.exists(full_path):
+            if os.path.exists(full_path) and (
+                not Settings.getdata("force_download").is_enabled
+                and not Settings.getdata("force_update").is_enabled
+            ):
                 await track_msg.edit(
                     parse_data("Track **{name}** already exists.", track)
                 )
@@ -387,27 +390,30 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 )
                 continue
 
-            if await error_handler(
-                download_file,
-                kwargs=dict(
-                    url=stream_data["url"],
-                    filename=tmp_full_path,
-                    proxy=Settings.PROXY,
-                    progress=download_progress,
-                    progress_args=(track_name, time.time(), track_msg),
-                ),
-                update=track_msg,
-                text=parse_data(
-                    "Failed to download the track **{name}**.", track
-                ),
+            if (
+                not os.path.exists(full_path)
+                or Settings.getdata("force_download").is_enabled
             ):
-                if os.path.exists(tmp_full_path):
-                    os.remove(tmp_full_path)
+                if await error_handler(
+                    download_file,
+                    kwargs=dict(
+                        url=stream_data["url"],
+                        filename=tmp_full_path,
+                        proxy=Settings.PROXY,
+                        progress=download_progress,
+                        progress_args=(track_name, time.time(), track_msg),
+                    ),
+                    update=track_msg,
+                    text=parse_data(
+                        "Failed to download the track **{name}**.", track
+                    ),
+                ):
+                    if os.path.exists(tmp_full_path):
+                        os.remove(tmp_full_path)
 
-                continue
-            else:
-                os.rename(tmp_full_path, full_path)
-                downloads += 1
+                    continue
+                else:
+                    os.rename(tmp_full_path, full_path)
 
             track["source"] = "Qobuz"
             tag_file(full_path, cover_path, track)
@@ -416,6 +422,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 lambda msg: asyncio.create_task(msg.delete()),
                 track_msg,
             )
+            downloads += 1
 
         if downloads == 0:
             return
