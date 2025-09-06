@@ -437,6 +437,7 @@ class Deezer(DeezerAPI):
             artists=[
                 {"name": artist["ART_NAME"]} for artist in data["ARTISTS"]
             ],
+            genre={"name": await self.get_album_genre(data["ALB_ID"])},
             tracks_count=data["NUMBER_TRACK"],
             songs=(
                 [self._track(track) for track in album["SONGS"]["data"]]
@@ -448,6 +449,15 @@ class Deezer(DeezerAPI):
             duration=data["DURATION"],
             cover=self._cover(data["ALB_PICTURE"]),
         )
+
+    async def get_album_genre(self, id: str | int):
+        resp = (
+            await self.session.get(f"https://api.deezer.com/album/{id}")
+        ).json()
+        if not resp["genres"]["data"]:
+            return ""
+
+        return resp["genres"]["data"][0]["name"]
 
     async def get_album_songs(
         self, id: str | int, start: int = 0, limit: int = 500
