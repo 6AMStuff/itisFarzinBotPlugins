@@ -1,3 +1,20 @@
+## v8.3.0 (2025-09-18)
+
+### Feat
+
+- **qobuz,deezer**: add force_download and force_update
+- **deezer**: add album genre field
+- **music**: add resume support for downloads
+- **misc**: add start plugin
+- **qobuz**: add track preview
+- **qobuz,deezer**: add a download button to the search results
+- **date**: add jalali date command
+
+### Refactor
+
+- **helper**: rename it to misc
+- **deezer**: update a comment
+
 ## v8.2.0 (2025-07-23)
 
 ### Feat
