@@ -120,6 +120,19 @@ class Qobuz:
 
         return await self._get("track/getFileUrl", params=params)
 
+    async def get_preview_url(self, track_id: str) -> dict:
+        params = {
+            "track_id": track_id,
+            "sample": "true",
+            "app_id": self._app_id,
+            "user_auth_token": self._auth_token,
+        }
+
+        signature = self.create_signature("track/getFileUrl", params)
+        params["request_ts"], params["request_sig"] = signature
+
+        return await self._get("track/getFileUrl", params=params)
+
     async def get_track(self, track_id: str) -> dict:
         return await self._get(
             "track/get", params={"track_id": track_id, "app_id": self._app_id}
@@ -179,7 +192,11 @@ async def qobuz_search_keyboard(query: str, page: int = 0):
                 InlineKeyboardButton(
                     parse_data("{time} | {name} - {artist}", track),
                     parse_data("qobuz trackinfo {id}", track),
-                )
+                ),
+                InlineKeyboardButton(
+                    "Download",
+                    parse_data("qobuz dltrack {id}", track),
+                ),
             ]
         )
 
@@ -252,7 +269,11 @@ async def qobuz_message(_: Bot, message: Message):
             InlineKeyboardButton(
                 parse_data("{time} | {name} - {artist}", track),
                 parse_data("qobuz dltrack {id}", track),
-            )
+            ),
+            InlineKeyboardButton(
+                "Preview",
+                parse_data("qobuz pvtrack {id}", track),
+            ),
         ]
         for track in album["tracks"]["items"]
     ]
@@ -342,7 +363,10 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
             track_name = parse_data(_track_name + ".{format}", track)
             full_path = album_path + track_name
             tmp_full_path = full_path + ".tmp"
-            if os.path.exists(full_path):
+            if os.path.exists(full_path) and (
+                not Settings.getdata("force_download").is_enabled
+                and not Settings.getdata("force_update").is_enabled
+            ):
                 await track_msg.edit(
                     parse_data("Track **{name}** already exists.", track)
                 )
@@ -366,27 +390,30 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 )
                 continue
 
-            if await error_handler(
-                download_file,
-                kwargs=dict(
-                    url=stream_data["url"],
-                    filename=tmp_full_path,
-                    proxy=Settings.PROXY,
-                    progress=download_progress,
-                    progress_args=(track_name, time.time(), track_msg),
-                ),
-                update=track_msg,
-                text=parse_data(
-                    "Failed to download the track **{name}**.", track
-                ),
+            if (
+                not os.path.exists(full_path)
+                or Settings.getdata("force_download").is_enabled
             ):
-                if os.path.exists(tmp_full_path):
-                    os.remove(tmp_full_path)
+                if await error_handler(
+                    download_file,
+                    kwargs=dict(
+                        url=stream_data["url"],
+                        filename=tmp_full_path,
+                        proxy=Settings.PROXY,
+                        progress=download_progress,
+                        progress_args=(track_name, time.time(), track_msg),
+                    ),
+                    update=track_msg,
+                    text=parse_data(
+                        "Failed to download the track **{name}**.", track
+                    ),
+                ):
+                    if os.path.exists(tmp_full_path):
+                        os.remove(tmp_full_path)
 
-                continue
-            else:
-                os.rename(tmp_full_path, full_path)
-                downloads += 1
+                    continue
+                else:
+                    os.rename(tmp_full_path, full_path)
 
             track["source"] = "Qobuz"
             tag_file(full_path, cover_path, track)
@@ -395,6 +422,7 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                 lambda msg: asyncio.create_task(msg.delete()),
                 track_msg,
             )
+            downloads += 1
 
         if downloads == 0:
             return
@@ -418,9 +446,27 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                         InlineKeyboardButton(
                             "Download",
                             parse_data("qobuz dltrack {id}", track),
-                        )
+                        ),
+                        InlineKeyboardButton(
+                            "Preview",
+                            parse_data("qobuz pvtrack {id}", track),
+                        ),
                     ]
                 ]
+            ),
+        )
+    elif info["type"] == "pvtrack":
+        await query.answer()
+        track = await qobuz.get_track(info["id"])
+        if not track["previewable"]:
+            await query.message.reply("There is no preview available.")
+            return
+
+        preview = await qobuz.get_preview_url(info["id"])
+        await query.message.reply_audio(
+            preview["url"],
+            caption=parse_data(
+                "Preview for **{name}** by **{artist}**.", track
             ),
         )
 

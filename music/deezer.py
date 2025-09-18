@@ -29,7 +29,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, modes
 from settings import Settings
 
 
-# Deezer classes from https://github.com/uhwot/orpheusdl-deezer
+# APIError and DeezerAPI classes from https://github.com/uhwot/orpheusdl-deezer
 # with some modifications
 class APIError(Exception):
     def __init__(self, type, msg, payload):
@@ -437,6 +437,7 @@ class Deezer(DeezerAPI):
             artists=[
                 {"name": artist["ART_NAME"]} for artist in data["ARTISTS"]
             ],
+            genre={"name": await self.get_album_genre(data["ALB_ID"])},
             tracks_count=data["NUMBER_TRACK"],
             songs=(
                 [self._track(track) for track in album["SONGS"]["data"]]
@@ -448,6 +449,15 @@ class Deezer(DeezerAPI):
             duration=data["DURATION"],
             cover=self._cover(data["ALB_PICTURE"]),
         )
+
+    async def get_album_genre(self, id: str | int):
+        resp = (
+            await self.session.get(f"https://api.deezer.com/album/{id}")
+        ).json()
+        if not resp["genres"]["data"]:
+            return ""
+
+        return resp["genres"]["data"][0]["name"]
 
     async def get_album_songs(
         self, id: str | int, start: int = 0, limit: int = 500
@@ -524,7 +534,11 @@ async def deezer_search_keyboard(query: str, page: int = 0):
                 InlineKeyboardButton(
                     parse_data("{time} | {name} - {artist}", track),
                     parse_data("deezer trackinfo {id}", track),
-                )
+                ),
+                InlineKeyboardButton(
+                    "Download",
+                    parse_data("deezer dltrack {id}", track),
+                ),
             ]
         )
 
@@ -720,7 +734,10 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
             track_name = parse_data(_track_name + ".{format}", track)
             full_path = album_path + track_name
             tmp_full_path = full_path + ".tmp"
-            if os.path.exists(full_path):
+            if os.path.exists(full_path) and (
+                not Settings.getdata("force_download").is_enabled
+                and not Settings.getdata("force_update").is_enabled
+            ):
                 await track_msg.edit(
                     parse_data("Track **{name}** already exists.", track)
                 )
@@ -744,30 +761,33 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 )
                 continue
 
-            if await error_handler(
-                download_file,
-                kwargs=dict(
-                    url=url,
-                    filename=tmp_full_path,
-                    proxy=Settings.PROXY,
-                    chunk_size=2048,
-                    chunk_process=deezer.decrypt_chunk,
-                    chunk_process_args=(track["id"],),
-                    progress=download_progress,
-                    progress_args=(track_name, time(), track_msg),
-                ),
-                update=track_msg,
-                text=parse_data(
-                    "Failed to download the track **{name}**.", track
-                ),
+            if (
+                not os.path.exists(full_path)
+                or Settings.getdata("force_download").is_enabled
             ):
-                if os.path.exists(tmp_full_path):
-                    os.remove(tmp_full_path)
+                if await error_handler(
+                    download_file,
+                    kwargs=dict(
+                        url=url,
+                        filename=tmp_full_path,
+                        proxy=Settings.PROXY,
+                        chunk_size=2048,
+                        chunk_process=deezer.decrypt_chunk,
+                        chunk_process_args=(track["id"],),
+                        progress=download_progress,
+                        progress_args=(track_name, time(), track_msg),
+                    ),
+                    update=track_msg,
+                    text=parse_data(
+                        "Failed to download the track **{name}**.", track
+                    ),
+                ):
+                    if os.path.exists(tmp_full_path):
+                        os.remove(tmp_full_path)
 
-                continue
-            else:
-                os.rename(tmp_full_path, full_path)
-                downloads += 1
+                    continue
+                else:
+                    os.rename(tmp_full_path, full_path)
 
             track["source"] = "Deezer"
             track["album"] = album
@@ -779,6 +799,7 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                 lambda msg: asyncio.create_task(msg.delete()),
                 track_msg,
             )
+            downloads += 1
 
         if downloads == 0:
             return

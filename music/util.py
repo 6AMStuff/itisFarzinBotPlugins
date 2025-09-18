@@ -1,3 +1,4 @@
+import os
 import copy
 import time
 import httpx
@@ -94,15 +95,16 @@ async def download_file(
     if not str(retry).isdigit() or retry < 0:
         retry = 1
 
-    async def download(client: httpx.AsyncClient):
-        async with client.stream("GET", url) as response:
+    async def download(client: httpx.AsyncClient, start: int = 0):
+        headers = {"Range": f"bytes={start}-"} if start > 0 else {}
+        async with client.stream("GET", url, headers=headers) as response:
             response.raise_for_status()
-            total_size = int(response.headers.get("content-length", 0))
-            downloaded = 0
+            total_size = int(response.headers.get("content-length", 0)) + start
+            downloaded = start
             last_update = time.monotonic()
 
-            with open(filename, "wb") as file:
-                i = 0
+            with open(filename, "ab") as file:
+                i = start // chunk_size if chunk_size else 0
                 async for chunk in response.aiter_bytes(chunk_size):
                     if chunk_process:
                         chunk = await chunk_process(
@@ -128,7 +130,12 @@ async def download_file(
     async with httpx.AsyncClient(proxy=proxy) as client:
         for n in range(retry + 1):
             try:
-                await download(client)
+                start = (
+                    os.path.getsize(filename)
+                    if os.path.exists(filename)
+                    else 0
+                )
+                await download(client, start)
                 break
             except Exception as e:
                 if n == retry:
