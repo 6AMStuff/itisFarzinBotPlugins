@@ -105,7 +105,11 @@ async def lastfm_status(
         text += ("\n**[{}]({})**, [{}]{}, {:,} plays").format(
             track,
             track.get_url(),
-            track.get_album().get_name(),
+            (
+                album.get_name()
+                if (album := track.get_album())
+                else "Unknown Album"
+            ),
             f", {time}" if time else "",
             track.get_userplaycount(),
         )
