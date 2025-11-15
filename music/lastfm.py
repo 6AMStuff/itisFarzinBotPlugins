@@ -190,12 +190,12 @@ async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
 
     user = lastfm.get_user(USERNAME)
     timeframes = {
-        "1w": {"7day", "1 Week"},
-        "1m": {"1month", "1 Month"},
-        "3m": {"3month", "3 Months"},
-        "6m": {"6month", "6 Months"},
+        "1w": ("7day", "1 Week"),
+        "1m": ("1month", "1 Month"),
+        "3m": ("3month", "3 Months"),
+        "6m": ("6month", "6 Months"),
         "1y": ("12month", "1 Year"),
-        "alltime": {"overall", "All Time"},
+        "alltime": ("overall", "All Time"),
     }.get(time, "alltime")
 
     if mode == "artists":
