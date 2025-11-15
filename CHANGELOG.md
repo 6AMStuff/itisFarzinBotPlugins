@@ -1,3 +1,10 @@
+## v8.4.0 (2025-11-15)
+
+### Fix
+
+- **lastfm**: handle tracks without an album
+- **deezer**: use self in check_token method
+
 ## v8.3.0 (2025-09-18)
 
 ### Feat
