@@ -1,7 +1,7 @@
 httpx==0.28.1
 mutagen==1.47.0
 cryptography==44.0.2
-pylast @ git+https://github.com/itisFarzin/pylast@5254c063f0c82753e1904bd781cabb70fb6a307e#egg=pylast
+pylast==6.0.0
 humanize==4.12.3
 psutil==7.0.0
 qrcode[pil]==8.2

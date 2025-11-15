@@ -494,7 +494,7 @@ class Deezer(DeezerAPI):
         return chunk
 
     async def check_token(self):
-        user = await deezer._api_call("deezer.getUserData")
+        user = await self._api_call("deezer.getUserData")
         if user["USER"]["OPTIONS"]["streaming_group"] == "ads":
             raise Exception("Free accounts are not eligible for downloading")
 
