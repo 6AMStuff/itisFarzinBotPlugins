@@ -1,3 +1,9 @@
+## v8.4.1 (2025-11-15)
+
+### Fix
+
+- **lastfm**: use tuples for timeframes
+
 ## v8.4.0 (2025-11-15)
 
 ### Fix
