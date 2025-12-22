@@ -1,3 +1,9 @@
+## v8.4.2 (2025-12-22)
+
+### Fix
+
+- **lastfm**: await set_up_lastfm in on_data_change
+
 ## v8.4.1 (2025-11-15)
 
 ### Fix
