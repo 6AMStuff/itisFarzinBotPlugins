@@ -230,7 +230,7 @@ async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
 
 async def on_data_change():
     global lastfm
-    lastfm = set_up_lastfm()
+    lastfm = await set_up_lastfm()
 
 
 lastfm = None
