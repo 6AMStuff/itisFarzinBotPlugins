@@ -1,3 +1,9 @@
+## v8.4.3 (2026-02-04)
+
+### Refactor
+
+- settings -> bot.settings
+
 ## v8.4.2 (2025-12-22)
 
 ### Fix
