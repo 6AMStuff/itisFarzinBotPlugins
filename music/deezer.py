@@ -26,7 +26,7 @@ from .util import (
 from cryptography.hazmat.decrepit.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import Cipher, modes
 
-from settings import Settings
+from bot.settings import Settings
 
 
 # APIError and DeezerAPI classes from https://github.com/uhwot/orpheusdl-deezer

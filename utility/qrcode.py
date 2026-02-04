@@ -4,7 +4,7 @@ from io import BytesIO
 from pyrogram import filters
 from pyrogram.types import Message
 
-from settings import Settings
+from bot.settings import Settings
 
 
 def generate_qr(text: str) -> BytesIO:

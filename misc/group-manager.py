@@ -13,7 +13,7 @@ from pyrogram.types import (
     CallbackQuery,
 )
 
-from settings import Settings
+from bot.settings import Settings
 
 
 def human_to_timedelta(duration: str):

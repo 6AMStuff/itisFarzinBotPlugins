@@ -7,7 +7,7 @@ from bot import Bot
 from pyrogram import filters, raw
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
-from settings import Settings
+from bot.settings import Settings
 
 
 pid = os.getpid()
