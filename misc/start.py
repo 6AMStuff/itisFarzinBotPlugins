@@ -1,8 +1,8 @@
 from bot import Bot
 from pyrogram import filters
-from pyrogram.types import Message, LinkPreviewOptions
+from pyrogram.types import LinkPreviewOptions, Message
 
-from settings import Settings
+from bot.settings import Settings
 
 
 @Bot.on_message(

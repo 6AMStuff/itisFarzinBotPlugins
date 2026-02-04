@@ -20,7 +20,7 @@ from .util import (
     error_handler_decorator,
 )
 
-from settings import Settings
+from bot.settings import Settings
 
 
 # Qobuz class from https://github.com/OrfiDev/orpheusdl-qobuz

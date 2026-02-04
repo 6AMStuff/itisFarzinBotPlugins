@@ -16,7 +16,7 @@ from pyrogram.types import (
     InlineKeyboardButton,
 )
 
-from settings import Settings, DataBase
+from bot.settings import Settings, DataBase
 
 
 class WhisperDatabase(DataBase):

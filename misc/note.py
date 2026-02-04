@@ -5,7 +5,7 @@ from pyrogram.types import Message, MessageEntity
 from sqlalchemy.orm import Session, Mapped, mapped_column
 from sqlalchemy import Text, JSON, Boolean, select, delete
 
-from settings import Settings, DataBase
+from bot.settings import Settings, DataBase
 
 
 class NotesDatabase(DataBase):

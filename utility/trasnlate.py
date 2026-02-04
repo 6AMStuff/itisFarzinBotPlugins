@@ -3,7 +3,7 @@ from pyrogram import filters
 from pyrogram.types import Message
 from googletrans import Translator
 
-from settings import Settings
+from bot.settings import Settings
 
 
 translator = Translator()

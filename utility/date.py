@@ -4,7 +4,7 @@ from datetime import datetime
 from pyrogram.types import Message
 from jdatetime import datetime as jdatetime
 
-from settings import Settings
+from bot.settings import Settings
 
 
 @Bot.on_message(filters.command("date", Settings.CMD_PREFIXES))

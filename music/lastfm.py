@@ -16,7 +16,7 @@ from pyrogram.types import (
     InputMediaPhoto,
 )
 
-from settings import Settings
+from bot.settings import Settings
 
 
 USERNAME = "itisFarzin"
