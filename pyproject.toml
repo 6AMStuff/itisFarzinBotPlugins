@@ -3,3 +3,78 @@ line-length = 79
 
 [tool.flake8]
 max-line-length = 79
+
+[tool.commitizen]
+name = "cz_customize"
+tag_format = "v$version"
+version_provider = "scm"
+version_scheme = "pep440"
+update_changelog_on_bump = true
+
+[tool.commitizen.customize]
+message_template = "{{change_type}}{% if scope %}({{scope}}){% endif %}{% if breaking %}!{% endif %}: {{subject}}{% if body %}\n\n{{body}}{% endif %}{% if footer %}\n\n{{footer}}{% endif %}"
+example = "feat(api)!: remove legacy auth flow"
+schema = "<type>(<scope>)!: <subject>"
+schema_pattern = "^(feat|fix|docs|style|refactor|test|build|ci|chore|revert)(\\([\\w\\-,\\.]\\))?(!)?: [^\\s].(\\n\\n[\\s\\S]*)?$"
+commit_parser = "^(?P<change_type>feat|fix|docs|style|refactor|test|build|ci|chore|revert)(?:\\((?P<scope>[\\w\\-,\\.])\\))?(?P<breaking>!)?:\\s(?P<message>[^\\s].)(?:\\n\\n(?P<body>[\\s\\S]*))?$"
+bump_pattern = "^(feat|fix|docs|style|refactor|test|build|ci|chore|revert)(\\(.\\))?(!)?:"
+changelog_pattern = "^(feat|fix|docs|style|refactor|test|build|ci|chore|revert)"
+
+[tool.commitizen.customize.bump_map]
+"^.!" = "MAJOR"
+"^feat" = "MINOR"
+"^(fix|docs|style|refactor|test|chore|ci|build|revert)" = "PATCH"
+
+[tool.commitizen.customize.change_type_map]
+feat = "Features"
+fix = "Bug Fixes"
+docs = "Documentation"
+style = "Styling"
+refactor = "Code Refactoring"
+test = "Tests"
+build = "Build System"
+ci = "Continuous Integration"
+chore = "Maintenance"
+revert = "Reverts"
+
+[[tool.commitizen.customize.questions]]
+type = "list"
+name = "change_type"
+message = "Select the type of change you are committing"
+choices = [
+  { value = "fix", name = "fix: A bug fix. Correlates with PATCH in SemVer" },
+  { value = "feat", name = "feat: A new feature. Correlates with MINOR in SemVer" },
+  { value = "docs", name = "docs: Documentation only changes" },
+  { value = "style", name = "style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)" },
+  { value = "refactor", name = "refactor: A code change that neither fixes a bug nor adds a feature" },
+  { value = "test", name = "test: Adding missing or correcting existing tests" },
+  { value = "build", name = "build: Changes that affect the build system or external dependencies (example scopes: pip, docker, npm)" },
+  { value = "ci", name = "ci: Changes to CI configuration files and scripts (example scopes: GitLabCI)" },
+  { value = "chore", name = "chore: Other changes that don't modify src or test files" }
+]
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "scope"
+message = "What is the scope of this change? (class or file name): (press [enter] to skip)"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "subject"
+message = "Write a short and imperative summary of the code changes: (lower case and no period)"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "body"
+message = "Provide additional contextual information about the code changes:"
+
+[[tool.commitizen.customize.questions]]
+type = "confirm"
+name = "breaking"
+message = "Is this a BREAKING CHANGE? Correlates with MAJOR in SemVer"
+default = false
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "footer"
+message = "Footer. Information about Breaking Changes and reference issues that this commit closes: (press [enter] to skip)"
