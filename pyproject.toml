@@ -12,29 +12,42 @@ version_scheme = "pep440"
 update_changelog_on_bump = true
 
 [tool.commitizen.customize]
-message_template = "{{change_type}}{% if scope %}({{scope}}){% endif %}{% if breaking %}!{% endif %}: {{subject}}{% if body %}\n\n{{body}}{% endif %}{% if footer %}\n\n{{footer}}{% endif %}"
-example = "feat(api)!: remove legacy auth flow"
-schema = "<type>(<scope>)!: <subject>"
-schema_pattern = "^(feat|fix|docs|style|refactor|test|build|ci|chore|revert)(\\([\\w\\-,\\.]\\))?(!)?: [^\\s].(\\n\\n[\\s\\S]*)?$"
-commit_parser = "^(?P<change_type>feat|fix|docs|style|refactor|test|build|ci|chore|revert)(?:\\((?P<scope>[\\w\\-,\\.])\\))?(?P<breaking>!)?:\\s(?P<message>[^\\s].)(?:\\n\\n(?P<body>[\\s\\S]*))?$"
-bump_pattern = "^(feat|fix|docs|style|refactor|test|build|ci|chore|revert)(\\(.\\))?(!)?:"
-changelog_pattern = "^(feat|fix|docs|style|refactor|test|build|ci|chore|revert)"
+message_template = "{{change_type}}{% if scope %}({{scope}}){% endif %}{% if breaking %}!{% endif %}: {{subject}}{% if body %}\n\n{{body}}{% endif %}{% if breaking %}\n\nBREAKING CHANGE: {{footer}}{% else %}\n\n{{footer}}{% endif %}"
+bump_pattern = "^(BREAKING[\\-\\ ]CHANGE|feat|fix|refactor|perf|ci|docs|style|test|chore|revert|build)(\\(.+\\))?(!)?"
+bump_message = "bump: version $current_version → $new_version"
+schema = "<type>(<scope>): <subject>\n<BLANK LINE>\n<body>\n<BLANK LINE>\n(BREAKING CHANGE: )<footer>"
+schema_pattern = "(?s)(feat|fix|refactor|chore|style|test|docs|build|ci|revert|bump)(\\(\\S+\\))?!?:( [^\\n\\r]+)((\\n\\n.*)|(\\s*))?$"
+commit_parser = "^(?P<change_type>BREAKING CHANGE|feat|fix|refactor|chore|style|test|docs|build|ci|revert)(?:\\((?P<scope>[^()\\r\\n]*)\\)|\\()?(?P<breaking>!)?:\\s(?P<message>.*)?"
+version_parser = "(?P<version>([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+)?(\\w+)?)"
+changelog_pattern = "^(BREAKING[\\-\\ ]CHANGE|feat|fix|refactor|chore|style|test|docs|build|ci|revert)(\\(.+\\))?(!)?"
+change_type_order = [
+    "BREAKING CHANGE",
+    "Features",
+    "Bug Fixes",
+    "Code Refactoring",
+    "Maintenance",
+    "Styling",
+    "Tests",
+    "Documentation",
+    "Build System",
+    "Continuous Integration",
+]
 
 [tool.commitizen.customize.bump_map]
 "^.!" = "MAJOR"
 "^feat" = "MINOR"
-"^(fix|docs|style|refactor|test|chore|ci|build|revert)" = "PATCH"
+"^(fix|refactor|chore|style|test|docs|build|ci|revert)" = "PATCH"
 
 [tool.commitizen.customize.change_type_map]
 feat = "Features"
 fix = "Bug Fixes"
-docs = "Documentation"
-style = "Styling"
 refactor = "Code Refactoring"
+chore = "Maintenance"
+style = "Styling"
 test = "Tests"
+docs = "Documentation"
 build = "Build System"
 ci = "Continuous Integration"
-chore = "Maintenance"
 revert = "Reverts"
 
 [[tool.commitizen.customize.questions]]
@@ -44,13 +57,13 @@ message = "Select the type of change you are committing"
 choices = [
   { value = "fix", name = "fix: A bug fix. Correlates with PATCH in SemVer" },
   { value = "feat", name = "feat: A new feature. Correlates with MINOR in SemVer" },
-  { value = "docs", name = "docs: Documentation only changes" },
-  { value = "style", name = "style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)" },
   { value = "refactor", name = "refactor: A code change that neither fixes a bug nor adds a feature" },
+  { value = "chore", name = "chore: Other changes that don't modify src or test files" },
+  { value = "style", name = "style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)" },
   { value = "test", name = "test: Adding missing or correcting existing tests" },
+  { value = "docs", name = "docs: Documentation only changes" },
   { value = "build", name = "build: Changes that affect the build system or external dependencies (example scopes: pip, docker, npm)" },
-  { value = "ci", name = "ci: Changes to CI configuration files and scripts (example scopes: GitLabCI)" },
-  { value = "chore", name = "chore: Other changes that don't modify src or test files" }
+  { value = "ci", name = "ci: Changes to CI configuration files and scripts (example scopes: GitLabCI)" }
 ]
 
 [[tool.commitizen.customize.questions]]
