@@ -1,3 +1,16 @@
+## v8.4.4 (2026-02-23)
+
+### Maintenance
+
+- **deps**: update dependencies
+- **commitizen**: remove the old config
+- **commitizen**: update configurations
+- **pyproject**: set up commitizen
+
+### Documentation
+
+- **license**: update year
+
 ## v8.4.3 (2026-02-04)
 
 ### Refactor
