@@ -3,3 +3,91 @@ line-length = 79
 
 [tool.flake8]
 max-line-length = 79
+
+[tool.commitizen]
+name = "cz_customize"
+tag_format = "v$version"
+version_provider = "scm"
+version_scheme = "pep440"
+update_changelog_on_bump = true
+
+[tool.commitizen.customize]
+message_template = "{{change_type}}{% if scope %}({{scope}}){% endif %}{% if breaking %}!{% endif %}: {{subject}}{% if body %}\n\n{{body}}{% endif %}{% if breaking %}\n\nBREAKING CHANGE: {{footer}}{% else %}\n\n{{footer}}{% endif %}"
+bump_pattern = "^(BREAKING[\\-\\ ]CHANGE|feat|fix|refactor|perf|ci|docs|style|test|chore|revert|build)(\\(.+\\))?(!)?"
+bump_message = "bump: version $current_version → $new_version"
+schema = "<type>(<scope>): <subject>\n<BLANK LINE>\n<body>\n<BLANK LINE>\n(BREAKING CHANGE: )<footer>"
+schema_pattern = "(?s)(feat|fix|refactor|chore|style|test|docs|build|ci|revert|bump)(\\(\\S+\\))?!?:( [^\\n\\r]+)((\\n\\n.*)|(\\s*))?$"
+commit_parser = "^(?P<change_type>BREAKING CHANGE|feat|fix|refactor|chore|style|test|docs|build|ci|revert)(?:\\((?P<scope>[^()\\r\\n]*)\\)|\\()?(?P<breaking>!)?:\\s(?P<message>.*)?"
+version_parser = "(?P<version>([0-9]+)\\.([0-9]+)\\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+)?(\\w+)?)"
+changelog_pattern = "^(BREAKING[\\-\\ ]CHANGE|feat|fix|refactor|chore|style|test|docs|build|ci|revert)(\\(.+\\))?(!)?"
+change_type_order = [
+    "BREAKING CHANGE",
+    "Features",
+    "Bug Fixes",
+    "Code Refactoring",
+    "Maintenance",
+    "Styling",
+    "Tests",
+    "Documentation",
+    "Build System",
+    "Continuous Integration",
+]
+
+[tool.commitizen.customize.bump_map]
+"^.!" = "MAJOR"
+"^feat" = "MINOR"
+"^(fix|refactor|chore|style|test|docs|build|ci|revert)" = "PATCH"
+
+[tool.commitizen.customize.change_type_map]
+feat = "Features"
+fix = "Bug Fixes"
+refactor = "Code Refactoring"
+chore = "Maintenance"
+style = "Styling"
+test = "Tests"
+docs = "Documentation"
+build = "Build System"
+ci = "Continuous Integration"
+revert = "Reverts"
+
+[[tool.commitizen.customize.questions]]
+type = "list"
+name = "change_type"
+message = "Select the type of change you are committing"
+choices = [
+  { value = "fix", name = "fix: A bug fix. Correlates with PATCH in SemVer" },
+  { value = "feat", name = "feat: A new feature. Correlates with MINOR in SemVer" },
+  { value = "refactor", name = "refactor: A code change that neither fixes a bug nor adds a feature" },
+  { value = "chore", name = "chore: Other changes that don't modify src or test files" },
+  { value = "style", name = "style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)" },
+  { value = "test", name = "test: Adding missing or correcting existing tests" },
+  { value = "docs", name = "docs: Documentation only changes" },
+  { value = "build", name = "build: Changes that affect the build system or external dependencies (example scopes: pip, docker, npm)" },
+  { value = "ci", name = "ci: Changes to CI configuration files and scripts (example scopes: GitLabCI)" }
+]
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "scope"
+message = "What is the scope of this change? (class or file name): (press [enter] to skip)"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "subject"
+message = "Write a short and imperative summary of the code changes: (lower case and no period)"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "body"
+message = "Provide additional contextual information about the code changes:"
+
+[[tool.commitizen.customize.questions]]
+type = "confirm"
+name = "breaking"
+message = "Is this a BREAKING CHANGE? Correlates with MAJOR in SemVer"
+default = false
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "footer"
+message = "Footer. Information about Breaking Changes and reference issues that this commit closes: (press [enter] to skip)"
