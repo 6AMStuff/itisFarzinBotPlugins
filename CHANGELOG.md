@@ -1,3 +1,9 @@
+## v8.4.5 (2026-05-15)
+
+### Code Refactoring
+
+- **system**: drop status plugin
+
 ## v8.4.4 (2026-02-23)
 
 ### Maintenance
