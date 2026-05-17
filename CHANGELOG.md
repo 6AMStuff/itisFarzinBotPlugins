@@ -1,3 +1,12 @@
+## v8.4.6 (2026-05-17)
+
+### Maintenance
+
+- **deps**: drop requirements.txt
+- **uv**: set it up
+- **pyproject**: update version provider to uv
+- **pyproject**: define project
+
 ## v8.4.5 (2026-05-15)
 
 ### Code Refactoring
