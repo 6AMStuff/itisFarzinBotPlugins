@@ -1,3 +1,25 @@
+[project]
+name = "itisFarzinBotPlugins"
+version = "8.4.5"
+description = "Curated collection of plugins for itisFarzinBot."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+  { name = "Farzin Kazemzadeh", email = "itisFarzin@proton.me" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "cryptography>=46.0.5",
+    "googletrans>=4.0.2",
+    "httpx>=0.28.1",
+    "humanize>=4.12.3",
+    "jdatetime>=5.2.0",
+    "mutagen>=1.47.0",
+    "psutil>=7.2.2",
+    "pylast>=7.0.2",
+    "qrcode[pil]>=8.2",
+]
+
 [tool.black]
 line-length = 79
 
@@ -7,7 +29,7 @@ max-line-length = 79
 [tool.commitizen]
 name = "cz_customize"
 tag_format = "v$version"
-version_provider = "scm"
+version_provider = "uv"
 version_scheme = "pep440"
 update_changelog_on_bump = true
 
