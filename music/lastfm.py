@@ -208,7 +208,6 @@ async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
     text = f"{user.name}'s Top {mode.title()} of the Last {timeframes[1]}:\n"
     if tops:
         for i, top in enumerate(tops, start=1):
-            top.item.username = USERNAME  # Fixes user play count for artists
             text += (
                 "\n{}. [{}](https://www.last.fm/search/tracks?q={}) ->"
                 " {} plays"
