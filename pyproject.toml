@@ -9,7 +9,7 @@ authors = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "cryptography>=46.0.5",
+    "cryptography>=48.0.1",
     "googletrans>=4.0.2",
     "httpx>=0.28.1",
     "humanize>=4.12.3",
