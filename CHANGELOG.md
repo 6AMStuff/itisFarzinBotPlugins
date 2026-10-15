@@ -1,3 +1,28 @@
+## v8.4.7 (2026-10-16)
+
+### Bug Fixes
+
+- define callback_data for inline buttons
+
+### Code Refactoring
+
+- apply ruff formatting
+- rename bot package references to itisfarzinbot
+- **lastfm**: drop the temporary play count fix
+
+### Maintenance
+
+- **dependabot**: drop target branch
+- add dependabot configuration for uv
+- adopt ruff, pyrefly, and modern dev tooling
+
+### Build System
+
+- **deps**: Bump pillow from 12.2.0 to 12.3.0 (#12)
+- **deps**: Bump h2 from 4.3.0 to 4.4.1 (#14)
+- **deps**: Bump anyio from 4.13.0 to 4.14.2 (#15)
+- **deps**: bump the uv-dependencies group with 5 updates
+
 ## v8.4.6 (2026-05-17)
 
 ### Maintenance
