@@ -1,32 +1,32 @@
-import os
-import httpx
-import hashlib
 import asyncio
-from itisfarzinbot import Bot
-from time import time
+import hashlib
+import os
 from math import ceil
 from random import randint
-from typing import Optional
+from time import time
+
+import httpx
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.decrepit.ciphers import algorithms
+from cryptography.hazmat.primitives.ciphers import Cipher, modes
+from itisfarzinbot import Bot
+from itisfarzinbot.settings import Settings
 from pyrogram import filters
 from pyrogram.types import (
-    Message,
     CallbackQuery,
-    InlineKeyboardMarkup,
     InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
 )
-from cryptography.hazmat.backends import default_backend
+
 from .util import (
     download_file,
     download_progress,
-    parse_data,
-    tag_file,
     error_handler,
     error_handler_decorator,
+    parse_data,
+    tag_file,
 )
-from cryptography.hazmat.decrepit.ciphers import algorithms
-from cryptography.hazmat.primitives.ciphers import Cipher, modes
-
-from itisfarzinbot.settings import Settings
 
 
 # APIError and DeezerAPI classes from https://github.com/uhwot/orpheusdl-deezer
@@ -47,7 +47,7 @@ class DeezerAPI:
         client_id: str,
         client_secret: str,
         bf_secret: str,
-        proxy: Optional[str] = None,
+        proxy: str | None = None,
     ):
         self.gw_light_url = "https://www.deezer.com/ajax/gw-light.php"
         self.api_token = ""
@@ -73,7 +73,7 @@ class DeezerAPI:
             }
         )
 
-    async def _api_call(self, method: str, payload: Optional[dict] = None):
+    async def _api_call(self, method: str, payload: dict | None = None):
         api_token = (
             self.api_token
             if method not in ("deezer.getUserData", "user.getArl")
@@ -94,8 +94,8 @@ class DeezerAPI:
         ).json()
 
         if resp["error"]:
-            type = list(resp["error"].keys())[0]
-            msg = list(resp["error"].values())[0]
+            type = next(iter(resp["error"].keys()))
+            msg = next(iter(resp["error"].values()))
             raise APIError(type, msg, resp["payload"])
 
         if method == "deezer.getUserData":
@@ -324,7 +324,7 @@ class Deezer(DeezerAPI):
         client_id: str,
         client_secret: str,
         bf_secret: str,
-        proxy: str = None,
+        proxy: str | None = None,
     ):
         super().__init__(client_id, client_secret, bf_secret, proxy)
 
@@ -382,7 +382,7 @@ class Deezer(DeezerAPI):
         return result
 
     def _cover(self, hash: str, resolution: int = 3000):
-        resolution = 3000 if resolution > 3000 else resolution
+        resolution = min(resolution, 3000)
         compression = 50
 
         return (
@@ -400,8 +400,8 @@ class Deezer(DeezerAPI):
 
     async def get_track_cover(
         self,
-        id: Optional[str | int] = None,
-        track: Optional[dict[str, str]] = None,
+        id: str | int | None = None,
+        track: dict[str, str] | None = None,
         resolution: int = 3000,
     ):
         if not id and not track:
@@ -525,7 +525,13 @@ async def deezer_search_keyboard(query: str, page: int = 0):
 
     if not tracks:
         return InlineKeyboardMarkup(
-            [[InlineKeyboardButton("No track was found.", callback_data="None")]]
+            [
+                [
+                    InlineKeyboardButton(
+                        "No track was found.", callback_data="None"
+                    )
+                ]
+            ]
         )
 
     for track in tracks[:10]:
@@ -545,14 +551,18 @@ async def deezer_search_keyboard(query: str, page: int = 0):
     page_keyboard = []
     if page != 0:
         page_keyboard.append(
-            InlineKeyboardButton("Previous Page", callback_data=f"dese {query} {page-1}")
+            InlineKeyboardButton(
+                "Previous Page", callback_data=f"dese {query} {page - 1}"
+            )
         )
     if len(tracks) == 11:
         page_keyboard.append(
-            InlineKeyboardButton("Next Page", callback_data=f"dese {query} {page+1}")
+            InlineKeyboardButton(
+                "Next Page", callback_data=f"dese {query} {page + 1}"
+            )
         )
 
-    return InlineKeyboardMarkup(keyboard + [page_keyboard])
+    return InlineKeyboardMarkup([*keyboard, page_keyboard])
 
 
 async def on_data_change():
@@ -613,12 +623,15 @@ async def deezer_message(_: Bot, message: Message):
         keyboard = []
         _keyboard = [
             InlineKeyboardButton(
-                f"Download {type.title()}", callback_data=f"deezer dl{type} {id}"
+                f"Download {type.title()}",
+                callback_data=f"deezer dl{type} {id}",
             )
         ]
         if type == "track":
             _keyboard.append(
-                InlineKeyboardButton("Preview", callback_data=f"deezer pvtrack {id}")
+                InlineKeyboardButton(
+                    "Preview", callback_data=f"deezer pvtrack {id}"
+                )
             )
 
         keyboard.append(_keyboard)
@@ -828,11 +841,15 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                     [
                         InlineKeyboardButton(
                             "Download",
-                            callback_data=parse_data("deezer dltrack {id}", track),
+                            callback_data=parse_data(
+                                "deezer dltrack {id}", track
+                            ),
                         ),
                         InlineKeyboardButton(
                             parse_data("Preview", track),
-                            callback_data=parse_data("deezer pvtrack {id}", track),
+                            callback_data=parse_data(
+                                "deezer pvtrack {id}", track
+                            ),
                         ),
                     ]
                 ]
@@ -875,6 +892,6 @@ async def deezer_search(_: Bot, query: CallbackQuery):
     )
 
 
-__all__ = ("deezer_message", "deezer_callback", "deezer_search")
+__all__ = ("deezer_callback", "deezer_message", "deezer_search")
 __plugin__ = True
 __bot_only__ = True

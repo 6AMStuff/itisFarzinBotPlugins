@@ -1,19 +1,19 @@
-import re
 import logging
-from itisfarzinbot import Bot
+import re
 from datetime import datetime, timedelta
-from pyrogram import filters, errors, utils
-from pyrogram.types import (
-    Message,
-    ChatPermissions,
-    Chat,
-    User,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    CallbackQuery,
-)
 
+from itisfarzinbot import Bot
 from itisfarzinbot.settings import Settings
+from pyrogram import errors, filters, utils
+from pyrogram.types import (
+    CallbackQuery,
+    Chat,
+    ChatPermissions,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+    User,
+)
 
 
 def human_to_timedelta(duration: str):
@@ -212,7 +212,7 @@ async def restrict(app: Bot, message: Message):
         case "kick" | "delkick":
             result = await app.ban_chat_member(chat.id, user.id)
             if not bool(result):
-                await message.reply("Failed to kick {}.".format(user.mention))
+                await message.reply(f"Failed to kick {user.mention}.")
                 return
 
             if action[0:3] == "del":
@@ -422,6 +422,6 @@ async def pin(app: Bot, message: Message):
             await message.reply(f"Failed to unpin the {type} message.")
 
 
-__all__ = ("restrict", "restrict_callback", "pin")
+__all__ = ("pin", "restrict", "restrict_callback")
 __plugin__ = True
 __bot_only__ = False

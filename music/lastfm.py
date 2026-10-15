@@ -1,23 +1,22 @@
-import pylast
 import datetime
-import humanize
 import urllib.parse
+
+import humanize
+import pylast
 from itisfarzinbot import Bot
-from pyrogram import filters, errors
+from itisfarzinbot.settings import Settings
+from pyrogram import errors, filters
 from pyrogram.types import (
+    CallbackQuery,
+    ChosenInlineResult,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
     InlineQuery,
     InlineQueryResultArticle,
-    InputTextMessageContent,
-    ChosenInlineResult,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    LinkPreviewOptions,
-    CallbackQuery,
     InputMediaPhoto,
+    InputTextMessageContent,
+    LinkPreviewOptions,
 )
-
-from itisfarzinbot.settings import Settings
-
 
 USERNAME = "itisFarzin"
 
@@ -209,13 +208,8 @@ async def lastfm_top(app: Bot, message_id: str, mode: str, time: str):
     if tops:
         for i, top in enumerate(tops, start=1):
             text += (
-                "\n{}. [{}](https://www.last.fm/search/tracks?q={}) ->"
-                " {} plays"
-            ).format(
-                i,
-                top.item,
-                urllib.parse.quote(str(top.item)),
-                top.item.get_userplaycount(),
+                f"\n{i}. [{top.item}](https://www.last.fm/search/tracks?q={urllib.parse.quote(str(top.item))}) ->"
+                f" {top.item.get_userplaycount()} plays"
             )
     else:
         text += "\nNothing were found."
@@ -244,7 +238,13 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
                 input_message_content=InputTextMessageContent("Status"),
                 id="lastfm_status",
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("LastFM Status", callback_data="None")]]
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "LastFM Status", callback_data="None"
+                            )
+                        ]
+                    ]
                 ),
             ),
             InlineQueryResultArticle(
@@ -254,7 +254,13 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
                 ),
                 id="lastfm_expanded_status",
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("LastFM Status", callback_data="None")]]
+                    [
+                        [
+                            InlineKeyboardButton(
+                                "LastFM Status", callback_data="None"
+                            )
+                        ]
+                    ]
                 ),
             ),
             InlineQueryResultArticle(
@@ -284,8 +290,9 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
 
 @Bot.on_chosen_inline_result(
     filters.create(
-        lambda _, __, chosen: chosen.result_id
-        in {"lastfm_status", "lastfm_expanded_status"}
+        lambda _, __, chosen: (
+            chosen.result_id in {"lastfm_status", "lastfm_expanded_status"}
+        )
     )
 )
 async def lastfm_inline_result(app: Bot, chosen: ChosenInlineResult):
@@ -363,7 +370,8 @@ async def lastfm_callback(app: Bot, query: CallbackQuery):
                                 "1Y", callback_data=f"lastfm top {mode} 1y"
                             ),
                             InlineKeyboardButton(
-                                "All time", callback_data=f"lastfm top {mode} alltime"
+                                "All time",
+                                callback_data=f"lastfm top {mode} alltime",
                             ),
                         ],
                     ]
@@ -375,6 +383,6 @@ async def lastfm_callback(app: Bot, query: CallbackQuery):
         await lastfm_top(app, query.inline_message_id, mode, time)
 
 
-__all__ = ("lastfm_inline", "lastfm_inline_result", "lastfm_callback")
+__all__ = ("lastfm_callback", "lastfm_inline", "lastfm_inline_result")
 __plugin__ = True
 __bot_only__ = True

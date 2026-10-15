@@ -1,40 +1,42 @@
-import os
-import copy
-import time
-import httpx
-import logging
 import asyncio
+import contextlib
+import copy
 import datetime
+import logging
+import os
+import time
 import traceback
-from mutagen.mp3 import MP3
-from typing import Callable
-from pyrogram import errors
-from mutagen.id3 import PictureType
+from collections.abc import Callable
+
+import httpx
 from mutagen.flac import FLAC, Picture
-from pyrogram.types import Message, CallbackQuery
 from mutagen.id3 import (
-    TIT2,
-    TPE1,
+    APIC,
+    COMM,
     TALB,
     TCOM,
     TCON,
-    TDRC,
     TCOP,
-    COMM,
+    TDRC,
+    TIT2,
+    TPE1,
     TPE2,
-    TRCK,
     TPOS,
-    APIC,
+    TRCK,
+    PictureType,
 )
+from mutagen.mp3 import MP3
+from pyrogram import errors
+from pyrogram.types import CallbackQuery, Message
 
 
 async def error_handler(
     func: Callable,
-    args: tuple = None,
-    kwargs: dict = None,
+    args: tuple | None = None,
+    kwargs: dict | None = None,
     update: Message | CallbackQuery = None,
-    texts: dict = None,
-    text: dict = None,
+    texts: dict | None = None,
+    text: dict | None = None,
     from_decorator: bool = False,
 ):
     args = args or ()
@@ -56,10 +58,8 @@ async def error_handler(
             if update.message:
                 await update.message.reply(text)
             else:
-                try:
+                with contextlib.suppress(errors.QueryIdInvalid):
                     await update.answer(text)
-                except errors.QueryIdInvalid:
-                    pass
 
     return True
 
@@ -82,12 +82,12 @@ def error_handler_decorator(func: Callable):
 async def download_file(
     url: str,
     filename: str,
-    proxy: str = None,
-    chunk_size: int = None,
-    chunk_process: Callable = None,
-    chunk_process_args: tuple = None,
-    progress: Callable = None,
-    progress_args: tuple = None,
+    proxy: str | None = None,
+    chunk_size: int | None = None,
+    chunk_process: Callable | None = None,
+    chunk_process_args: tuple | None = None,
+    progress: Callable | None = None,
+    progress_args: tuple | None = None,
     retry: int = 3,
 ):
     progress_args = progress_args or ()
@@ -186,7 +186,7 @@ async def download_progress(
 
 
 class DefaultDictMissing(dict):
-    def __init__(self, *args, missing_text: str = None, **kwargs):
+    def __init__(self, *args, missing_text: str | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.missing_text = (
             missing_text if missing_text is not None else "{{{key}}}"
@@ -196,7 +196,7 @@ class DefaultDictMissing(dict):
         return self.missing_text.format(key=key)
 
 
-def parse_data(text: str, data: dict, missing_text: str = None):
+def parse_data(text: str, data: dict, missing_text: str | None = None):
     _data = copy.deepcopy(data)
     if "performer" in data:
         _data["artist"] = data["performer"]["name"]
@@ -208,7 +208,7 @@ def parse_data(text: str, data: dict, missing_text: str = None):
         )
     if "title" in data:
         _data["name"] = data["title"]
-    if "version" in data and data["version"]:
+    if data.get("version"):
         if "(" not in data["version"]:
             _data["version"] = f"({data['version']})"
         _data["name"] += f" {_data['version']}"

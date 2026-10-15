@@ -1,9 +1,7 @@
 from itisfarzinbot import Bot
+from itisfarzinbot.settings import Settings
 from pyrogram import filters
 from pyrogram.types import Message
-
-from itisfarzinbot.settings import Settings
-
 
 emoji_list = {
     "dice": "🎲",
@@ -26,7 +24,7 @@ async def throw(app: Bot, message: Message):
     emoji = message.command[0]
     if emoji == "throw":
         emoji = message.command[1] if len(message.command) > 1 else None
-        if emoji not in emoji_list.values() and emoji not in emoji_list.keys():
+        if emoji not in emoji_list.values() and emoji not in emoji_list:
             await message.reply(
                 "The emoji should be one of the following: "
                 + ", ".join(
@@ -37,7 +35,7 @@ async def throw(app: Bot, message: Message):
             return
 
     await app.send_dice(
-        message.chat.id, emoji_list[emoji] if emoji in emoji_list else emoji
+        message.chat.id, emoji_list.get(emoji, emoji)
     )
 
 

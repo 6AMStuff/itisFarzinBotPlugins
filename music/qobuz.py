@@ -1,26 +1,27 @@
+import asyncio
+import hashlib
 import os
 import time
+
 import httpx
-import hashlib
-import asyncio
 from itisfarzinbot import Bot
+from itisfarzinbot.settings import Settings
 from pyrogram import filters
 from pyrogram.types import (
-    Message,
     CallbackQuery,
-    InlineKeyboardMarkup,
     InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
 )
+
 from .util import (
     download_file,
     download_progress,
-    parse_data,
-    tag_file,
     error_handler,
     error_handler_decorator,
+    parse_data,
+    tag_file,
 )
-
-from itisfarzinbot.settings import Settings
 
 
 # Qobuz class from https://github.com/OrfiDev/orpheusdl-qobuz
@@ -31,7 +32,7 @@ class Qobuz:
         app_id: str | int,
         app_secret: str,
         auth_token: str,
-        proxy: str = None,
+        proxy: str | None = None,
     ):
         self.api_base = "https://www.qobuz.com/api.json/0.2/"
         self._app_id = str(app_id)
@@ -183,7 +184,13 @@ async def qobuz_search_keyboard(query: str, page: int = 0):
 
     if not tracks:
         return InlineKeyboardMarkup(
-            [[InlineKeyboardButton("No track was found.", callback_data="None")]]
+            [
+                [
+                    InlineKeyboardButton(
+                        "No track was found.", callback_data="None"
+                    )
+                ]
+            ]
         )
 
     for track in tracks[:10]:
@@ -203,14 +210,18 @@ async def qobuz_search_keyboard(query: str, page: int = 0):
     page_keyboard = []
     if page != 0:
         page_keyboard.append(
-            InlineKeyboardButton("Previous Page", callback_data=f"qose {query} {page-1}")
+            InlineKeyboardButton(
+                "Previous Page", callback_data=f"qose {query} {page - 1}"
+            )
         )
     if len(tracks) == 11:
         page_keyboard.append(
-            InlineKeyboardButton("Next Page", callback_data=f"qose {query} {page+1}")
+            InlineKeyboardButton(
+                "Next Page", callback_data=f"qose {query} {page + 1}"
+            )
         )
 
-    return InlineKeyboardMarkup(keyboard + [page_keyboard])
+    return InlineKeyboardMarkup([*keyboard, page_keyboard])
 
 
 def on_data_change():
@@ -260,7 +271,11 @@ async def qobuz_message(_: Bot, message: Message):
         return
 
     keyboard = [
-        [InlineKeyboardButton("Download Album", callback_data=f"qobuz dlalbum {album_id}")],
+        [
+            InlineKeyboardButton(
+                "Download Album", callback_data=f"qobuz dlalbum {album_id}"
+            )
+        ],
         [
             InlineKeyboardButton("—", callback_data="none"),
             InlineKeyboardButton("Tracks", callback_data="none"),
@@ -451,11 +466,15 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                     [
                         InlineKeyboardButton(
                             "Download",
-                            callback_data=parse_data("qobuz dltrack {id}", track),
+                            callback_data=parse_data(
+                                "qobuz dltrack {id}", track
+                            ),
                         ),
                         InlineKeyboardButton(
                             "Preview",
-                            callback_data=parse_data("qobuz pvtrack {id}", track),
+                            callback_data=parse_data(
+                                "qobuz pvtrack {id}", track
+                            ),
                         ),
                     ]
                 ]
@@ -495,6 +514,6 @@ async def qobuz_search(_: Bot, query: CallbackQuery):
     )
 
 
-__all__ = ("qobuz_message", "qobuz_callback", "qobuz_search")
+__all__ = ("qobuz_callback", "qobuz_message", "qobuz_search")
 __plugin__ = True
 __bot_only__ = True

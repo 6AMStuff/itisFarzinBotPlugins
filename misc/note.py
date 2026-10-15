@@ -1,11 +1,10 @@
-from itisfarzinbot import Bot
-from typing import Union
-from pyrogram import filters, enums, errors
-from pyrogram.types import Message, MessageEntity
-from sqlalchemy.orm import Session, Mapped, mapped_column
-from sqlalchemy import Text, JSON, Boolean, select, delete
 
-from itisfarzinbot.settings import Settings, DataBase
+from itisfarzinbot import Bot
+from itisfarzinbot.settings import DataBase, Settings
+from pyrogram import enums, errors, filters
+from pyrogram.types import Message, MessageEntity
+from sqlalchemy import JSON, Boolean, Text, delete, select
+from sqlalchemy.orm import Mapped, Session, mapped_column
 
 
 class NotesDatabase(DataBase):
@@ -40,7 +39,7 @@ def upgrade_to_sql():
     Settings.setdata("notes", {})
 
 
-def serialize_entities(entities: Union[list[MessageEntity]] = None):
+def serialize_entities(entities: list[MessageEntity] | None = None):
     if not entities:
         return None
 
@@ -49,17 +48,19 @@ def serialize_entities(entities: Union[list[MessageEntity]] = None):
             key: (
                 value.name.lower()
                 if isinstance(value, enums.MessageEntityType)
-                else value.id if key == "user" and value else value
+                else value.id
+                if key == "user" and value
+                else value
             )
             for key, value in entity.__dict__.items()
-            if key not in ["_client"] and value is not None
+            if key != "_client" and value is not None
         }
         for entity in entities
     ]
 
 
 async def deserialize_entities(
-    client: Bot, entities: Union[list[dict[str, str]]] = None
+    client: Bot, entities: list[dict[str, str]] | None = None
 ):
     if not entities:
         return None
@@ -193,9 +194,7 @@ async def note_message(app: Bot, message: Message):
 
                 note: NotesDatabase = data[0]
                 msg = (
-                    message.reply_to_message
-                    if message.reply_to_message
-                    else message
+                    message.reply_to_message or message
                 )
 
                 if note.private and not await Settings.IS_ADMIN(app, message):

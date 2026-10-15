@@ -1,22 +1,22 @@
-import re
 import base64
 import hashlib
-from itisfarzinbot import Bot
-from sqlalchemy import Text, select
-from cryptography.fernet import Fernet
-from pyrogram import filters, errors, enums
-from sqlalchemy.orm import Session, Mapped, mapped_column
-from pyrogram.types import (
-    InlineQuery,
-    CallbackQuery,
-    InlineQueryResultArticle,
-    ChosenInlineResult,
-    InputTextMessageContent,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-)
+import re
 
-from itisfarzinbot.settings import Settings, DataBase
+from cryptography.fernet import Fernet
+from itisfarzinbot import Bot
+from itisfarzinbot.settings import DataBase, Settings
+from pyrogram import enums, errors, filters
+from pyrogram.types import (
+    CallbackQuery,
+    ChosenInlineResult,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InlineQuery,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+)
+from sqlalchemy import Text, select
+from sqlalchemy.orm import Mapped, Session, mapped_column
 
 
 class WhisperDatabase(DataBase):
@@ -78,9 +78,7 @@ async def whisper_inline(app: Bot, query: InlineQuery):
                         [
                             InlineKeyboardButton(
                                 "Show the whisper",
-                                callback_data="whisper {} {}".format(
-                                    username, query.from_user.id
-                                ),
+                                callback_data=f"whisper {username} {query.from_user.id}",
                             )
                         ]
                     ]
@@ -131,6 +129,6 @@ async def whisper_callback(_: Bot, query: CallbackQuery):
             await query.answer(cipher.decrypt(text).decode(), show_alert=True)
 
 
-__all__ = ("whisper_inline", "whisper_inline_result", "whisper_callback")
+__all__ = ("whisper_callback", "whisper_inline", "whisper_inline_result")
 __plugin__ = True
 __bot_only__ = True

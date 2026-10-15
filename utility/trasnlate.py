@@ -1,10 +1,8 @@
+from googletrans import Translator
 from itisfarzinbot import Bot
+from itisfarzinbot.settings import Settings
 from pyrogram import filters
 from pyrogram.types import Message
-from googletrans import Translator
-
-from itisfarzinbot.settings import Settings
-
 
 translator = Translator()
 
@@ -37,9 +35,7 @@ async def translate(_: Bot, message: Message):
     try:
         result = await translator.translate(text, dest=language)
         await message.reply(
-            text="From **{}** to **{}**:\n`{}`".format(
-                result.src.upper(), result.dest.upper(), result.text
-            )
+            text=f"From **{result.src.upper()}** to **{result.dest.upper()}**:\n`{result.text}`"
         )
     except Exception as e:
         await message.reply("*ERROR**: " + str(e))
