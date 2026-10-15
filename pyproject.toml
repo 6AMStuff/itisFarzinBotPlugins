@@ -23,13 +23,47 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "itisFarzinBot",
+    "pre-commit>=4.6.1",
+    "pyrefly>=1.1.1",
+    "ruff>=0.16.0",
 ]
 
-[tool.black]
+[tool.ruff]
 line-length = 79
+src = ["."]
 
-[tool.flake8]
-max-line-length = 79
+[tool.ruff.lint]
+select = [
+  "E",
+  "F",
+  "W",
+  "C90",
+  "C901",
+  "SIM",
+  "RUF",
+  "B",
+  "S",
+  "TCH",
+  "I",
+  "UP",
+  "A",
+  "FURB",
+  "ARG",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["misc", "music", "utility"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 8
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pyrefly]
+project-includes = ["misc", "music", "utility"]
+preset = "all"
+strict-callable-subtyping = true
 
 [tool.commitizen]
 name = "cz_customize"
