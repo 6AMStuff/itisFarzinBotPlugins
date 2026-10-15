@@ -198,7 +198,7 @@ async def restrict(app: Bot, message: Message):
                             [
                                 InlineKeyboardButton(
                                     "Unban",
-                                    f"restrict unban {user.id}",
+                                    callback_data=f"restrict unban {user.id}",
                                 )
                             ]
                         ]
@@ -260,7 +260,7 @@ async def restrict(app: Bot, message: Message):
                             [
                                 InlineKeyboardButton(
                                     "Unmute",
-                                    f"restrict unmute {user.id}",
+                                    callback_data=f"restrict unmute {user.id}",
                                 )
                             ]
                         ]

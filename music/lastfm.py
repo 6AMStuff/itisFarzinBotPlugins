@@ -119,7 +119,7 @@ async def lastfm_status(
         buttons.append(
             InlineKeyboardButton(
                 "🖼",
-                "lastfm status {}with_cover".format(
+                callback_data="lastfm status {}with_cover".format(
                     "expanded_" if expanded else ""
                 ),
             )
@@ -128,7 +128,7 @@ async def lastfm_status(
     buttons.append(
         InlineKeyboardButton(
             "🔄",
-            "lastfm status {}with{}_cover".format(
+            callback_data="lastfm status {}with{}_cover".format(
                 "expanded_" if expanded else "", "" if with_cover else "out"
             ),
         )
@@ -138,7 +138,7 @@ async def lastfm_status(
         buttons.append(
             InlineKeyboardButton(
                 "➖",
-                "lastfm status with{}_cover".format(
+                callback_data="lastfm status with{}_cover".format(
                     "" if with_cover else "out"
                 ),
             )
@@ -147,7 +147,7 @@ async def lastfm_status(
         buttons.append(
             InlineKeyboardButton(
                 "➕",
-                "lastfm status expanded_with{}_cover".format(
+                callback_data="lastfm status expanded_with{}_cover".format(
                     "" if with_cover else "out"
                 ),
             )
@@ -244,7 +244,7 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
                 input_message_content=InputTextMessageContent("Status"),
                 id="lastfm_status",
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("LastFM Status", "None")]]
+                    [[InlineKeyboardButton("LastFM Status", callback_data="None")]]
                 ),
             ),
             InlineQueryResultArticle(
@@ -254,7 +254,7 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
                 ),
                 id="lastfm_expanded_status",
                 reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("LastFM Status", "None")]]
+                    [[InlineKeyboardButton("LastFM Status", callback_data="None")]]
                 ),
             ),
             InlineQueryResultArticle(
@@ -265,13 +265,13 @@ async def lastfm_inline(_: Bot, query: InlineQuery):
                     [
                         [
                             InlineKeyboardButton(
-                                "Artists", "lastfm top artists"
+                                "Artists", callback_data="lastfm top artists"
                             ),
                             InlineKeyboardButton(
-                                "Albums", "lastfm top albums"
+                                "Albums", callback_data="lastfm top albums"
                             ),
                             InlineKeyboardButton(
-                                "Tracks", "lastfm top tracks"
+                                "Tracks", callback_data="lastfm top tracks"
                             ),
                         ]
                     ]
@@ -346,24 +346,24 @@ async def lastfm_callback(app: Bot, query: CallbackQuery):
                     [
                         [
                             InlineKeyboardButton(
-                                "1W", f"lastfm top {mode} 1w"
+                                "1W", callback_data=f"lastfm top {mode} 1w"
                             ),
                             InlineKeyboardButton(
-                                "1M", f"lastfm top {mode} 1m"
+                                "1M", callback_data=f"lastfm top {mode} 1m"
                             ),
                             InlineKeyboardButton(
-                                "3M", f"lastfm top {mode} 3m"
+                                "3M", callback_data=f"lastfm top {mode} 3m"
                             ),
                         ],
                         [
                             InlineKeyboardButton(
-                                "6M", f"lastfm top {mode} 6m"
+                                "6M", callback_data=f"lastfm top {mode} 6m"
                             ),
                             InlineKeyboardButton(
-                                "1Y", f"lastfm top {mode} 1y"
+                                "1Y", callback_data=f"lastfm top {mode} 1y"
                             ),
                             InlineKeyboardButton(
-                                "All time", f"lastfm top {mode} alltime"
+                                "All time", callback_data=f"lastfm top {mode} alltime"
                             ),
                         ],
                     ]

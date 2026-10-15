@@ -183,7 +183,7 @@ async def qobuz_search_keyboard(query: str, page: int = 0):
 
     if not tracks:
         return InlineKeyboardMarkup(
-            [[InlineKeyboardButton("No track was found.", "None")]]
+            [[InlineKeyboardButton("No track was found.", callback_data="None")]]
         )
 
     for track in tracks[:10]:
@@ -191,11 +191,11 @@ async def qobuz_search_keyboard(query: str, page: int = 0):
             [
                 InlineKeyboardButton(
                     parse_data("{time} | {name} - {artist}", track),
-                    parse_data("qobuz trackinfo {id}", track),
+                    callback_data=parse_data("qobuz trackinfo {id}", track),
                 ),
                 InlineKeyboardButton(
                     "Download",
-                    parse_data("qobuz dltrack {id}", track),
+                    callback_data=parse_data("qobuz dltrack {id}", track),
                 ),
             ]
         )
@@ -203,11 +203,11 @@ async def qobuz_search_keyboard(query: str, page: int = 0):
     page_keyboard = []
     if page != 0:
         page_keyboard.append(
-            InlineKeyboardButton("Previous Page", f"qose {query} {page-1}")
+            InlineKeyboardButton("Previous Page", callback_data=f"qose {query} {page-1}")
         )
     if len(tracks) == 11:
         page_keyboard.append(
-            InlineKeyboardButton("Next Page", f"qose {query} {page+1}")
+            InlineKeyboardButton("Next Page", callback_data=f"qose {query} {page+1}")
         )
 
     return InlineKeyboardMarkup(keyboard + [page_keyboard])
@@ -260,22 +260,22 @@ async def qobuz_message(_: Bot, message: Message):
         return
 
     keyboard = [
-        [InlineKeyboardButton("Download Album", f"qobuz dlalbum {album_id}")],
+        [InlineKeyboardButton("Download Album", callback_data=f"qobuz dlalbum {album_id}")],
         [
-            InlineKeyboardButton("—", "none"),
-            InlineKeyboardButton("Tracks", "none"),
-            InlineKeyboardButton("—", "none"),
+            InlineKeyboardButton("—", callback_data="none"),
+            InlineKeyboardButton("Tracks", callback_data="none"),
+            InlineKeyboardButton("—", callback_data="none"),
         ],
     ]
     tracks = [
         [
             InlineKeyboardButton(
                 parse_data("{time} | {name} - {artist}", track),
-                parse_data("qobuz dltrack {id}", track),
+                callback_data=parse_data("qobuz dltrack {id}", track),
             ),
             InlineKeyboardButton(
                 "Preview",
-                parse_data("qobuz pvtrack {id}", track),
+                callback_data=parse_data("qobuz pvtrack {id}", track),
             ),
         ]
         for track in album["tracks"]["items"]
@@ -451,11 +451,11 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
                     [
                         InlineKeyboardButton(
                             "Download",
-                            parse_data("qobuz dltrack {id}", track),
+                            callback_data=parse_data("qobuz dltrack {id}", track),
                         ),
                         InlineKeyboardButton(
                             "Preview",
-                            parse_data("qobuz pvtrack {id}", track),
+                            callback_data=parse_data("qobuz pvtrack {id}", track),
                         ),
                     ]
                 ]

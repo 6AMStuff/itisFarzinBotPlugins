@@ -525,7 +525,7 @@ async def deezer_search_keyboard(query: str, page: int = 0):
 
     if not tracks:
         return InlineKeyboardMarkup(
-            [[InlineKeyboardButton("No track was found.", "None")]]
+            [[InlineKeyboardButton("No track was found.", callback_data="None")]]
         )
 
     for track in tracks[:10]:
@@ -533,11 +533,11 @@ async def deezer_search_keyboard(query: str, page: int = 0):
             [
                 InlineKeyboardButton(
                     parse_data("{time} | {name} - {artist}", track),
-                    parse_data("deezer trackinfo {id}", track),
+                    callback_data=parse_data("deezer trackinfo {id}", track),
                 ),
                 InlineKeyboardButton(
                     "Download",
-                    parse_data("deezer dltrack {id}", track),
+                    callback_data=parse_data("deezer dltrack {id}", track),
                 ),
             ]
         )
@@ -545,11 +545,11 @@ async def deezer_search_keyboard(query: str, page: int = 0):
     page_keyboard = []
     if page != 0:
         page_keyboard.append(
-            InlineKeyboardButton("Previous Page", f"dese {query} {page-1}")
+            InlineKeyboardButton("Previous Page", callback_data=f"dese {query} {page-1}")
         )
     if len(tracks) == 11:
         page_keyboard.append(
-            InlineKeyboardButton("Next Page", f"dese {query} {page+1}")
+            InlineKeyboardButton("Next Page", callback_data=f"dese {query} {page+1}")
         )
 
     return InlineKeyboardMarkup(keyboard + [page_keyboard])
@@ -613,12 +613,12 @@ async def deezer_message(_: Bot, message: Message):
         keyboard = []
         _keyboard = [
             InlineKeyboardButton(
-                f"Download {type.title()}", f"deezer dl{type} {id}"
+                f"Download {type.title()}", callback_data=f"deezer dl{type} {id}"
             )
         ]
         if type == "track":
             _keyboard.append(
-                InlineKeyboardButton("Preview", f"deezer pvtrack {id}")
+                InlineKeyboardButton("Preview", callback_data=f"deezer pvtrack {id}")
             )
 
         keyboard.append(_keyboard)
@@ -626,20 +626,20 @@ async def deezer_message(_: Bot, message: Message):
         if type == "album":
             keyboard += [
                 [
-                    InlineKeyboardButton("—", "none"),
-                    InlineKeyboardButton("Tracks", "none"),
-                    InlineKeyboardButton("—", "none"),
+                    InlineKeyboardButton("—", callback_data="none"),
+                    InlineKeyboardButton("Tracks", callback_data="none"),
+                    InlineKeyboardButton("—", callback_data="none"),
                 ],
             ]
             keyboard += [
                 [
                     InlineKeyboardButton(
                         parse_data("{time} | {name} - {artist}", track),
-                        parse_data("deezer dltrack {id}", track),
+                        callback_data=parse_data("deezer dltrack {id}", track),
                     ),
                     InlineKeyboardButton(
                         parse_data("Preview", track),
-                        parse_data("deezer pvtrack {id}", track),
+                        callback_data=parse_data("deezer pvtrack {id}", track),
                     ),
                 ]
                 for track in data["songs"]
@@ -828,11 +828,11 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
                     [
                         InlineKeyboardButton(
                             "Download",
-                            parse_data("deezer dltrack {id}", track),
+                            callback_data=parse_data("deezer dltrack {id}", track),
                         ),
                         InlineKeyboardButton(
                             parse_data("Preview", track),
-                            parse_data("deezer pvtrack {id}", track),
+                            callback_data=parse_data("deezer pvtrack {id}", track),
                         ),
                     ]
                 ]
