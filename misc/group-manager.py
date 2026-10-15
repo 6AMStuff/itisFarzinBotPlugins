@@ -1,6 +1,6 @@
 import re
 import logging
-from bot import Bot
+from itisfarzinbot import Bot
 from datetime import datetime, timedelta
 from pyrogram import filters, errors, utils
 from pyrogram.types import (
@@ -13,7 +13,7 @@ from pyrogram.types import (
     CallbackQuery,
 )
 
-from bot.settings import Settings
+from itisfarzinbot.settings import Settings
 
 
 def human_to_timedelta(duration: str):
@@ -277,6 +277,9 @@ async def restrict(app: Bot, message: Message):
     filters.regex(r"^restrict (?P<action>\w+) (?P<user>\d+)$")
 )
 async def restrict_callback(app: Bot, query: CallbackQuery):
+    if not isinstance(query.matches, list) or len(query.matches) == 0:
+        return
+
     action, user_id = query.matches[0].groups()
     message = query.message
     chat = message.chat

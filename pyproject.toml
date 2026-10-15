@@ -20,6 +20,11 @@ dependencies = [
     "qrcode[pil]>=8.2",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "itisFarzinBot",
+]
+
 [tool.black]
 line-length = 79
 
@@ -113,3 +118,6 @@ default = false
 type = "input"
 name = "footer"
 message = "Footer. Information about Breaking Changes and reference issues that this commit closes: (press [enter] to skip)"
+
+[tool.uv.sources]
+itisFarzinBot = { git = "https://github.com/6AMStuff/itisFarzinBot", rev = "v0.23.1" }

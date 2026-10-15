@@ -1,15 +1,16 @@
-from bot import Bot
+from itisfarzinbot import Bot
 from typing import Union
 from pyrogram import filters, enums, errors
 from pyrogram.types import Message, MessageEntity
 from sqlalchemy.orm import Session, Mapped, mapped_column
 from sqlalchemy import Text, JSON, Boolean, select, delete
 
-from bot.settings import Settings, DataBase
+from itisfarzinbot.settings import Settings, DataBase
 
 
 class NotesDatabase(DataBase):
     __tablename__ = "notes"
+    __table_args__ = {"extend_existing": True}
 
     note_name: Mapped[str] = mapped_column(Text(), primary_key=True)
     type: Mapped[str] = mapped_column(Text())

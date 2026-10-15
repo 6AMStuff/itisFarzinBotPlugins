@@ -1,7 +1,7 @@
 import re
 import base64
 import hashlib
-from bot import Bot
+from itisfarzinbot import Bot
 from sqlalchemy import Text, select
 from cryptography.fernet import Fernet
 from pyrogram import filters, errors, enums
@@ -16,11 +16,12 @@ from pyrogram.types import (
     InlineKeyboardButton,
 )
 
-from bot.settings import Settings, DataBase
+from itisfarzinbot.settings import Settings, DataBase
 
 
 class WhisperDatabase(DataBase):
     __tablename__ = "whispers"
+    __table_args__ = {"extend_existing": True}
 
     message_id: Mapped[str] = mapped_column(Text(), primary_key=True)
     text: Mapped[str] = mapped_column(Text())
@@ -47,6 +48,9 @@ whisper_chosen = filters.create(whisper_chosen_filter)
     )
 )
 async def whisper_inline(app: Bot, query: InlineQuery):
+    if not isinstance(query.matches, list) or len(query.matches) == 0:
+        return
+
     full_name = username = query.matches[0].group("username")
     try:
         user = await app.get_users([username])
@@ -113,6 +117,9 @@ async def whisper_callback(_: Bot, query: CallbackQuery):
         ).scalar()
         if not text:
             await query.answer("Whisper not found.")
+            return
+
+        if not isinstance(query.matches, list) or len(query.matches) == 0:
             return
 
         receiver, sender = query.matches[0].groups()

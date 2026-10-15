@@ -2,7 +2,7 @@ import pylast
 import datetime
 import humanize
 import urllib.parse
-from bot import Bot
+from itisfarzinbot import Bot
 from pyrogram import filters, errors
 from pyrogram.types import (
     InlineQuery,
@@ -16,7 +16,7 @@ from pyrogram.types import (
     InputMediaPhoto,
 )
 
-from bot.settings import Settings
+from itisfarzinbot.settings import Settings
 
 
 USERNAME = "itisFarzin"
@@ -308,6 +308,9 @@ async def lastfm_inline_result(app: Bot, chosen: ChosenInlineResult):
     filters.regex(r"^lastfm (?P<action>\w+) (?P<mode>\w+)(?: (?P<time>\w+))?$")
 )
 async def lastfm_callback(app: Bot, query: CallbackQuery):
+    if not isinstance(query.matches, list) or len(query.matches) == 0:
+        return
+
     action, mode, time = query.matches[0].groups()
 
     if action == "status":

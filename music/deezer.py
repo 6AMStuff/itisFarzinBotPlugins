@@ -2,7 +2,7 @@ import os
 import httpx
 import hashlib
 import asyncio
-from bot import Bot
+from itisfarzinbot import Bot
 from time import time
 from math import ceil
 from random import randint
@@ -26,7 +26,7 @@ from .util import (
 from cryptography.hazmat.decrepit.ciphers import algorithms
 from cryptography.hazmat.primitives.ciphers import Cipher, modes
 
-from bot.settings import Settings
+from itisfarzinbot.settings import Settings
 
 
 # APIError and DeezerAPI classes from https://github.com/uhwot/orpheusdl-deezer
@@ -581,6 +581,9 @@ async def deezer_message(_: Bot, message: Message):
         await message.reply(deezer)
         return
 
+    if not isinstance(message.matches, list) or len(message.matches) == 0:
+        return
+
     match = message.matches[0]
     type = match.group("type")
     id = match.group("id")
@@ -662,6 +665,9 @@ async def deezer_callback(_: Bot, query: CallbackQuery):
 
     if isinstance(deezer, str):
         await query.answer(deezer)
+        return
+
+    if not isinstance(query.matches, list) or len(query.matches) == 0:
         return
 
     loop = asyncio.get_running_loop()
@@ -858,6 +864,9 @@ async def deezer_search(_: Bot, query: CallbackQuery):
 
     if isinstance(deezer, str):
         await query.answer(deezer)
+        return
+
+    if not isinstance(query.matches, list) or len(query.matches) == 0:
         return
 
     search_query, page = query.matches[0].groups()

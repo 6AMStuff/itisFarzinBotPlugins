@@ -1,10 +1,10 @@
 import qrcode
-from bot import Bot
+from itisfarzinbot import Bot
 from io import BytesIO
 from pyrogram import filters
 from pyrogram.types import Message
 
-from bot.settings import Settings
+from itisfarzinbot.settings import Settings
 
 
 def generate_qr(text: str) -> BytesIO:

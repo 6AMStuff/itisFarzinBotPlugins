@@ -1,9 +1,9 @@
 import httpx
-from bot import Bot
+from itisfarzinbot import Bot
 from pyrogram import filters
 from pyrogram.types import Message
 
-from bot.settings import Settings
+from itisfarzinbot.settings import Settings
 
 
 async def get_weather(location: str):

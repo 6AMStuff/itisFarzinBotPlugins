@@ -3,7 +3,7 @@ import time
 import httpx
 import hashlib
 import asyncio
-from bot import Bot
+from itisfarzinbot import Bot
 from pyrogram import filters
 from pyrogram.types import (
     Message,
@@ -20,7 +20,7 @@ from .util import (
     error_handler_decorator,
 )
 
-from bot.settings import Settings
+from itisfarzinbot.settings import Settings
 
 
 # Qobuz class from https://github.com/OrfiDev/orpheusdl-qobuz
@@ -235,6 +235,9 @@ async def qobuz_message(_: Bot, message: Message):
         await message.reply(qobuz)
         return
 
+    if not isinstance(message.matches, list) or len(message.matches) == 0:
+        return
+
     album_id = message.matches[0].group("id")
     query = message.matches[0].group("query")
 
@@ -291,6 +294,9 @@ async def qobuz_message(_: Bot, message: Message):
 async def qobuz_callback(_: Bot, query: CallbackQuery):
     if isinstance(qobuz, str):
         await query.answer(qobuz)
+        return
+
+    if not isinstance(query.matches, list) or len(query.matches) == 0:
         return
 
     loop = asyncio.get_running_loop()
@@ -478,6 +484,9 @@ async def qobuz_callback(_: Bot, query: CallbackQuery):
 async def qobuz_search(_: Bot, query: CallbackQuery):
     if isinstance(qobuz, str):
         await query.answer(qobuz)
+        return
+
+    if not isinstance(query.matches, list) or len(query.matches) == 0:
         return
 
     search_query, page = query.matches[0].groups()

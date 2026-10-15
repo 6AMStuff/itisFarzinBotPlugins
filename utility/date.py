@@ -1,10 +1,10 @@
-from bot import Bot
+from itisfarzinbot import Bot
 from pyrogram import filters
 from datetime import datetime
 from pyrogram.types import Message
 from jdatetime import datetime as jdatetime
 
-from bot.settings import Settings
+from itisfarzinbot.settings import Settings
 
 
 @Bot.on_message(filters.command("date", Settings.CMD_PREFIXES))
